@@ -1,0 +1,203 @@
+{
+    "title": "Gestionnaire de batteries",
+    "language": {
+        "label": "Langue",
+        "auto": "Automatique",
+        "fr": "Fran\u00e7ais",
+        "en": "English",
+        "es": "Espa\u00f1ol"
+    },
+    "tabs": {
+        "overview": "Vue d'ensemble",
+        "configuration": "Configuration",
+        "schedule": "Programmation"
+    },
+    "buttons": {
+        "add": "Ajouter",
+        "duplicate": "Dupliquer",
+        "delete": "Supprimer",
+        "save": "Enregistrer",
+        "retrieve_entities": "R\u00e9cup\u00e9rer les entit\u00e9s",
+        "apply_range": "Appliquer la plage"
+    },
+    "actions": {
+        "charge": "Charge",
+        "discharge": "D\u00e9charge",
+        "self_consumption": "Autoconsommation collective",
+        "solar_charge": "Charge solaire collective",
+        "native_self_consumption": "Autoconsommation native Marstek",
+        "default_mode": "Retour au mode par d\u00e9faut",
+        "standby": "Standby",
+        "waiting": "En attente",
+        "disabled": "D\u00e9sactiv\u00e9",
+        "blocked": "Bloqu\u00e9"
+    },
+    "adapters": {
+        "generic": "G\u00e9n\u00e9rique",
+        "marstek_entities": "Marstek",
+        "hoymiles_msa2": "Hoymiles MS-A2"
+    },
+    "modes": {
+        "disabled": "D\u00e9sactiv\u00e9",
+        "schedule": "Programmation"
+    },
+    "overview": {
+        "none": "Aucune batterie configur\u00e9e.",
+        "control_enabled": "gestion autoris\u00e9e",
+        "monitoring": "surveillance",
+        "action": "Action",
+        "pilotage_activation": "Activation du pilotage",
+        "enabled": "Activ\u00e9e",
+        "disabled": "D\u00e9sactiv\u00e9e",
+        "disabled_return": "Retour lorsque le pilotage est d\u00e9sactiv\u00e9",
+        "network_power": "Puissance r\u00e9seau",
+        "consumption": "Consommation",
+        "injection": "Injection",
+        "marstek_live_commands": "Commandes r\u00e9elles Marstek",
+        "msa2_live_commands": "Commandes MQTT MS-A2",
+        "transmitted_command": "Consigne transmise",
+        "calculated_command": "Consigne calculée",
+        "compensation": "Compensation",
+        "sent_at": "Derni\u00e8re publication :",
+        "not_sent": "aucune commande envoy\u00e9e",
+        "last_mqtt_mode": "Dernier mode MQTT envoy\u00e9",
+        "last_mqtt_power": "Derni\u00e8re puissance MQTT envoy\u00e9e"
+    },
+    "diagnostic": {
+        "summary": "Diagnostic des entit\u00e9s \u2014 {total} au total \u00b7 {problems} probl\u00e8me(s)",
+        "entity": "Entit\u00e9",
+        "id": "Identifiant",
+        "state": "\u00c9tat",
+        "role": "R\u00f4le",
+        "disabled": "D\u00e9sactiv\u00e9e",
+        "not_loaded": "Non charg\u00e9e",
+        "unavailable": "Indisponible"
+    },
+    "config": {
+        "none": "Aucune batterie.",
+        "add_battery": "Ajouter une batterie",
+        "new_battery": "Nouvelle batterie",
+        "copy_suffix": "copie",
+        "safety_notice": "Le gestionnaire envoie les consignes programm\u00e9es uniquement lorsque \u00ab Activation du pilotage \u00bb est coch\u00e9e. Lors de la d\u00e9sactivation, une Marstek ou une Hoymiles revient une seule fois vers le mode choisi ci-dessous.",
+        "entities_found": "{total} entit\u00e9s rattach\u00e9es \u00b7 {managed} entit\u00e9s de gestion reconnues",
+        "marstek_found": "{total} batterie(s) Marstek d\u00e9tect\u00e9e(s)"
+    },
+    "sections": {
+        "grid": "Mesure r\u00e9seau et contr\u00f4leur collectif",
+        "general": "G\u00e9n\u00e9ral",
+        "marstek_detection": "D\u00e9tection Marstek Venus Modbus",
+        "info_entities": "Entit\u00e9s d'information",
+        "protection": "Protection et puissances",
+        "charge_tiers": "Paliers de charge selon le SOC",
+        "marstek_commands": "Commandes Marstek",
+        "hoymiles_commands": "Commandes MQTT MS-A2"
+    },
+    "fields": {
+        "battery": "Batterie",
+        "detected_battery": "Batterie d\u00e9tect\u00e9e",
+        "choose_battery": "Choisir une batterie\u2026",
+        "grid_power_entity": "Entit\u00e9 de puissance r\u00e9seau",
+        "grid_zero_correction": "Correction du z\u00e9ro r\u00e9seau (W, -200 \u00e0 +200)",
+        "deadband": "Zone morte (W)",
+        "command_hysteresis": "Hystérésis de consigne (W)",
+        "control_interval": "Intervalle de contr\u00f4le (s)",
+        "command_refresh_s": "Retransmission de la consigne (s, 0 = d\u00e9sactiv\u00e9e)",
+        "invert_grid": "Inverser le signe r\u00e9seau",
+        "name": "Nom",
+        "capacity": "Capacit\u00e9 (kWh)",
+        "battery_type": "Type de batterie",
+        "mode": "Mode",
+        "allow_commands": "Autoriser les commandes",
+        "pilotage_activation": "Activation du pilotage",
+        "disabled_return": "Retour lorsque le pilotage est d\u00e9sactiv\u00e9",
+        "invert_power": "Inverser le signe de la puissance",
+        "force_mode": "Force Mode",
+        "user_work_mode": "User Work Mode",
+        "rs485_control_mode": "RS485 Control Mode",
+        "power": "Puissance",
+        "soc": "SOC",
+        "state": "\u00c9tat",
+        "temperature": "Temp\u00e9rature",
+        "grid_voltage": "Tension Grid",
+        "grid_loss_return_default": "Retour au mode pr\u00e9c\u00e9dent si perte du Grid",
+        "grid_return_resume": "Revenir automatiquement en Programmation si retour du Grid (4 h max)",
+        "min_soc": "SOC minimal (%)",
+        "discharge_resume": "Reprise d\u00e9charge (%)",
+        "max_soc": "SOC maximal (%)",
+        "charge_resume": "Reprise charge (%)",
+        "max_charge_w": "Charge maximale (W)",
+        "max_discharge_w": "D\u00e9charge maximale (W)",
+        "charge_compensation": "Compensation de charge (W)",
+        "discharge_compensation": "Compensation de décharge (W)",
+        "charge_setpoint": "Consigne charge",
+        "discharge_setpoint": "Consigne d\u00e9charge",
+        "max_charge": "Maximum charge",
+        "max_discharge": "Maximum d\u00e9charge",
+        "manual_value": "Valeur User Work Mode manuel",
+        "force_charge_value": "Valeur Force Mode charge",
+        "force_discharge_value": "Valeur Force Mode d\u00e9charge",
+        "force_standby_value": "Valeur Force Mode standby",
+        "native_self_consumption_value": "Valeur User Work Mode autoconsommation native",
+        "ai_optimization_value": "Valeur User Work Mode Optimisation IA",
+        "ems_topic": "Sujet mode EMS",
+        "power_topic": "Sujet consigne"
+    },
+    "fallback": {
+        "standby": "Standby",
+        "native_self_consumption": "Autoconsommation native Marstek",
+        "native_self_consumption_hoymiles": "Autoconsommation native Hoymiles",
+        "native_schedule": "Programmation native Hoymiles",
+        "manual": "Manuel",
+        "ai_optimization": "Optimisation IA"
+    },
+    "tiers": {
+        "from": "De",
+        "to": "\u00c0",
+        "maximum": "Maximum W",
+        "empty": "vide = limite batterie"
+    },
+    "schedule": {
+        "add_first": "Ajoutez d'abord une batterie.",
+        "start": "D\u00e9but",
+        "end": "Fin",
+        "max_charge": "Charge maxi en W",
+        "max_discharge": "D\u00e9charge maxi en W",
+        "min_soc": "SOC minimal du cr\u00e9neau (%)",
+        "max_soc": "SOC maximal du cr\u00e9neau (%)",
+        "daily": "programmation journali\u00e8re",
+        "help": "La plage est appliqu\u00e9e \u00e0 la batterie s\u00e9lectionn\u00e9e en haut. Charge solaire collective utilise uniquement le surplus inject\u00e9 et ne d\u00e9charge jamais. Pour une Marstek, un clic ajoute aussi l'autoconsommation native."
+    },
+    "confirm": {
+        "delete": "Supprimer d\u00e9finitivement cette batterie du gestionnaire ?"
+    },
+    "notification": {
+        "title": "Gestion des batteries",
+        "saved": "Configuration enregistr\u00e9e"
+    },
+    "errors": {
+        "save": "Erreur d'enregistrement : {details}",
+        "unknown": "cause inconnue \u2014 consultez les journaux Home Assistant"
+    },
+    "reasons": {
+        "gestion_desactivee": "Gestion d\u00e9sactiv\u00e9e",
+        "soc_maximum": "SOC maximal atteint",
+        "soc_minimum": "SOC minimal atteint",
+        "zone_morte": "Puissance r\u00e9seau dans la zone morte",
+        "surplus_solaire_absent": "Aucun surplus solaire disponible",
+        "grid_sensor_unavailable": "Capteur r\u00e9seau indisponible",
+        "soc_unavailable": "Capteur SOC indisponible",
+        "power_sensor_unavailable": "Capteur de puissance indisponible",
+        "retour_mode_defaut": "Retour programm\u00e9 au mode par d\u00e9faut",
+        "grid_loss_pending": "Tension Grid hors limites \u2014 confirmation en cours",
+        "grid_loss_detected": "Perte du Grid confirm\u00e9e pendant 60 secondes",
+        "grid_loss_latched": "Pilotage suspendu apr\u00e8s perte du Grid",
+        "grid_voltage_unavailable": "Entit\u00e9 de tension Grid indisponible \u2014 \u00e9tat pr\u00e9c\u00e9dent conserv\u00e9",
+        "grid_returned": "Grid revenu \u2014 reprise de la programmation",
+        "rs485_control_missing": "Entit\u00e9 RS485 Control Mode manquante",
+        "native_mode": "Autoconsommation native Marstek",
+        "native_mode_unsupported": "Mode natif non pris en charge",
+        "palier_soc": "Limite du palier SOC",
+        "programme": "Programmation",
+        "command_error": "Erreur lors de l'envoi de la commande"
+    }
+}

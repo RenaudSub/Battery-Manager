@@ -1,0 +1,18 @@
+{
+  "title": "Gestionnaire de batteries",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configuration générale",
+        "description": "Sélectionnez le capteur mesurant l'échange global avec le réseau. Les batteries seront ajoutées depuis le panneau latéral.",
+        "data": {
+          "grid_power_entity": "Capteur de puissance réseau",
+          "grid_power_inverted": "Inverser le signe de la puissance réseau"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Une seule instance est autorisée."
+    }
+  }
+}

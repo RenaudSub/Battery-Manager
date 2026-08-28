@@ -1,0 +1,203 @@
+{
+    "title": "Battery Manager",
+    "language": {
+        "label": "Language",
+        "auto": "Automatic",
+        "fr": "Fran\u00e7ais",
+        "en": "English",
+        "es": "Espa\u00f1ol"
+    },
+    "tabs": {
+        "overview": "Overview",
+        "configuration": "Configuration",
+        "schedule": "Schedule"
+    },
+    "buttons": {
+        "add": "Add",
+        "duplicate": "Duplicate",
+        "delete": "Delete",
+        "save": "Save",
+        "retrieve_entities": "Retrieve entities",
+        "apply_range": "Apply time range"
+    },
+    "actions": {
+        "charge": "Charge",
+        "discharge": "Discharge",
+        "self_consumption": "Collective self-consumption",
+        "solar_charge": "Collective solar charging",
+        "native_self_consumption": "Native Marstek self-consumption",
+        "default_mode": "Return to default mode",
+        "standby": "Standby",
+        "waiting": "Waiting",
+        "disabled": "Disabled",
+        "blocked": "Blocked"
+    },
+    "adapters": {
+        "generic": "Generic",
+        "marstek_entities": "Marstek",
+        "hoymiles_msa2": "Hoymiles MS-A2"
+    },
+    "modes": {
+        "disabled": "Disabled",
+        "schedule": "Schedule"
+    },
+    "overview": {
+        "none": "No battery configured.",
+        "control_enabled": "control enabled",
+        "monitoring": "monitoring",
+        "action": "Action",
+        "pilotage_activation": "Control activation",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "disabled_return": "Return when control is disabled",
+        "network_power": "Grid power",
+        "consumption": "Consumption",
+        "injection": "Export",
+        "marstek_live_commands": "Live Marstek commands",
+        "msa2_live_commands": "MS-A2 MQTT commands",
+        "transmitted_command": "Transmitted command",
+        "calculated_command": "Calculated command",
+        "compensation": "Compensation",
+        "sent_at": "Last publication:",
+        "not_sent": "no command sent",
+        "last_mqtt_mode": "Last MQTT mode sent",
+        "last_mqtt_power": "Last MQTT power sent"
+    },
+    "diagnostic": {
+        "summary": "Entity diagnostics \u2014 {total} total \u00b7 {problems} issue(s)",
+        "entity": "Entity",
+        "id": "Entity ID",
+        "state": "State",
+        "role": "Role",
+        "disabled": "Disabled",
+        "not_loaded": "Not loaded",
+        "unavailable": "Unavailable"
+    },
+    "config": {
+        "none": "No battery.",
+        "add_battery": "Add a battery",
+        "new_battery": "New battery",
+        "copy_suffix": "copy",
+        "safety_notice": "Scheduled commands are sent only while Control activation is enabled. When disabled, a Marstek or Hoymiles returns once to the mode selected below.",
+        "entities_found": "{total} linked entities \u00b7 {managed} recognised management entities",
+        "marstek_found": "{total} Marstek battery/batteries detected"
+    },
+    "sections": {
+        "grid": "Grid measurement and collective controller",
+        "general": "General",
+        "marstek_detection": "Marstek Venus Modbus detection",
+        "info_entities": "Information entities",
+        "protection": "Protection and power limits",
+        "charge_tiers": "SOC-based charge tiers",
+        "marstek_commands": "Marstek commands",
+        "hoymiles_commands": "MS-A2 MQTT commands"
+    },
+    "fields": {
+        "battery": "Battery",
+        "detected_battery": "Detected battery",
+        "choose_battery": "Choose a battery\u2026",
+        "grid_power_entity": "Grid power entity",
+        "grid_zero_correction": "Grid zero correction (W, -200 to +200)",
+        "deadband": "Deadband (W)",
+        "command_hysteresis": "Setpoint hysteresis (W)",
+        "control_interval": "Control interval (s)",
+        "command_refresh_s": "Command refresh (s, 0 = disabled)",
+        "invert_grid": "Invert grid sign",
+        "name": "Name",
+        "capacity": "Capacity (kWh)",
+        "battery_type": "Battery type",
+        "mode": "Mode",
+        "allow_commands": "Allow commands",
+        "pilotage_activation": "Control activation",
+        "disabled_return": "Return when control is disabled",
+        "invert_power": "Invert power sign",
+        "force_mode": "Force Mode",
+        "user_work_mode": "User Work Mode",
+        "rs485_control_mode": "RS485 Control Mode",
+        "power": "Power",
+        "soc": "SOC",
+        "state": "State",
+        "temperature": "Temperature",
+        "grid_voltage": "Grid voltage",
+        "grid_loss_return_default": "Return to previous mode on grid loss",
+        "grid_return_resume": "Automatically resume Schedule when grid returns (4 h max)",
+        "min_soc": "Minimum SOC (%)",
+        "discharge_resume": "Resume discharge (%)",
+        "max_soc": "Maximum SOC (%)",
+        "charge_resume": "Resume charge (%)",
+        "max_charge_w": "Maximum charge (W)",
+        "max_discharge_w": "Maximum discharge (W)",
+        "charge_compensation": "Charge compensation (W)",
+        "discharge_compensation": "Discharge compensation (W)",
+        "charge_setpoint": "Charge setpoint",
+        "discharge_setpoint": "Discharge setpoint",
+        "max_charge": "Maximum charge",
+        "max_discharge": "Maximum discharge",
+        "manual_value": "Manual User Work Mode value",
+        "force_charge_value": "Charge Force Mode value",
+        "force_discharge_value": "Discharge Force Mode value",
+        "force_standby_value": "Standby Force Mode value",
+        "native_self_consumption_value": "Native self-consumption User Work Mode value",
+        "ai_optimization_value": "AI Optimization User Work Mode value",
+        "ems_topic": "EMS mode topic",
+        "power_topic": "Power setpoint topic"
+    },
+    "fallback": {
+        "standby": "Standby",
+        "native_self_consumption": "Native Marstek self-consumption",
+        "native_self_consumption_hoymiles": "Native Hoymiles self-consumption",
+        "native_schedule": "Native Hoymiles schedule",
+        "manual": "Manual",
+        "ai_optimization": "AI Optimization"
+    },
+    "tiers": {
+        "from": "From",
+        "to": "To",
+        "maximum": "Maximum W",
+        "empty": "empty = battery limit"
+    },
+    "schedule": {
+        "add_first": "Add a battery first.",
+        "start": "Start",
+        "end": "End",
+        "max_charge": "Maximum charge in W",
+        "max_discharge": "Maximum discharge in W",
+        "min_soc": "Slot minimum SOC (%)",
+        "max_soc": "Slot maximum SOC (%)",
+        "daily": "daily schedule",
+        "help": "The time range is applied to the battery selected above. Collective solar charging uses export surplus only and never discharges. A Marstek also offers native self-consumption."
+    },
+    "confirm": {
+        "delete": "Permanently remove this battery from the manager?"
+    },
+    "notification": {
+        "title": "Battery management",
+        "saved": "Configuration saved"
+    },
+    "errors": {
+        "save": "Save error: {details}",
+        "unknown": "unknown cause \u2014 check the Home Assistant logs"
+    },
+    "reasons": {
+        "gestion_desactivee": "Management disabled",
+        "soc_maximum": "Maximum SOC reached",
+        "soc_minimum": "Minimum SOC reached",
+        "zone_morte": "Grid power within deadband",
+        "surplus_solaire_absent": "No solar surplus available",
+        "grid_sensor_unavailable": "Grid sensor unavailable",
+        "soc_unavailable": "SOC sensor unavailable",
+        "power_sensor_unavailable": "Power sensor unavailable",
+        "retour_mode_defaut": "Scheduled return to default mode",
+        "grid_loss_pending": "Grid voltage out of range \u2014 confirmation pending",
+        "grid_loss_detected": "Grid loss confirmed for 60 seconds",
+        "grid_loss_latched": "Control suspended after grid loss",
+        "grid_voltage_unavailable": "Grid voltage entity unavailable \u2014 previous state retained",
+        "grid_returned": "Grid restored \u2014 schedule resumed",
+        "rs485_control_missing": "RS485 Control Mode entity missing",
+        "native_mode": "Native Marstek self-consumption",
+        "native_mode_unsupported": "Native mode not supported",
+        "palier_soc": "SOC tier limit",
+        "programme": "Schedule",
+        "command_error": "Error while sending the command"
+    }
+}

@@ -1,0 +1,18 @@
+{
+  "title": "Battery Manager",
+  "config": {
+    "step": {
+      "user": {
+        "title": "General configuration",
+        "description": "Select the sensor measuring the overall exchange with the grid. Batteries will be added from the sidebar panel.",
+        "data": {
+          "grid_power_entity": "Grid power sensor",
+          "grid_power_inverted": "Invert grid power sign"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Only one instance is allowed."
+    }
+  }
+}

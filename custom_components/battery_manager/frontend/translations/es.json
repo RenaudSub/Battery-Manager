@@ -1,0 +1,203 @@
+{
+    "title": "Gestor de bater\u00edas",
+    "language": {
+        "label": "Idioma",
+        "auto": "Autom\u00e1tico",
+        "fr": "Fran\u00e7ais",
+        "en": "English",
+        "es": "Espa\u00f1ol"
+    },
+    "tabs": {
+        "overview": "Vista general",
+        "configuration": "Configuraci\u00f3n",
+        "schedule": "Programaci\u00f3n"
+    },
+    "buttons": {
+        "add": "A\u00f1adir",
+        "duplicate": "Duplicar",
+        "delete": "Eliminar",
+        "save": "Guardar",
+        "retrieve_entities": "Obtener entidades",
+        "apply_range": "Aplicar franja"
+    },
+    "actions": {
+        "charge": "Carga",
+        "discharge": "Descarga",
+        "self_consumption": "Autoconsumo colectivo",
+        "solar_charge": "Carga solar colectiva",
+        "native_self_consumption": "Autoconsumo nativo Marstek",
+        "default_mode": "Volver al modo predeterminado",
+        "standby": "Espera",
+        "waiting": "En espera",
+        "disabled": "Desactivado",
+        "blocked": "Bloqueado"
+    },
+    "adapters": {
+        "generic": "Gen\u00e9rica",
+        "marstek_entities": "Marstek",
+        "hoymiles_msa2": "Hoymiles MS-A2"
+    },
+    "modes": {
+        "disabled": "Desactivado",
+        "schedule": "Programaci\u00f3n"
+    },
+    "overview": {
+        "none": "No hay ninguna bater\u00eda configurada.",
+        "control_enabled": "control autorizado",
+        "monitoring": "supervisi\u00f3n",
+        "action": "Acci\u00f3n",
+        "pilotage_activation": "Activaci\u00f3n del control",
+        "enabled": "Activado",
+        "disabled": "Desactivado",
+        "disabled_return": "Retorno al desactivar el control",
+        "network_power": "Potencia de red",
+        "consumption": "Consumo",
+        "injection": "Inyecci\u00f3n",
+        "marstek_live_commands": "Comandos Marstek actuales",
+        "msa2_live_commands": "Comandos MQTT MS-A2",
+        "transmitted_command": "Consigna transmitida",
+        "calculated_command": "Consigna calculada",
+        "compensation": "Compensación",
+        "sent_at": "\u00daltima publicaci\u00f3n:",
+        "not_sent": "ning\u00fan comando enviado",
+        "last_mqtt_mode": "\u00daltimo modo MQTT enviado",
+        "last_mqtt_power": "\u00daltima potencia MQTT enviada"
+    },
+    "diagnostic": {
+        "summary": "Diagn\u00f3stico de entidades \u2014 {total} en total \u00b7 {problems} problema(s)",
+        "entity": "Entidad",
+        "id": "Identificador",
+        "state": "Estado",
+        "role": "Funci\u00f3n",
+        "disabled": "Desactivada",
+        "not_loaded": "No cargada",
+        "unavailable": "No disponible"
+    },
+    "config": {
+        "none": "No hay bater\u00eda.",
+        "add_battery": "A\u00f1adir una bater\u00eda",
+        "new_battery": "Nueva bater\u00eda",
+        "copy_suffix": "copia",
+        "safety_notice": "Los comandos programados solo se env\u00edan cuando est\u00e1 activado el control. Al desactivarlo, una Marstek o Hoymiles vuelve una sola vez al modo seleccionado abajo.",
+        "entities_found": "{total} entidades vinculadas \u00b7 {managed} entidades de gesti\u00f3n reconocidas",
+        "marstek_found": "{total} bater\u00eda(s) Marstek detectada(s)"
+    },
+    "sections": {
+        "grid": "Medici\u00f3n de red y controlador colectivo",
+        "general": "General",
+        "marstek_detection": "Detecci\u00f3n Marstek Venus Modbus",
+        "info_entities": "Entidades de informaci\u00f3n",
+        "protection": "Protecci\u00f3n y potencias",
+        "charge_tiers": "Niveles de carga seg\u00fan el SOC",
+        "marstek_commands": "Comandos Marstek",
+        "hoymiles_commands": "Comandos MQTT MS-A2"
+    },
+    "fields": {
+        "battery": "Bater\u00eda",
+        "detected_battery": "Bater\u00eda detectada",
+        "choose_battery": "Elegir una bater\u00eda\u2026",
+        "grid_power_entity": "Entidad de potencia de red",
+        "grid_zero_correction": "Correcci\u00f3n del cero de red (W, -200 a +200)",
+        "deadband": "Zona muerta (W)",
+        "command_hysteresis": "Histéresis de consigna (W)",
+        "control_interval": "Intervalo de control (s)",
+        "command_refresh_s": "Retransmisi\u00f3n de la consigna (s, 0 = desactivada)",
+        "invert_grid": "Invertir el signo de red",
+        "name": "Nombre",
+        "capacity": "Capacidad (kWh)",
+        "battery_type": "Tipo de bater\u00eda",
+        "mode": "Modo",
+        "allow_commands": "Permitir comandos",
+        "pilotage_activation": "Activaci\u00f3n del control",
+        "disabled_return": "Retorno al desactivar el control",
+        "invert_power": "Invertir el signo de potencia",
+        "force_mode": "Force Mode",
+        "user_work_mode": "User Work Mode",
+        "rs485_control_mode": "RS485 Control Mode",
+        "power": "Potencia",
+        "soc": "SOC",
+        "state": "Estado",
+        "temperature": "Temperatura",
+        "grid_voltage": "Tensi\u00f3n de red",
+        "grid_loss_return_default": "Volver al modo anterior si se pierde la red",
+        "grid_return_resume": "Reanudar autom\u00e1ticamente la programaci\u00f3n al volver la red (m\u00e1x. 4 h)",
+        "min_soc": "SOC m\u00ednimo (%)",
+        "discharge_resume": "Reanudar descarga (%)",
+        "max_soc": "SOC m\u00e1ximo (%)",
+        "charge_resume": "Reanudar carga (%)",
+        "max_charge_w": "Carga m\u00e1xima (W)",
+        "max_discharge_w": "Descarga m\u00e1xima (W)",
+        "charge_compensation": "Compensación de carga (W)",
+        "discharge_compensation": "Compensación de descarga (W)",
+        "charge_setpoint": "Consigna de carga",
+        "discharge_setpoint": "Consigna de descarga",
+        "max_charge": "Carga m\u00e1xima",
+        "max_discharge": "Descarga m\u00e1xima",
+        "manual_value": "Valor manual de User Work Mode",
+        "force_charge_value": "Valor de carga de Force Mode",
+        "force_discharge_value": "Valor de descarga de Force Mode",
+        "force_standby_value": "Valor de espera de Force Mode",
+        "native_self_consumption_value": "Valor de autoconsumo nativo de User Work Mode",
+        "ai_optimization_value": "Valor de Optimización IA de User Work Mode",
+        "ems_topic": "Tema del modo EMS",
+        "power_topic": "Tema de consigna"
+    },
+    "fallback": {
+        "standby": "Standby",
+        "native_self_consumption": "Autoconsumo nativo Marstek",
+        "native_self_consumption_hoymiles": "Autoconsumo nativo Hoymiles",
+        "native_schedule": "Programación nativa Hoymiles",
+        "manual": "Manual",
+        "ai_optimization": "Optimización IA"
+    },
+    "tiers": {
+        "from": "Desde",
+        "to": "Hasta",
+        "maximum": "M\u00e1ximo W",
+        "empty": "vac\u00edo = l\u00edmite de la bater\u00eda"
+    },
+    "schedule": {
+        "add_first": "A\u00f1ada primero una bater\u00eda.",
+        "start": "Inicio",
+        "end": "Fin",
+        "max_charge": "Carga m\u00e1xima en W",
+        "max_discharge": "Descarga m\u00e1xima en W",
+        "min_soc": "SOC m\u00ednimo del intervalo (%)",
+        "max_soc": "SOC m\u00e1ximo del intervalo (%)",
+        "daily": "programaci\u00f3n diaria",
+        "help": "La franja se aplica a la bater\u00eda seleccionada arriba. La carga solar colectiva solo utiliza el excedente inyectado y nunca descarga. Una Marstek tambi\u00e9n ofrece autoconsumo nativo."
+    },
+    "confirm": {
+        "delete": "\u00bfEliminar definitivamente esta bater\u00eda del gestor?"
+    },
+    "notification": {
+        "title": "Gesti\u00f3n de bater\u00edas",
+        "saved": "Configuraci\u00f3n guardada"
+    },
+    "errors": {
+        "save": "Error al guardar: {details}",
+        "unknown": "causa desconocida \u2014 consulte los registros de Home Assistant"
+    },
+    "reasons": {
+        "gestion_desactivee": "Gesti\u00f3n desactivada",
+        "soc_maximum": "SOC m\u00e1ximo alcanzado",
+        "soc_minimum": "SOC m\u00ednimo alcanzado",
+        "zone_morte": "Potencia de red dentro de la zona muerta",
+        "surplus_solaire_absent": "No hay excedente solar disponible",
+        "grid_sensor_unavailable": "Sensor de red no disponible",
+        "soc_unavailable": "Sensor SOC no disponible",
+        "power_sensor_unavailable": "Sensor de potencia no disponible",
+        "retour_mode_defaut": "Retorno programado al modo predeterminado",
+        "grid_loss_pending": "Tensi\u00f3n de red fuera de rango \u2014 confirmaci\u00f3n en curso",
+        "grid_loss_detected": "P\u00e9rdida de red confirmada durante 60 segundos",
+        "grid_loss_latched": "Control suspendido tras la p\u00e9rdida de red",
+        "grid_voltage_unavailable": "Entidad de tensi\u00f3n de red no disponible \u2014 se conserva el estado anterior",
+        "grid_returned": "Red restablecida \u2014 programaci\u00f3n reanudada",
+        "rs485_control_missing": "Falta la entidad RS485 Control Mode",
+        "native_mode": "Autoconsumo nativo Marstek",
+        "native_mode_unsupported": "Modo nativo no compatible",
+        "palier_soc": "L\u00edmite del nivel SOC",
+        "programme": "Programaci\u00f3n",
+        "command_error": "Error al enviar el comando"
+    }
+}

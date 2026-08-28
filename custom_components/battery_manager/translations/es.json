@@ -1,0 +1,7 @@
+{
+  "title": "Gestor de baterías",
+  "config": {
+    "step": {"user": {"title":"Configuración general", "description":"Seleccione el sensor que mide el intercambio global con la red. Las baterías se añadirán desde el panel lateral.", "data":{"grid_power_entity":"Sensor de potencia de red", "grid_power_inverted":"Invertir el signo de la potencia de red"}}},
+    "abort": {"single_instance_allowed":"Solo se permite una instancia."}
+  }
+}
