@@ -1,4 +1,5 @@
 # Gestionnaire de batteries pour Home Assistant par SUBRINI Renaud
+# https://logisub.com
 
 Première version bêta d'une intégration locale destinée à centraliser la
 surveillance, la programmation et le pilotage de plusieurs batteries de
@@ -10,6 +11,7 @@ marques différentes.
 
 ## Documentation
 
+- [Présentation de Battery Manager sur LogiSub](https://logisub.com/battery-manager.html#installation)
 - [Installation avec HACS ou installation manuelle](docs/INSTALLATION.md)
 - [Configuration détaillée et choix des entités](docs/CONFIGURATION.md)
 - [Guide Hoymiles MS-A2 et identification des sujets MQTT](docs/HOYMILES_MQTT.md)
