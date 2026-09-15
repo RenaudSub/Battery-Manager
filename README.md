@@ -1,9 +1,21 @@
-# Gestionnaire de batteries pour Home Assistant par SUBRINI Renaud
-# https://logisub.com
+# Gestionnaire de batteries pour Home Assistant
+[Site Web](https://logisub.com)
 
 Première version bêta d'une intégration locale destinée à centraliser la
 surveillance, la programmation et le pilotage de plusieurs batteries de
 marques différentes.
+
+### Planificateur journalier
+[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg)](https://logisub.com/assets/bm-planificateur.jpg)
+
+### Vue d’ensemble
+[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg)](https://logisub.com/assets/bm-vue-ensemble.jpg)
+
+### Configuration générale
+[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg)](https://logisub.com/assets/bm-configuration-generale.jpg)
+
+### Protections et paliers de charge
+[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg)](https://logisub.com/assets/bm-configuration-paliers.jpg)
 
 > **Important :** Battery Manager est une intégration personnalisée Home
 > Assistant installable avec HACS ou manuellement. Ce n'est pas un module
