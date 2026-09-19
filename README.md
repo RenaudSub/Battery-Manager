@@ -69,13 +69,13 @@ Ces limitations semblent provenir du firmware Marstek V150 et non du calcul de r
 Ce comportement n’est pas encore confirmé sur toutes les batteries ni toutes les installations. Les utilisateurs du firmware V150 sont invités à vérifier dans Home Assistant les valeurs réelles de Max Charge Power, Max Discharge Power et la puissance mesurée par la batterie.
 
 Si vous observez le même problème, merci d’indiquer dans une issue GitHub :
-     - le modèle exact de la batterie 
-     - la version du firmware 
-     - le mode utilisé 
-     - le SOC 
-     - la consigne envoyée 
-     - la puissance réellement mesurée.
-
+   - le modèle exact de la batterie.
+   - la version du firmware.
+   - le mode utilisé.
+   - le SOC.
+   - la consigne envoyée.
+   - la puissance réellement mesurée.
+     
 En attendant une réponse de Marstek, commencez les essais avec une puissance réduite et gardez l’application constructeur disponible pour reprendre la main.
 
 ## Installation manuelle
