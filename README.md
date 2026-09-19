@@ -53,6 +53,31 @@ les limites et les réactions du matériel avant d'autoriser les commandes.
 Cette intégration n'est pas un dispositif de sécurité électrique et ne remplace
 pas les protections du BMS, les disjoncteurs ou les limites du constructeur.
 
+## ⚠️ Avertissement concernant le firmware Marstek V150
+
+Depuis l’installation du firmware V150 sur des Marstek Venus E, un comportement anormal a été observé dans certains modes de fonctionnement.
+
+Sur l’installation testée :
+   - la charge en mode autoconsommation semble limitée à environ 700 W 
+   - la décharge semble plafonnée à environ 1 000 W 
+   - la valeur Max Charge Power peut être modifiée ou limitée par la batterie en fonction du mode ou du SOC 
+
+la charge solaire collective pilotée directement par Battery Manager peut continuer à fonctionner à une puissance supérieure.
+
+Ces limitations semblent provenir du firmware Marstek V150 et non du calcul de répartition de Battery Manager. Elles peuvent néanmoins modifier les puissances réellement appliquées par rapport aux consignes envoyées.
+
+Ce comportement n’est pas encore confirmé sur toutes les batteries ni toutes les installations. Les utilisateurs du firmware V150 sont invités à vérifier dans Home Assistant les valeurs réelles de Max Charge Power, Max Discharge Power et la puissance mesurée par la batterie.
+
+Si vous observez le même problème, merci d’indiquer dans une issue GitHub :
+     - le modèle exact de la batterie 
+     - la version du firmware 
+     - le mode utilisé 
+     - le SOC 
+     - la consigne envoyée 
+     - la puissance réellement mesurée.
+
+En attendant une réponse de Marstek, commencez les essais avec une puissance réduite et gardez l’application constructeur disponible pour reprendre la main.
+
 ## Installation manuelle
 
 1. Copier `custom_components/battery_manager` dans le dossier
