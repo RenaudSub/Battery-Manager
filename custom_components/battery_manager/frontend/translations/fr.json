@@ -41,6 +41,15 @@
         "disabled": "D\u00e9sactiv\u00e9",
         "schedule": "Programmation"
     },
+    "control_modes": {
+        "schedule": "Planificateur",
+        "charge": "Charge",
+        "self_consumption": "Autoconso Collect.",
+        "native_self_consumption": "Autoconso Native",
+        "solar_charge": "Charge Solaire",
+        "standby": "En attente",
+        "disabled": "Désactivé"
+    },
     "overview": {
         "none": "Aucune batterie configur\u00e9e.",
         "control_enabled": "gestion autoris\u00e9e",
@@ -51,6 +60,22 @@
         "disabled": "D\u00e9sactiv\u00e9e",
         "disabled_return": "Retour lorsque le pilotage est d\u00e9sactiv\u00e9",
         "network_power": "Puissance r\u00e9seau",
+        "average_1m": "Moyenne 1 minute",
+        "average_15m": "Moyenne 15 minutes",
+        "status": "Statut",
+        "online": "En ligne",
+        "offline": "Hors ligne",
+        "error": "Erreur",
+        "management": "Gestion",
+        "in_charge": "en charge",
+        "in_discharge": "en décharge",
+        "current_setpoint": "Consigne en cours",
+        "current_mode": "Mode actuel",
+        "conversion": "Rendement de conversion",
+        "inverter_status": "État de l'onduleur",
+        "total_capacity": "Capacité totale",
+        "charged_today": "Chargé aujourd'hui",
+        "discharged_today": "Déchargé aujourd'hui",
         "consumption": "Consommation",
         "injection": "Injection",
         "marstek_live_commands": "Commandes r\u00e9elles Marstek",
@@ -64,7 +89,7 @@
         "last_mqtt_power": "Derni\u00e8re puissance MQTT envoy\u00e9e"
     },
     "diagnostic": {
-        "summary": "Diagnostic des entit\u00e9s \u2014 {total} au total \u00b7 {problems} probl\u00e8me(s)",
+        "summary": "Diagnostic des entit\u00e9s — {total} au total · {active} actives · {problems} indisponible(s)",
         "entity": "Entit\u00e9",
         "id": "Identifiant",
         "state": "\u00c9tat",
@@ -78,7 +103,7 @@
         "add_battery": "Ajouter une batterie",
         "new_battery": "Nouvelle batterie",
         "copy_suffix": "copie",
-        "safety_notice": "Le gestionnaire envoie les consignes programm\u00e9es uniquement lorsque \u00ab Activation du pilotage \u00bb est coch\u00e9e. Lors de la d\u00e9sactivation, une Marstek ou une Hoymiles revient une seule fois vers le mode choisi ci-dessous.",
+        "safety_notice": "Le mode principal se choisit directement depuis le menu Gestion de la vue d'ensemble. Désactivé applique une fois le retour configuré ci-dessous, puis cesse toute commande.",
         "entities_found": "{total} entit\u00e9s rattach\u00e9es \u00b7 {managed} entit\u00e9s de gestion reconnues",
         "marstek_found": "{total} batterie(s) Marstek d\u00e9tect\u00e9e(s)"
     },
@@ -119,6 +144,13 @@
         "state": "\u00c9tat",
         "temperature": "Temp\u00e9rature",
         "grid_voltage": "Tension Grid",
+        "ac_current": "Intensité AC",
+        "dc_voltage": "Tension DC batterie",
+        "dc_current": "Intensité DC batterie",
+        "dc_power": "Puissance DC batterie",
+        "total_capacity": "Capacité totale BMS",
+        "charged_today": "Énergie chargée aujourd'hui",
+        "discharged_today": "Énergie déchargée aujourd'hui",
         "grid_loss_return_default": "Retour au mode pr\u00e9c\u00e9dent si perte du Grid",
         "grid_return_resume": "Revenir automatiquement en Programmation si retour du Grid (4 h max)",
         "min_soc": "SOC minimal (%)",
@@ -176,6 +208,7 @@
     },
     "errors": {
         "save": "Erreur d'enregistrement : {details}",
+        "control_mode": "Impossible de changer le mode : {details}",
         "unknown": "cause inconnue \u2014 consultez les journaux Home Assistant"
     },
     "reasons": {

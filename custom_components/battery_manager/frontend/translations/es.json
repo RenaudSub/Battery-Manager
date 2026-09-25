@@ -41,6 +41,11 @@
         "disabled": "Desactivado",
         "schedule": "Programaci\u00f3n"
     },
+    "control_modes": {
+        "schedule": "Planificador", "charge": "Carga", "self_consumption": "Autoconsumo colectivo",
+        "native_self_consumption": "Autoconsumo nativo", "solar_charge": "Carga solar",
+        "standby": "En espera", "disabled": "Desactivado"
+    },
     "overview": {
         "none": "No hay ninguna bater\u00eda configurada.",
         "control_enabled": "control autorizado",
@@ -51,6 +56,12 @@
         "disabled": "Desactivado",
         "disabled_return": "Retorno al desactivar el control",
         "network_power": "Potencia de red",
+        "average_1m": "Media de 1 minuto", "average_15m": "Media de 15 minutos",
+        "status": "Estado", "online": "En l\u00ednea", "offline": "Fuera de l\u00ednea", "error": "Error",
+        "management": "Gesti\u00f3n", "in_charge": "en carga", "in_discharge": "en descarga",
+        "current_setpoint": "Consigna actual", "current_mode": "Modo actual", "conversion": "Rendimiento de conversi\u00f3n",
+        "inverter_status": "Estado del inversor", "total_capacity": "Capacidad total",
+        "charged_today": "Cargado hoy", "discharged_today": "Descargado hoy",
         "consumption": "Consumo",
         "injection": "Inyecci\u00f3n",
         "marstek_live_commands": "Comandos Marstek actuales",
@@ -64,7 +75,7 @@
         "last_mqtt_power": "\u00daltima potencia MQTT enviada"
     },
     "diagnostic": {
-        "summary": "Diagn\u00f3stico de entidades \u2014 {total} en total \u00b7 {problems} problema(s)",
+        "summary": "Diagn\u00f3stico de entidades \u2014 {total} en total \u00b7 {active} activas \u00b7 {problems} no disponibles",
         "entity": "Entidad",
         "id": "Identificador",
         "state": "Estado",
@@ -78,7 +89,7 @@
         "add_battery": "A\u00f1adir una bater\u00eda",
         "new_battery": "Nueva bater\u00eda",
         "copy_suffix": "copia",
-        "safety_notice": "Los comandos programados solo se env\u00edan cuando est\u00e1 activado el control. Al desactivarlo, una Marstek o Hoymiles vuelve una sola vez al modo seleccionado abajo.",
+        "safety_notice": "Seleccione el modo principal desde el men\u00fa Gesti\u00f3n de la vista general. Desactivado aplica una vez el retorno configurado y luego deja de enviar comandos.",
         "entities_found": "{total} entidades vinculadas \u00b7 {managed} entidades de gesti\u00f3n reconocidas",
         "marstek_found": "{total} bater\u00eda(s) Marstek detectada(s)"
     },
@@ -119,6 +130,9 @@
         "state": "Estado",
         "temperature": "Temperatura",
         "grid_voltage": "Tensi\u00f3n de red",
+        "ac_current": "Intensidad AC", "dc_voltage": "Tensi\u00f3n DC de bater\u00eda", "dc_current": "Intensidad DC de bater\u00eda",
+        "dc_power": "Potencia DC de bater\u00eda", "total_capacity": "Capacidad total BMS",
+        "charged_today": "Energ\u00eda cargada hoy", "discharged_today": "Energ\u00eda descargada hoy",
         "grid_loss_return_default": "Volver al modo anterior si se pierde la red",
         "grid_return_resume": "Reanudar autom\u00e1ticamente la programaci\u00f3n al volver la red (m\u00e1x. 4 h)",
         "min_soc": "SOC m\u00ednimo (%)",
@@ -176,6 +190,7 @@
     },
     "errors": {
         "save": "Error al guardar: {details}",
+        "control_mode": "No se puede cambiar el modo: {details}",
         "unknown": "causa desconocida \u2014 consulte los registros de Home Assistant"
     },
     "reasons": {

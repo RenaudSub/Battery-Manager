@@ -49,7 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         frontend_url_path=PANEL_URL,
         sidebar_title=PANEL_TITLE,
         sidebar_icon=PANEL_ICON,
-        module_url="/battery_manager/frontend/battery-manager-panel.js?v=0.2.26",
+        module_url="/battery_manager/frontend/battery-manager-panel.js?v=0.3.4",
         require_admin=True,
     )
     return True

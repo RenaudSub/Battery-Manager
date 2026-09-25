@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import asyncio
+from collections import deque
 from datetime import datetime
 from time import monotonic
 from typing import Any
@@ -56,6 +57,8 @@ class BatteryController:
         self._collective_target_w: float | None = None
         self._collective_signature: tuple[tuple[str, str], ...] | None = None
         self._grid_guards: dict[str, dict[str, Any]] = {}
+        self._grid_samples: deque[tuple[float, float]] = deque()
+        self._temperature_daily: dict[str, dict[str, Any]] = {}
 
     async def async_start(self) -> None:
         """Start periodic evaluation."""
@@ -202,7 +205,61 @@ class BatteryController:
                 **decision,
                 **self._last_commands.get(battery_id, {}),
             }
-        return {"decisions": decisions}
+        return {
+            "decisions": decisions,
+            "grid_average_1m": self._grid_average(60),
+            "grid_average_15m": self._grid_average(15 * 60),
+            "temperature_daily": self._temperature_daily,
+        }
+
+    def _grid_average(self, seconds: int) -> float | None:
+        """Return a rolling average from controller samples."""
+        if not self._grid_samples:
+            return None
+        cutoff = monotonic() - seconds
+        values = [value for stamp, value in self._grid_samples if stamp >= cutoff]
+        if not values:
+            return None
+        return round(sum(values) / len(values), 1)
+
+    def _record_grid(self, value: float) -> None:
+        now_mono = monotonic()
+        self._grid_samples.append((now_mono, value))
+        cutoff = now_mono - 15 * 60
+        while self._grid_samples and self._grid_samples[0][0] < cutoff:
+            self._grid_samples.popleft()
+
+    def _record_temperature(
+        self, battery_id: str, battery: dict[str, Any], local_now: datetime
+    ) -> None:
+        value = _number(self.hass, battery["entities"].get("temperature", ""))
+        if value is None:
+            return
+        day = local_now.date().isoformat()
+        current = self._temperature_daily.get(battery_id)
+        if current is None or current.get("date") != day:
+            self._temperature_daily[battery_id] = {
+                "date": day,
+                "min": round(value, 1),
+                "max": round(value, 1),
+            }
+            return
+        current["min"] = round(min(float(current["min"]), value), 1)
+        current["max"] = round(max(float(current["max"]), value), 1)
+
+    @staticmethod
+    def _quick_slot(battery: dict[str, Any], scheduled: dict[str, Any]) -> dict[str, Any]:
+        """Return the effective slot for a persistent overview quick mode."""
+        mode = battery.get("control_mode", "schedule")
+        if mode == "schedule":
+            return scheduled
+        return {
+            "action": mode,
+            "charge_w": int(battery["limits"]["max_charge_w"]),
+            "discharge_w": int(battery["limits"]["max_discharge_w"]),
+            "min_soc": None,
+            "max_soc": None,
+        }
 
     async def _async_tick(self, now: datetime) -> None:
         config = self.store.data
@@ -218,12 +275,15 @@ class BatteryController:
             grid = 0.0
         if config.get("grid_power_inverted"):
             grid = -grid
+        if grid_available:
+            self._record_grid(float(grid))
 
         local_now = dt_util.as_local(now)
         index = slot_index(local_now)
         self_consumption: list[dict[str, Any]] = []
         for battery in config.get("batteries", []):
             battery_id = str(battery.get("id") or battery.get("name"))
+            self._record_temperature(battery_id, battery, local_now)
             if not battery.get("enabled") or battery.get("operation_mode") != MODE_SCHEDULE:
                 self._grid_guards.pop(battery_id, None)
                 previous = self._last_decisions.get(battery_id, {})
@@ -246,7 +306,7 @@ class BatteryController:
                     )
                 self._last_decisions[battery_id] = disabled_status
                 continue
-            slot = battery["schedule"][index]
+            slot = self._quick_slot(battery, battery["schedule"][index])
             grid_suspended, grid_reason = self._grid_guard_suspended(battery)
             if grid_suspended or slot["action"] == ACTION_DEFAULT_MODE:
                 reason = grid_reason if grid_suspended else "retour_mode_defaut"
@@ -265,6 +325,25 @@ class BatteryController:
                         "Unable to apply default mode to battery %s",
                         battery.get("name"),
                     )
+                    status.update(
+                        {"action": "blocked", "reason": "command_error", "error": str(err)}
+                    )
+                self._last_decisions[battery_id] = status
+                continue
+            if battery.get("control_mode") == ACTION_NATIVE_SELF_CONSUMPTION:
+                native_battery = dict(battery)
+                native_battery["disabled_behavior"] = ACTION_NATIVE_SELF_CONSUMPTION
+                status = {
+                    "action": ACTION_NATIVE_SELF_CONSUMPTION,
+                    "reason": "native_mode",
+                    "slot": index,
+                }
+                try:
+                    command = await self._async_apply_default_mode(native_battery)
+                    if command:
+                        status.update(command)
+                        self._last_commands[battery_id] = command
+                except Exception as err:
                     status.update(
                         {"action": "blocked", "reason": "command_error", "error": str(err)}
                     )

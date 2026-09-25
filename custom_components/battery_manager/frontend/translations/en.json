@@ -41,6 +41,11 @@
         "disabled": "Disabled",
         "schedule": "Schedule"
     },
+    "control_modes": {
+        "schedule": "Scheduler", "charge": "Charge", "self_consumption": "Collective self-consumption",
+        "native_self_consumption": "Native self-consumption", "solar_charge": "Solar charge",
+        "standby": "Standby", "disabled": "Disabled"
+    },
     "overview": {
         "none": "No battery configured.",
         "control_enabled": "control enabled",
@@ -51,6 +56,12 @@
         "disabled": "Disabled",
         "disabled_return": "Return when control is disabled",
         "network_power": "Grid power",
+        "average_1m": "1-minute average", "average_15m": "15-minute average",
+        "status": "Status", "online": "Online", "offline": "Offline", "error": "Error",
+        "management": "Control", "in_charge": "charging", "in_discharge": "discharging",
+        "current_setpoint": "Current setpoint", "current_mode": "Current mode", "conversion": "Conversion efficiency",
+        "inverter_status": "Inverter status", "total_capacity": "Total capacity",
+        "charged_today": "Charged today", "discharged_today": "Discharged today",
         "consumption": "Consumption",
         "injection": "Export",
         "marstek_live_commands": "Live Marstek commands",
@@ -64,7 +75,7 @@
         "last_mqtt_power": "Last MQTT power sent"
     },
     "diagnostic": {
-        "summary": "Entity diagnostics \u2014 {total} total \u00b7 {problems} issue(s)",
+        "summary": "Entity diagnostics \u2014 {total} total \u00b7 {active} active \u00b7 {problems} unavailable",
         "entity": "Entity",
         "id": "Entity ID",
         "state": "State",
@@ -78,7 +89,7 @@
         "add_battery": "Add a battery",
         "new_battery": "New battery",
         "copy_suffix": "copy",
-        "safety_notice": "Scheduled commands are sent only while Control activation is enabled. When disabled, a Marstek or Hoymiles returns once to the mode selected below.",
+        "safety_notice": "Select the main mode directly from the Control menu on the overview. Disabled applies the configured fallback once, then stops sending commands.",
         "entities_found": "{total} linked entities \u00b7 {managed} recognised management entities",
         "marstek_found": "{total} Marstek battery/batteries detected"
     },
@@ -119,6 +130,9 @@
         "state": "State",
         "temperature": "Temperature",
         "grid_voltage": "Grid voltage",
+        "ac_current": "AC current", "dc_voltage": "Battery DC voltage", "dc_current": "Battery DC current",
+        "dc_power": "Battery DC power", "total_capacity": "BMS total capacity",
+        "charged_today": "Energy charged today", "discharged_today": "Energy discharged today",
         "grid_loss_return_default": "Return to previous mode on grid loss",
         "grid_return_resume": "Automatically resume Schedule when grid returns (4 h max)",
         "min_soc": "Minimum SOC (%)",
@@ -176,6 +190,7 @@
     },
     "errors": {
         "save": "Save error: {details}",
+        "control_mode": "Unable to change mode: {details}",
         "unknown": "unknown cause \u2014 check the Home Assistant logs"
     },
     "reasons": {

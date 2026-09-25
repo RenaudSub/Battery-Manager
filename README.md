@@ -155,6 +155,60 @@ La puissance appliquée est la plus faible parmi :
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
 
+## Version 0.3.4
+
+- Ajout d'une flèche de tendance à gauche de la puissance réseau instantanée,
+  calculée par rapport à la moyenne des quinze dernières minutes.
+- Affichage séparé du mode actif du planificateur et de la commande réellement
+  transmise.
+- Déplacement de `User Work Mode` sous les puissances maximales Marstek.
+- Séparation visuelle de l'état de l'onduleur.
+
+## Version 0.3.3
+
+- Masquage des mesures AC/DC, du rendement et de la température non disponibles
+  pour les batteries Hoymiles MS-A2.
+- Affichage vert des injections réseau et rouge des consommations, y compris
+  pour les moyennes sur une et quinze minutes.
+- Ajout d'un repère noir tous les 10 % sur l'anneau du SOC.
+
+## Version 0.3.2
+
+- Correction du faux statut `Hors ligne` lorsque le SOC et la puissance restent
+  stables plus de deux minutes.
+- Réorganisation du monitoring en deux colonnes cohérentes : AC à gauche et DC
+  à droite.
+- Ajout de l'icône de puissance devant `DC W`.
+
+## Version 0.3.1
+
+- Le rafraîchissement des entités ne reconstruit plus la vue tant que le menu
+  rapide `Gestion` est ouvert ou possède le focus.
+- Reconnaissance complétée des entités Venus Modbus `battery_total_energy`,
+  `total_daily_charging_energy` et `total_daily_discharging_energy`.
+- Les champs AC/DC restent disponibles pour une sélection manuelle dans
+  `Configuration` > `Entités d'information` si une intégration emploie des
+  identifiants différents.
+
+## Version 0.3.0
+
+- Refonte complète de la vue d'ensemble avec cercle de SOC, état de connexion,
+  puissance et sens du flux, consigne active et monitoring AC/DC.
+- Ajout du menu rapide `Gestion` par batterie : Planificateur, Charge,
+  Autoconsommation collective, Autoconsommation native, Charge solaire,
+  En attente et Désactivé.
+- Un mode rapide remplace temporairement le planificateur sans modifier ses
+  96 créneaux et reste enregistré après un redémarrage.
+- Ajout des moyennes glissantes réseau sur une minute et quinze minutes, sans
+  augmenter la hauteur du bandeau réseau.
+- Ajout du rendement de conversion AC/DC, des températures minimale et maximale
+  du jour, de l'état de l'onduleur et des compteurs de capacité/énergie lorsque
+  les entités correspondantes sont disponibles.
+- Les entités volontairement désactivées ne sont plus comptées comme des
+  problèmes dans le diagnostic.
+- Nouveaux paliers Marstek proposés par défaut : 0–85 % à 2500 W, 85–92 % à
+  2000 W, 92–95 % à 1200 W et 95–100 % à 700 W.
+
 ## Version 0.2.26
 
 - La détection automatique Marstek utilise désormais `ac_power`, côté réseau

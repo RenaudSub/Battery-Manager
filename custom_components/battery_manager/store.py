@@ -62,3 +62,19 @@ class BatteryManagerStore:
         ]
         self.data = clean
         await self._store.async_save(self.data)
+
+    async def async_set_control_mode(self, battery_id: str, mode: str) -> None:
+        """Persist one overview quick-control selection."""
+        updated = False
+        for index, battery in enumerate(self.data.get("batteries", [])):
+            current_id = str(battery.get("id") or battery.get("name"))
+            if current_id != battery_id:
+                continue
+            raw = deepcopy(battery)
+            raw["control_mode"] = mode
+            self.data["batteries"][index] = normalize_battery(raw)
+            updated = True
+            break
+        if not updated:
+            raise ValueError(f"Unknown battery: {battery_id}")
+        await self._store.async_save(self.data)

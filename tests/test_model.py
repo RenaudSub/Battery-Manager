@@ -48,6 +48,17 @@ def test_pilotage_fields_are_kept_consistent() -> None:
     assert inactive["command_refresh_s"] == 60
 
 
+def test_quick_control_mode_drives_legacy_pilotage_fields() -> None:
+    charge = normalize_battery({"control_mode": "charge"})
+    assert charge["enabled"] is True
+    assert charge["operation_mode"] == "schedule"
+    assert charge["control_mode"] == "charge"
+
+    disabled = normalize_battery({"control_mode": "disabled"})
+    assert disabled["enabled"] is False
+    assert disabled["operation_mode"] == "disabled"
+
+
 def test_disabled_behaviors_are_adapter_specific() -> None:
     hoymiles = normalize_battery(
         {"adapter": "hoymiles_msa2", "disabled_behavior": "native_schedule"}
@@ -104,7 +115,7 @@ def test_charge_tier_caps_program() -> None:
     slot = {"action": "charge", "charge_w": 2000, "discharge_w": 0}
     result = decide(battery, slot, soc=92, grid_power_w=-2000)
     assert result.action == "charge"
-    assert result.charge_w == 500
+    assert result.charge_w == 1200
     assert result.reason == "palier_soc"
 
 
@@ -186,7 +197,7 @@ def test_self_consumption_obeys_grid_and_limits() -> None:
 
     charge = decide(battery, slot, soc=92, grid_power_w=-1200)
     assert charge.action == "charge"
-    assert charge.charge_w == 500
+    assert charge.charge_w == 1000
 
     standby = decide(battery, slot, soc=50, grid_power_w=15)
     assert standby.action == "standby"

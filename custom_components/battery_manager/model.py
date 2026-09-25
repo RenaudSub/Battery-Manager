@@ -18,6 +18,15 @@ from .const import (
 )
 
 SLOTS_PER_DAY = 96
+CONTROL_MODES = {
+    "schedule",
+    "charge",
+    "self_consumption",
+    "native_self_consumption",
+    "solar_charge",
+    "standby",
+    "disabled",
+}
 
 
 def empty_slot() -> dict[str, Any]:
@@ -110,6 +119,7 @@ def default_battery(name: str = "Nouvelle batterie") -> dict[str, Any]:
         "adapter": "generic",
         "enabled": False,
         "operation_mode": "disabled",
+        "control_mode": "disabled",
         "disabled_behavior": "standby",
         "command_refresh_s": 60,
         "capacity_kwh": 0.0,
@@ -125,6 +135,13 @@ def default_battery(name: str = "Nouvelle batterie") -> dict[str, Any]:
             "state": "",
             "temperature": "",
             "grid_voltage": "",
+            "ac_current": "",
+            "dc_voltage": "",
+            "dc_current": "",
+            "dc_power": "",
+            "total_capacity": "",
+            "charged_today": "",
+            "discharged_today": "",
             "work_mode": "",
             "force_mode": "",
             "rs485_control_mode": "",
@@ -152,10 +169,10 @@ def default_battery(name: str = "Nouvelle batterie") -> dict[str, Any]:
             "max_discharge_w": 800,
         },
         "charge_tiers": [
-            {"from_soc": 0, "to_soc": 85, "max_charge_w": None},
-            {"from_soc": 85, "to_soc": 90, "max_charge_w": 1500},
-            {"from_soc": 90, "to_soc": 95, "max_charge_w": 500},
-            {"from_soc": 95, "to_soc": 100, "max_charge_w": 250},
+            {"from_soc": 0, "to_soc": 85, "max_charge_w": 2500},
+            {"from_soc": 85, "to_soc": 92, "max_charge_w": 2000},
+            {"from_soc": 92, "to_soc": 95, "max_charge_w": 1200},
+            {"from_soc": 95, "to_soc": 100, "max_charge_w": 700},
         ],
         "schedule": empty_schedule(),
     }
@@ -170,6 +187,7 @@ def normalize_battery(raw: dict[str, Any]) -> dict[str, Any]:
         "adapter",
         "enabled",
         "operation_mode",
+        "control_mode",
         "disabled_behavior",
         "command_refresh_s",
         "capacity_kwh",
@@ -211,9 +229,16 @@ def normalize_battery(raw: dict[str, Any]) -> dict[str, Any]:
     result["grid_return_resume"] = bool(result.get("grid_return_resume", False))
     for key in ("charge_compensation_w", "discharge_compensation_w"):
         result[key] = max(-200, min(200, int(round(float(result.get(key, 0) or 0)))))
-    pilotage = bool(result["enabled"] and result["operation_mode"] == "schedule")
-    result["enabled"] = pilotage
-    result["operation_mode"] = "schedule" if pilotage else "disabled"
+    if "control_mode" not in raw:
+        result["control_mode"] = (
+            "schedule"
+            if result["enabled"] and result["operation_mode"] == "schedule"
+            else "disabled"
+        )
+    if result["control_mode"] not in CONTROL_MODES:
+        result["control_mode"] = "disabled"
+    result["enabled"] = result["control_mode"] != "disabled"
+    result["operation_mode"] = "schedule" if result["enabled"] else "disabled"
     return result
 
 
