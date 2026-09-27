@@ -22,6 +22,7 @@ ROLE_SUFFIXES = {
     "dc_current": ("battery_current", "dc_current"),
     "dc_power": ("battery_power", "dc_power"),
     "total_capacity": (
+        "stored_energy", "remaining_energy", "battery_stored_energy",
         "battery_total_energy", "battery_energy", "battery_total_capacity",
         "total_capacity", "battery_capacity",
     ),
@@ -33,6 +34,10 @@ ROLE_SUFFIXES = {
         "total_daily_discharging_energy", "discharged_energy_today",
         "discharge_energy_today", "daily_discharge_energy",
     ),
+    "cycle_count": ("cycle_count",),
+    "cycle_count_calc": ("cycle_count_calc",),
+    "max_cell_voltage": ("max_cell_voltage",),
+    "min_cell_voltage": ("min_cell_voltage",),
     "soc": ("battery_soc", "battery_state_of_charge"),
     "state": ("inverter_state",),
     "temperature": ("internal_temperature", "battery_temperature"),
@@ -52,6 +57,8 @@ ROLE_NAMES = {
     "battery voltage": "dc_voltage",
     "battery current": "dc_current",
     "battery power": "dc_power",
+    "stored energy": "total_capacity",
+    "remaining energy": "total_capacity",
     "battery total capacity": "total_capacity",
     "battery total energy": "total_capacity",
     "battery energy": "total_capacity",
@@ -60,6 +67,10 @@ ROLE_NAMES = {
     "discharged energy today": "discharged_today",
     "total daily charging energy": "charged_today",
     "total daily discharging energy": "discharged_today",
+    "cycle count": "cycle_count",
+    "cycle count calc": "cycle_count_calc",
+    "max cell voltage": "max_cell_voltage",
+    "min cell voltage": "min_cell_voltage",
     "battery soc": "soc",
     "battery state of charge": "soc",
     "inverter state": "state",
@@ -125,7 +136,14 @@ def discover_marstek_devices(hass: HomeAssistant) -> list[dict[str, Any]]:
                 else None
             ) or name
             role = _role(entry.entity_id, name)
-            if role and role not in mapping:
+            # Stored Energy is the live energy remaining in the battery.  It
+            # must win over Battery Total Energy, which is only the nominal
+            # 5.12 kWh pack capacity and does not follow the SOC.
+            preferred_stored_energy = role == "total_capacity" and (
+                entry.entity_id.partition(".")[2].lower().endswith("stored_energy")
+                or entry.entity_id.partition(".")[2].lower().endswith("remaining_energy")
+            )
+            if role and (role not in mapping or preferred_stored_energy):
                 mapping[role] = entry.entity_id
             entities.append(
                 {

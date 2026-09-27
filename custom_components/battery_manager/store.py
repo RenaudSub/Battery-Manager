@@ -37,6 +37,47 @@ class BatteryManagerStore:
             for item in self.data.get("batteries", [])
             if isinstance(item, dict)
         ]
+        self._normalize_profiles()
+
+    def _normalize_profiles(self) -> None:
+        """Normalize global profile metadata and weather selection."""
+        raw_profiles = self.data.get("schedule_profiles", [])
+        profiles = []
+        seen = set()
+        for item in raw_profiles if isinstance(raw_profiles, list) else []:
+            if not isinstance(item, dict):
+                continue
+            profile_id = str(item.get("id", "")).strip()
+            name = str(item.get("name", "")).strip()
+            if profile_id and name and profile_id not in seen:
+                profiles.append({"id": profile_id, "name": name})
+                seen.add(profile_id)
+        for profile_id, name in (("sunny", "Ensoleillé"), ("cloudy", "Nuageux"), ("rainy", "Pluvieux")):
+            if profile_id not in seen:
+                profiles.append({"id": profile_id, "name": name})
+        self.data["schedule_profiles"] = profiles
+        valid = {item["id"] for item in profiles}
+        active = str(self.data.get("active_profile", "sunny"))
+        self.data["active_profile"] = active if active == "auto" or active in valid else "sunny"
+        weather = deepcopy(DEFAULT_CONFIG["weather"])
+        if isinstance(self.data.get("weather"), dict):
+            weather.update(self.data["weather"])
+        weather["entity_id"] = str(weather.get("entity_id", ""))
+        weather["cloud_cover_entity"] = str(weather.get("cloud_cover_entity", ""))
+        weather["forecast_offset_h"] = max(0, min(24, int(weather.get("forecast_offset_h", 1))))
+        weather["refresh_minutes"] = max(5, min(120, int(weather.get("refresh_minutes", 15))))
+        for key, fallback in (("analysis_start", "06:00"), ("analysis_end", "22:00")):
+            value = str(weather.get(key, fallback))
+            weather[key] = value if len(value) == 5 and value[2] == ":" else fallback
+        weather["sunny_cloud_max"] = max(0, min(100, int(weather.get("sunny_cloud_max", 40))))
+        weather["cloud_hysteresis"] = max(0, min(30, int(weather.get("cloud_hysteresis", 10))))
+        weather["daylight_only"] = bool(weather.get("daylight_only", True))
+        default_map = deepcopy(DEFAULT_CONFIG["weather"]["condition_map"])
+        if isinstance(weather.get("condition_map"), dict):
+            default_map.update({str(k): str(v) for k, v in weather["condition_map"].items()})
+        valid_map = {item["id"] for item in profiles} | {"ignore"}
+        weather["condition_map"] = {key: value if value in valid_map else DEFAULT_CONFIG["weather"]["condition_map"].get(key, "ignore") for key, value in default_map.items()}
+        self.data["weather"] = weather
 
     async def async_save(self, data: dict[str, Any]) -> None:
         """Validate and save configuration supplied by the panel."""
@@ -55,12 +96,24 @@ class BatteryManagerStore:
         clean["control_interval_s"] = max(
             1, min(60, int(data.get("control_interval_s", 5)))
         )
+        clean["schedule_profiles"] = deepcopy(data.get("schedule_profiles", DEFAULT_CONFIG["schedule_profiles"]))
+        clean["active_profile"] = str(data.get("active_profile", "sunny"))
+        clean["weather"] = deepcopy(data.get("weather", DEFAULT_CONFIG["weather"]))
         clean["batteries"] = [
             normalize_battery(item)
             for item in data.get("batteries", [])
             if isinstance(item, dict)
         ]
         self.data = clean
+        self._normalize_profiles()
+        await self._store.async_save(self.data)
+
+    async def async_set_active_profile(self, profile_id: str) -> None:
+        """Persist the globally selected manual/automatic profile."""
+        valid = {item["id"] for item in self.data.get("schedule_profiles", [])}
+        if profile_id != "auto" and profile_id not in valid:
+            raise ValueError(f"Unknown profile: {profile_id}")
+        self.data["active_profile"] = profile_id
         await self._store.async_save(self.data)
 
     async def async_set_control_mode(self, battery_id: str, mode: str) -> None:

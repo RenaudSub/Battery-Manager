@@ -86,8 +86,30 @@ async def ws_set_control_mode(hass, connection, msg) -> None:
     connection.send_result(msg["id"], {"saved": True, "mode": msg["mode"]})
 
 
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "battery_manager/set_active_profile",
+        vol.Required("profile_id"): str,
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_set_active_profile(hass, connection, msg) -> None:
+    """Select the global manual/automatic schedule profile."""
+    runtime = hass.data[DOMAIN]
+    try:
+        await runtime["store"].async_set_active_profile(msg["profile_id"])
+        await runtime["controller"].async_refresh_weather(force=True)
+        await runtime["controller"].async_restart()
+    except Exception as err:
+        connection.send_error(msg["id"], "profile_failed", str(err))
+        return
+    connection.send_result(msg["id"], {"saved": True})
+
+
 def async_register(hass: HomeAssistant) -> None:
     """Register WebSocket commands."""
     websocket_api.async_register_command(hass, ws_get_config)
     websocket_api.async_register_command(hass, ws_save_config)
     websocket_api.async_register_command(hass, ws_set_control_mode)
+    websocket_api.async_register_command(hass, ws_set_active_profile)

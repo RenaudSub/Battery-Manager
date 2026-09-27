@@ -9,6 +9,7 @@
     },
     "tabs": {
         "overview": "Vue d'ensemble",
+        "weather": "Météo",
         "configuration": "Configuration",
         "schedule": "Programmation"
     },
@@ -18,8 +19,12 @@
         "delete": "Supprimer",
         "save": "Enregistrer",
         "retrieve_entities": "R\u00e9cup\u00e9rer les entit\u00e9s",
-        "apply_range": "Appliquer la plage"
+        "apply_range": "Appliquer la plage",
+        "actions": "Actions",
+        "cancel": "Annuler"
     },
+    "profiles": {"active":"Profil actif","auto":"Automatique","new":"Nouveau","manage":"Gérer","name_prompt":"Nom du nouveau profil météo :"},
+    "weather": {"title":"Sélection automatique du profil météo","source":"Source météo","entity":"Entité météo","cloud_entity":"Entité de couverture nuageuse (%)","source_help":"La prévision horaire Home Assistant est analysée uniquement lorsque le profil Automatique est sélectionné.","analysis":"Interprétation","conditions":"Association des mentions météo","ignore":"Ignorer","offset":"Prévision analysée à + (heures)","refresh":"Actualisation (minutes)","sunny_max":"Couverture maximale Ensoleillé (%)","hysteresis":"Hystérésis nuageuse (%)","diagnostic":"Diagnostic en direct","available":"Prévision disponible","forecast_time":"Heure analysée","condition":"Condition reçue","cloud":"Couverture nuageuse","calculated_profile":"Profil calculé","reason":"Raison","yes":"Oui","no":"Non"},
     "actions": {
         "charge": "Charge",
         "discharge": "D\u00e9charge",
@@ -73,9 +78,13 @@
         "current_mode": "Mode actuel",
         "conversion": "Rendement de conversion",
         "inverter_status": "État de l'onduleur",
-        "total_capacity": "Capacité totale",
+        "total_capacity": "Énergie restante",
         "charged_today": "Chargé aujourd'hui",
         "discharged_today": "Déchargé aujourd'hui",
+        "cycle_count": "Cycle Count",
+        "cycle_count_calc": "Cycle Count (Calc)",
+        "max_cell_voltage": "Max Cell Voltage",
+        "min_cell_voltage": "Min Cell Voltage",
         "consumption": "Consommation",
         "injection": "Injection",
         "marstek_live_commands": "Commandes r\u00e9elles Marstek",
@@ -148,9 +157,13 @@
         "dc_voltage": "Tension DC batterie",
         "dc_current": "Intensité DC batterie",
         "dc_power": "Puissance DC batterie",
-        "total_capacity": "Capacité totale BMS",
+        "total_capacity": "Énergie restante dans la batterie",
         "charged_today": "Énergie chargée aujourd'hui",
         "discharged_today": "Énergie déchargée aujourd'hui",
+        "cycle_count": "Nombre de cycles BMS",
+        "cycle_count_calc": "Nombre de cycles calculé",
+        "max_cell_voltage": "Tension maximale cellule",
+        "min_cell_voltage": "Tension minimale cellule",
         "grid_loss_return_default": "Retour au mode pr\u00e9c\u00e9dent si perte du Grid",
         "grid_return_resume": "Revenir automatiquement en Programmation si retour du Grid (4 h max)",
         "min_soc": "SOC minimal (%)",
@@ -192,10 +205,13 @@
         "add_first": "Ajoutez d'abord une batterie.",
         "start": "D\u00e9but",
         "end": "Fin",
-        "max_charge": "Charge maxi en W",
-        "max_discharge": "D\u00e9charge maxi en W",
-        "min_soc": "SOC minimal du cr\u00e9neau (%)",
-        "max_soc": "SOC maximal du cr\u00e9neau (%)",
+        "max_charge": "Charge Max",
+        "max_discharge": "Décharge Max",
+        "min_soc": "SOC Mini",
+        "max_soc": "SOC Maxi",
+        "export": "Exporter la planification",
+        "import": "Importer une planification",
+        "duplicate_profile": "Dupliquer le profil affiché",
         "daily": "programmation journali\u00e8re",
         "help": "La plage est appliqu\u00e9e \u00e0 la batterie s\u00e9lectionn\u00e9e en haut. Charge solaire collective utilise uniquement le surplus inject\u00e9 et ne d\u00e9charge jamais. Pour une Marstek, un clic ajoute aussi l'autoconsommation native."
     },
@@ -209,6 +225,7 @@
     "errors": {
         "save": "Erreur d'enregistrement : {details}",
         "control_mode": "Impossible de changer le mode : {details}",
+        "profile": "Impossible de changer le profil : {details}",
         "unknown": "cause inconnue \u2014 consultez les journaux Home Assistant"
     },
     "reasons": {

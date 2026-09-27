@@ -5,10 +5,11 @@ const ACTIONS = {
   default_mode: { color: "#ffffff" },
   standby: { color: "#78909c" },
 };
-const PANEL_VERSION = "0.3.4";
+const PANEL_VERSION = "0.4.3";
 const SUPPORTED_LANGUAGES = ["fr", "en", "es"];
 
 const emptySlot = () => ({ action: "standby", charge_w: 0, discharge_w: 0, min_soc: null, max_soc: null });
+const emptyWeek = () => Array.from({length:7},()=>Array.from({ length:96 }, emptySlot));
 const defaultBattery = () => ({
   id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`,
   name: "Nouvelle batterie",
@@ -28,7 +29,8 @@ const defaultBattery = () => ({
   entities: {
     power: "", soc: "", state: "", temperature: "", grid_voltage: "", ac_current: "",
     dc_voltage: "", dc_current: "", dc_power: "", total_capacity: "",
-    charged_today: "", discharged_today: "", work_mode: "",
+    charged_today: "", discharged_today: "", cycle_count: "", cycle_count_calc: "",
+    max_cell_voltage: "", min_cell_voltage: "", work_mode: "",
     force_mode: "", rs485_control_mode: "",
     charge_power: "", discharge_power: "", max_charge_power: "",
     max_discharge_power: "",
@@ -50,6 +52,7 @@ const defaultBattery = () => ({
     { from_soc: 95, to_soc: 100, max_charge_w: 700 },
   ],
   schedule: Array.from({ length: 96 }, emptySlot),
+  schedules: { sunny:emptyWeek(), cloudy:emptyWeek(), rainy:emptyWeek() },
 });
 
 const esc = (value) => String(value ?? "")
@@ -72,6 +75,8 @@ class BatteryManagerPanel extends HTMLElement {
     this._fallbackTranslations = {};
     this._loadedLocale = null;
     this._rangeEditor = { start:"00:00", end:"00:00", action:"charge", charge_w:null, discharge_w:null, min_soc:null, max_soc:null };
+    this._editingProfile = "sunny";
+    this._selectedDays = [0];
   }
 
   set hass(value) {
@@ -103,7 +108,7 @@ class BatteryManagerPanel extends HTMLElement {
 
   _overviewControlHasFocus() {
     const active = this.shadowRoot?.activeElement;
-    return Boolean(active?.matches?.("[data-quick-mode]"));
+    return Boolean(active?.matches?.("[data-quick-mode]") || this.shadowRoot?.querySelector("details.profile-menu[open]"));
   }
 
   async _load() {
@@ -114,12 +119,15 @@ class BatteryManagerPanel extends HTMLElement {
       this._config = result.config;
       this._status = result.status || {};
       this._marstekDevices = result.marstek_devices || [];
+      this._editingProfile = this._config.schedule_profiles?.some(p=>p.id===this._editingProfile) ? this._editingProfile : (this._config.schedule_profiles?.[0]?.id || "sunny");
       for (const battery of this._config.batteries || []) {
         if (battery.adapter !== "marstek_entities" || !battery.source_device_id) continue;
         const device = this._marstekDevices.find((item) => item.device_id === battery.source_device_id);
         if (!device) continue;
         for (const [role, entityId] of Object.entries(device.mapping || {})) {
-          if (!battery.entities[role]) battery.entities[role] = entityId;
+          const legacyNominalEnergy = role === "total_capacity"
+            && /(?:battery_total_energy|battery_total_capacity|total_capacity)$/.test(battery.entities[role] || "");
+          if (!battery.entities[role] || legacyNominalEnergy) battery.entities[role] = entityId;
         }
       }
       await this._loadTranslations();
@@ -191,6 +199,13 @@ class BatteryManagerPanel extends HTMLElement {
         background:var(--app-header-background-color, var(--card-background-color)); box-shadow:0 2px 8px #0002; }
       header h1 { font-size:20px; margin:0 auto 0 0; }
       .language-select { min-width:105px; padding:7px; }
+      .profile-menu { position:relative; }
+      .profile-menu summary { list-style:none; min-width:155px; padding:8px 12px; border:1px solid var(--divider-color); border-radius:9px; background:var(--card-background-color); cursor:pointer; font-weight:700; }
+      .profile-menu summary::-webkit-details-marker { display:none; }
+      .profile-menu-content,.actions-menu-content { position:absolute; z-index:20; right:0; top:calc(100% + 5px); min-width:210px; padding:6px; border:1px solid var(--divider-color); border-radius:10px; background:var(--card-background-color); box-shadow:0 8px 24px #0005; display:grid; gap:4px; }
+      .profile-menu-content button,.actions-menu-content button { text-align:left; white-space:nowrap; }
+      .actions-menu { position:relative; flex:0 0 auto; }
+      .actions-menu summary { list-style:none; padding:10px 14px; border-radius:10px; background:var(--secondary-background-color); cursor:pointer; font-weight:600; }
       nav button, button { border:0; border-radius:10px; padding:10px 14px; cursor:pointer; color:var(--primary-text-color);
         background:var(--secondary-background-color); font-weight:600; }
       nav button.active, button.primary { color:#fff; background:var(--primary-color); }
@@ -212,6 +227,8 @@ class BatteryManagerPanel extends HTMLElement {
           conic-gradient(var(--soc-color) calc(var(--soc)*1%), var(--divider-color) 0); }
       .soc-ring::before { content:""; width:66px; height:66px; border-radius:50%; background:var(--card-background-color); grid-area:1/1; }
       .soc-ring strong { grid-area:1/1; z-index:1; font-size:20px; }
+      [data-more-info] { cursor:pointer; }
+      [data-more-info]:hover { filter:brightness(.92); }
       .live-power { font-size:22px; font-weight:800; line-height:1.2; }
       .charging { color:#2e7d32; } .discharging { color:#c62828; } .waiting-power { color:var(--primary-text-color); }
       .section-divider { border-top:1px solid var(--divider-color); margin-top:12px; padding-top:10px; }
@@ -222,7 +239,15 @@ class BatteryManagerPanel extends HTMLElement {
       .monitor-item span { color:var(--secondary-text-color); font-size:12px; }
       .monitor-item strong { margin-left:auto; text-align:right; }
       .conversion { display:flex; justify-content:space-between; margin-top:9px; font-weight:700; }
-      .temperature-line,.capacity-line { display:flex; justify-content:space-between; gap:8px; margin-top:7px; font-size:13px; }
+      .temperature-line { display:flex; justify-content:space-between; gap:8px; margin-top:7px; font-size:13px; }
+      .capacity-line { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:7px; font-size:13px; align-items:start; }
+      .capacity-line > span { min-width:0; display:flex; flex-direction:column; align-items:center; text-align:center; }
+      .capacity-line b { display:block; white-space:nowrap; margin-top:2px; }
+      .bms-details { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 18px; border-top:1px solid var(--divider-color); margin-top:10px; padding-top:10px; }
+      .bms-detail { display:grid; grid-template-columns:20px minmax(0,1fr) auto; align-items:center; gap:7px; min-width:0; font-size:13px; }
+      .bms-detail ha-icon { color:var(--primary-color); width:20px; }
+      .bms-detail span { min-width:0; }
+      .bms-detail strong { white-space:nowrap; text-align:right; }
       .temp-good { color:#2e7d32; } .temp-warn { color:#ef6c00; } .temp-hot { color:#c62828; }
       .muted { color:var(--secondary-text-color); font-size:13px; }
       .metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:16px; }
@@ -250,6 +275,12 @@ class BatteryManagerPanel extends HTMLElement {
       .command-row span { color:var(--secondary-text-color); font-size:13px; }
       .command-row strong { text-align:right; overflow-wrap:anywhere; }
       .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:16px; }
+      .schedule-toolbar { flex-wrap:nowrap; overflow:visible; padding-bottom:4px; }
+      .schedule-toolbar label { flex:0 0 90px; }
+      .schedule-toolbar label:first-child { flex-basis:150px; }
+      .schedule-toolbar label:nth-child(4) { flex-basis:185px; }
+      .schedule-toolbar input,.schedule-toolbar select { min-width:0; width:100%; padding:8px; }
+      .schedule-toolbar button { flex:0 0 auto; }
       .toolbar .save-right { margin-left:auto; }
       label { display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--secondary-text-color); }
       input, select { min-width:130px; padding:10px; border:1px solid var(--divider-color); border-radius:9px;
@@ -270,6 +301,28 @@ class BatteryManagerPanel extends HTMLElement {
       .schedule-card { border:2px solid transparent; }
       .schedule-card.selected { border-color:var(--primary-color); }
       .schedule-title { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+      .profile-tabs { display:flex; gap:7px; align-items:center; justify-content:center; overflow:auto; margin:12px 0; }
+      .profile-tabs button.active-edit { outline:3px solid var(--primary-color); }
+      .profile-tabs button.active-run::after { content:" ●"; color:#2e7d32; }
+      .weekly-wrap { display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; }
+      .weekly-card { min-width:410px; flex:1 0 410px; }
+      .week-grid { display:grid; grid-template-columns:44px repeat(7,1fr); grid-template-rows:26px repeat(96,8px); user-select:none; }
+      .day-head { text-align:center; font-size:11px; font-weight:700; position:sticky; top:0; z-index:1; background:var(--card-background-color); }
+      .time-label { font-size:9px; transform:translateY(-4px); color:var(--secondary-text-color); cursor:crosshair; }
+      .week-slot { border:0; border-right:1px solid #0002; border-bottom:1px solid #0001; padding:0; border-radius:0; min-width:45px; cursor:crosshair; }
+      .week-slot.hour { border-top:1px solid var(--divider-color); }
+      .week-slot.selected { outline:2px solid var(--primary-color); z-index:1; opacity:.65; }
+      .weather-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; align-items:start; }
+      .weather-grid fieldset { min-width:0; margin:0; }
+      .weather-grid ha-entity-picker { min-width:0; width:100%; overflow:hidden; }
+      .weather-source,.weather-conditions { grid-column:1 / -1; }
+      .weather-analysis { grid-column:1; grid-row:2; }
+      .weather-diagnostic { grid-column:2; grid-row:2; }
+      .weather-conditions { grid-row:3; }
+      .weather-save { display:block; margin:0 0 14px auto; }
+      .weather-diagnostic { line-height:1.8; }
+      dialog { color:var(--primary-text-color); background:var(--card-background-color); border:1px solid var(--divider-color); border-radius:16px; padding:20px; min-width:min(620px,90vw); box-shadow:0 12px 40px #0007; }
+      dialog::backdrop { background:#0008; }
       .entity-with-option { display:grid; gap:8px; }
       .entity-with-option > label { display:flex; flex-direction:row; align-items:center; gap:10px; }
       .legend { display:flex; flex-wrap:wrap; gap:14px; margin:15px 0; }
@@ -288,13 +341,14 @@ class BatteryManagerPanel extends HTMLElement {
       .entity-table tr.problem { background:#c6282814; }
       .entity-table code { color:var(--secondary-text-color); }
       .ok { color:#2e7d32; } .bad { color:#c62828; font-weight:700; }
-      @media(max-width:700px){ header{flex-wrap:wrap} nav{width:100%;display:flex;overflow:auto} main{padding:12px} .grid{grid-template-columns:1fr}.grid-power-card{grid-template-columns:1fr 1.1fr 1fr;padding-left:8px;padding-right:8px}.grid-power-block strong{font-size:15px}.grid-power-now strong{font-size:21px}.grid-power-block:not(.grid-power-now) .muted{display:none} }
+      @media(max-width:700px){ header{flex-wrap:wrap} nav{width:100%;display:flex;overflow:auto} main{padding:12px} .grid{grid-template-columns:1fr}.weather-grid{display:block}.weather-grid fieldset{margin-bottom:14px}.grid-power-card{grid-template-columns:1fr 1.1fr 1fr;padding-left:8px;padding-right:8px}.grid-power-block strong{font-size:15px}.grid-power-now strong{font-size:21px}.grid-power-block:not(.grid-power-now) .muted{display:none} }
     </style>`;
   }
 
   _render() {
     if (!this._config) return;
     const body = this._tab === "overview" ? this._overview()
+      : this._tab === "weather" ? this._weatherEditor()
       : this._tab === "batteries" ? this._batteryEditor()
       : this._scheduleEditor();
     this.shadowRoot.innerHTML = `${this._styles()}
@@ -302,8 +356,13 @@ class BatteryManagerPanel extends HTMLElement {
       <select id="languageSelect" class="language-select" aria-label="${esc(this._t("language.label"))}">
         ${["auto", ...SUPPORTED_LANGUAGES].map((language) => `<option value="${language}" ${this._languageOverride===language?"selected":""}>${this._t(`language.${language}`)}</option>`).join("")}
       </select>
+      <details class="profile-menu"><summary>${this._t("profiles.active")} : ${this._config.active_profile==="auto"?`${this._t("profiles.auto")} → ${esc((this._config.schedule_profiles||[]).find(p=>p.id===this._status.effective_profile)?.name||this._status.effective_profile||"—")}`:esc((this._config.schedule_profiles||[]).find(p=>p.id===this._config.active_profile)?.name||this._config.active_profile)}</summary><div class="profile-menu-content">
+        <button data-active-profile="auto">${this._t("profiles.auto")}</button>
+        ${(this._config.schedule_profiles||[]).map(p=>`<button data-active-profile="${esc(p.id)}">${esc(p.name)}</button>`).join("")}
+      </div></details>
       <nav>
         <button data-tab="overview" class="${this._tab === "overview" ? "active" : ""}">${this._t("tabs.overview")}</button>
+        <button data-tab="weather" class="${this._tab === "weather" ? "active" : ""}">${this._t("tabs.weather")}</button>
         <button data-tab="batteries" class="${this._tab === "batteries" ? "active" : ""}">${this._t("tabs.configuration")}</button>
         <button data-tab="schedule" class="${this._tab === "schedule" ? "active" : ""}">${this._t("tabs.schedule")}</button>
       </nav></header><main>${body}</main>`;
@@ -349,8 +408,8 @@ class BatteryManagerPanel extends HTMLElement {
       return `<section class="card battery-card"><div class="battery-head"><div class="battery-title"><ha-icon icon="mdi:battery-medium"></ha-icon>
         <div><h2>${esc(b.name)}</h2><div class="battery-online ${connectivity.className}">${this._t("overview.status")} : ${this._t(`overview.${connectivity.label}`)}</div></div></div>
         <label>${this._t("overview.management")}<select class="quick-control" data-quick-mode="${esc(decisionKey)}">${this._controlOptions(b.control_mode || (b.enabled ? "schedule" : "disabled"))}</select></label></div>
-        <div class="battery-summary"><div class="soc-ring" style="--soc:${socNumber};--soc-color:${socColor}"><strong>${Number.isFinite(Number(soc.state)) ? `${Math.round(Number(soc.state))}%` : "—"}</strong></div>
-        <div class="live-power ${powerClass}">${esc(powerText)}</div></div>
+        <div class="battery-summary"><div class="soc-ring" data-more-info="${esc(b.entities.soc)}" style="--soc:${socNumber};--soc-color:${socColor}"><strong>${Number.isFinite(Number(soc.state)) ? `${Math.round(Number(soc.state))}%` : "—"}</strong></div>
+        <div class="live-power ${powerClass}" data-more-info="${esc(b.entities.power)}">${esc(powerText)}</div></div>
         ${b.adapter === "marstek_entities" ? this._marstekCommandStatus(b) : ""}
         ${b.adapter === "hoymiles_msa2" ? this._msa2CommandStatus(b, decision) : ""}
         <div class="section-divider setpoint-box"><b>${this._t("overview.current_setpoint")}</b><br>
@@ -383,7 +442,8 @@ class BatteryManagerPanel extends HTMLElement {
     if (mode === "schedule") {
       const now = new Date();
       const index = now.getHours() * 4 + Math.floor(now.getMinutes() / 15);
-      mode = battery.schedule?.[index]?.action || "standby";
+      const day=(now.getDay()+6)%7, profile=this._status.effective_profile||this._config.active_profile||"sunny";
+      mode = battery.schedules?.[profile]?.[day]?.[index]?.action || battery.schedule?.[index]?.action || "standby";
     }
     if (mode === "disabled") return this._t("control_modes.disabled");
     return this._action(mode);
@@ -400,7 +460,7 @@ class BatteryManagerPanel extends HTMLElement {
 
   _batteryMonitoring(battery, normalizedAcPower, temperature, batteryId) {
     const e = battery.entities || {};
-    const item = (icon, label, entityId) => { const value=this._state(entityId); return `<div class="monitor-item"><ha-icon icon="${icon}"></ha-icon><span>${label}</span><strong>${esc(value.state)} ${esc(value.unit)}</strong></div>`; };
+    const item = (icon, label, entityId) => { const value=this._state(entityId); return `<div class="monitor-item" data-more-info="${esc(entityId)}"><ha-icon icon="${icon}"></ha-icon><span>${label}</span><strong>${esc(value.state)} ${esc(value.unit)}</strong></div>`; };
     const dcPowerState = this._state(e.dc_power);
     const dcPower = Math.abs(Number(dcPowerState.state));
     const acPower = Math.abs(Number(normalizedAcPower));
@@ -413,18 +473,28 @@ class BatteryManagerPanel extends HTMLElement {
     const tempClass = !Number.isFinite(tempNumber) ? "" : tempNumber > 40 ? "temp-hot" : tempNumber > 33 ? "temp-warn" : "temp-good";
     const daily = this._status.temperature_daily?.[batteryId] || {};
     const inverter = this._state(e.state), capacity = this._state(e.total_capacity), charged = this._state(e.charged_today), discharged = this._state(e.discharged_today);
+    const bmsItem = (fallbackIcon, label, entityId) => {
+      const value=this._state(entityId), icon=this._hass?.states?.[entityId]?.attributes?.icon || fallbackIcon;
+      return `<div class="bms-detail" data-more-info="${esc(entityId)}"><ha-icon icon="${esc(icon)}"></ha-icon><span>${label}</span><strong>${esc(value.state)} ${esc(value.unit)}</strong></div>`;
+    };
     const detailedMonitoring = battery.adapter === "hoymiles_msa2" ? "" : `<div class="monitor-grid">
       ${item("mdi:sine-wave", "AC V", e.grid_voltage)}${item("mdi:battery-charging", "DC V", e.dc_voltage)}
       ${item("mdi:current-ac", "AC A", e.ac_current)}${item("mdi:current-dc", "DC A", e.dc_current)}
       ${item("mdi:flash", "AC W", e.power)}${item("mdi:flash", "DC W", e.dc_power)}
       </div><div class="conversion"><span>${this._t("overview.conversion")}</span><strong>${conversion}</strong></div>
-      <div class="temperature-line"><span>${this._t("fields.temperature")}</span><strong class="${tempClass}">${esc(temperature.state)} ${esc(temperature.unit)}</strong><span class="temp-good">↓ ${daily.min ?? "—"}°C</span><span class="temp-hot">↑ ${daily.max ?? "—"}°C</span></div>`;
+      <div class="temperature-line"><span>${this._t("fields.temperature")}</span><strong class="${tempClass}" data-more-info="${esc(e.temperature)}">${esc(temperature.state)} ${esc(temperature.unit)}</strong><span class="temp-good">↓ ${daily.min ?? "—"}°C</span><span class="temp-hot">↑ ${daily.max ?? "—"}°C</span></div>`;
     const capacityMonitoring = battery.adapter === "hoymiles_msa2"
-      ? `<div class="capacity-line"><span>${this._t("overview.charged_today")} <b>${esc(charged.state)} ${esc(charged.unit)}</b></span><span>${this._t("overview.discharged_today")} <b>${esc(discharged.state)} ${esc(discharged.unit)}</b></span></div>`
-      : `<div class="capacity-line"><span>${this._t("overview.total_capacity")} <b>${esc(capacity.state)} ${esc(capacity.unit)}</b></span><span>${this._t("overview.charged_today")} <b>${esc(charged.state)} ${esc(charged.unit)}</b></span><span>${this._t("overview.discharged_today")} <b>${esc(discharged.state)} ${esc(discharged.unit)}</b></span></div>`;
+      ? `<div class="capacity-line"><span data-more-info="${esc(e.charged_today)}">${this._t("overview.charged_today")} <b>${esc(charged.state)} ${esc(charged.unit)}</b></span><span data-more-info="${esc(e.discharged_today)}">${this._t("overview.discharged_today")} <b>${esc(discharged.state)} ${esc(discharged.unit)}</b></span></div>`
+      : `<div class="capacity-line"><span data-more-info="${esc(e.total_capacity)}">${this._t("overview.total_capacity")} <b>${esc(capacity.state)} ${esc(capacity.unit)}</b></span><span data-more-info="${esc(e.charged_today)}">${this._t("overview.charged_today")} <b>${esc(charged.state)} ${esc(charged.unit)}</b></span><span data-more-info="${esc(e.discharged_today)}">${this._t("overview.discharged_today")} <b>${esc(discharged.state)} ${esc(discharged.unit)}</b></span></div>`;
+    const bmsDetails = battery.adapter === "marstek_entities" ? `<div class="bms-details">
+      ${bmsItem("mdi:counter", this._t("overview.cycle_count"), e.cycle_count)}
+      ${bmsItem("mdi:counter", this._t("overview.cycle_count_calc"), e.cycle_count_calc)}
+      ${bmsItem("mdi:sine-wave", this._t("overview.max_cell_voltage"), e.max_cell_voltage)}
+      ${bmsItem("mdi:sine-wave", this._t("overview.min_cell_voltage"), e.min_cell_voltage)}
+      </div>` : "";
     return `<div class="section-divider ${battery.adapter === "hoymiles_msa2" ? "hoymiles-monitoring" : ""}">${detailedMonitoring}
-      <div class="temperature-line inverter-state"><span>${this._t("overview.inverter_status")}</span><strong>${esc(inverter.state)}</strong></div>
-      ${capacityMonitoring}</div>`;
+      <div class="temperature-line inverter-state" data-more-info="${esc(e.state)}"><span>${this._t("overview.inverter_status")}</span><strong>${esc(inverter.state)}</strong></div>
+      ${capacityMonitoring}${bmsDetails}</div>`;
   }
 
   _commandText(decision, battery) {
@@ -464,7 +534,7 @@ class BatteryManagerPanel extends HTMLElement {
   _msa2CommandStatus(battery, decision) {
     const state = this._state(battery.entities?.state);
     return `<div class="command-status"><h3>${this._t("overview.msa2_live_commands")}</h3>
-      <div class="command-row"><span>${this._t("fields.state")}</span><strong>${esc(state.state)}</strong></div>
+      <div class="command-row" data-more-info="${esc(battery.entities?.state)}"><span>${this._t("fields.state")}</span><strong>${esc(state.state)}</strong></div>
       <div class="command-row"><span>${this._t("fields.ems_topic")}</span><strong class="mqtt-topic">${esc(battery.mqtt?.mode_topic || "—")}</strong></div>
       <div class="command-row"><span>${this._t("fields.power_topic")}</span><strong class="mqtt-topic">${esc(battery.mqtt?.power_topic || "—")}</strong></div>
       <div class="command-row"><span>${this._t("overview.last_mqtt_mode")}</span><strong>${decision.command_transport === "mqtt" ? esc(decision.command_mqtt_mode || "mqtt_ctrl") : "—"}</strong></div>
@@ -476,7 +546,7 @@ class BatteryManagerPanel extends HTMLElement {
     const entities = battery.entities || {};
     const row = (label, entityId) => {
       const value = this._state(entityId);
-      return `<div class="command-row"><span>${this._t(label)}</span><strong>${esc(value.state)} ${esc(value.unit)}</strong></div>`;
+      return `<div class="command-row" data-more-info="${esc(entityId)}"><span>${this._t(label)}</span><strong>${esc(value.state)} ${esc(value.unit)}</strong></div>`;
     };
     return `<div class="command-status"><h3>${this._t("overview.marstek_live_commands")}</h3>
       ${row("fields.force_mode", entities.force_mode)}
@@ -503,8 +573,37 @@ class BatteryManagerPanel extends HTMLElement {
     const isOpen = this._openDiagnostics.has(device.device_id);
     return `<details class="entities" data-device-id="${esc(device.device_id)}" ${isOpen ? "open" : ""}><summary>${this._t("diagnostic.summary", {total:rows.length, active, problems})}</summary>
       <div class="entity-table-wrap"><table class="entity-table"><thead><tr><th>${this._t("diagnostic.entity")}</th><th>${this._t("diagnostic.id")}</th><th>${this._t("diagnostic.state")}</th><th>${this._t("diagnostic.role")}</th></tr></thead><tbody>
-      ${rows.map(({entity,problem,value}) => `<tr class="${problem?"problem":""}"><td>${esc(entity.short_name || entity.name)}</td><td><code>${esc(entity.entity_id)}</code></td><td class="${problem?"bad":""}">${esc(value)}</td><td>${esc(entity.role || "—")}</td></tr>`).join("")}
+      ${rows.map(({entity,problem,value}) => `<tr class="${problem?"problem":""}" data-more-info="${esc(entity.entity_id)}"><td>${esc(entity.short_name || entity.name)}</td><td><code>${esc(entity.entity_id)}</code></td><td class="${problem?"bad":""}">${esc(value)}</td><td>${esc(entity.role || "—")}</td></tr>`).join("")}
       </tbody></table></div></details>`;
+  }
+
+  _weatherEditor() {
+    const w=this._config.weather||{}, d=this._status.weather||{};
+    const profileName=(id)=>(this._config.schedule_profiles||[]).find(p=>p.id===id)?.name||id||"—";
+    const conditions=["sunny","partlycloudy","cloudy","fog","windy","windy-variant","rainy","pouring","lightning","lightning-rainy","hail","snowy","snowy-rainy","clear-night"];
+    const profileOptions=(selected)=>`<option value="ignore" ${selected==="ignore"?"selected":""}>${this._t("weather.ignore")}</option>${(this._config.schedule_profiles||[]).map(p=>`<option value="${esc(p.id)}" ${selected===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}`;
+    return `<div class="card"><h2>${this._t("weather.title")}</h2><button id="save" class="primary weather-save">${this._t("buttons.save")}</button><div class="weather-grid">
+      <fieldset class="weather-source"><legend>${this._t("weather.source")}</legend>
+        <ha-entity-picker data-entity-path="_global.weather.entity_id" data-label="${this._t("weather.entity")}" data-domains="weather" value="${esc(w.entity_id||"")}"></ha-entity-picker>
+        <ha-entity-picker data-entity-path="_global.weather.cloud_cover_entity" data-label="${this._t("weather.cloud_entity")}" data-domains="sensor" value="${esc(w.cloud_cover_entity||"")}"></ha-entity-picker>
+        <p class="muted">${this._t("weather.source_help")}</p></fieldset>
+      <fieldset class="weather-analysis"><legend>${this._t("weather.analysis")}</legend><div class="form-grid">
+        <label>${this._t("weather.offset")}<input data-path="_global.weather.forecast_offset_h" type="number" min="0" max="24" value="${esc(w.forecast_offset_h??1)}"></label>
+        <label>${this._t("weather.refresh")}<input data-path="_global.weather.refresh_minutes" type="number" min="5" max="120" value="${esc(w.refresh_minutes??15)}"></label>
+        <label>${this._t("schedule.start")}<input data-path="_global.weather.analysis_start" type="time" value="${esc(w.analysis_start||"06:00")}"></label>
+        <label>${this._t("schedule.end")}<input data-path="_global.weather.analysis_end" type="time" value="${esc(w.analysis_end||"22:00")}"></label>
+        <label>${this._t("weather.sunny_max")}<input data-path="_global.weather.sunny_cloud_max" type="number" min="0" max="100" value="${esc(w.sunny_cloud_max??40)}"></label>
+        <label>${this._t("weather.hysteresis")}<input data-path="_global.weather.cloud_hysteresis" type="number" min="0" max="30" value="${esc(w.cloud_hysteresis??10)}"></label>
+      </div></fieldset>
+      <fieldset class="weather-conditions"><legend>${this._t("weather.conditions")}</legend><div class="form-grid">${conditions.map(c=>`<label>${esc(c)}<select data-path="_global.weather.condition_map.${c}">${profileOptions(w.condition_map?.[c])}</select></label>`).join("")}</div></fieldset>
+      <fieldset class="weather-diagnostic"><legend>${this._t("weather.diagnostic")}</legend>
+        ${this._t("weather.available")} : <b>${d.available?this._t("weather.yes"):this._t("weather.no")}</b><br>
+        ${this._t("weather.forecast_time")} : <b>${d.forecast_time?esc(new Date(d.forecast_time).toLocaleString()):"—"}</b><br>
+        ${this._t("weather.condition")} : <b>${esc(d.condition||"—")}</b><br>
+        ${this._t("weather.cloud")} : <b>${d.cloud_coverage==null?"—":`${esc(d.cloud_coverage)} %`}</b><br>
+        ${this._t("weather.calculated_profile")} : <b>${esc(profileName(d.selected_profile))}</b><br>
+        ${this._t("weather.reason")} : <b>${esc(d.reason||"—")}</b>
+      </fieldset></div></div>`;
   }
 
   _batteryEditor() {
@@ -574,6 +673,10 @@ class BatteryManagerPanel extends HTMLElement {
         ${entityField(this._t("fields.total_capacity"), "entities.total_capacity", e.total_capacity, ["sensor"])}
         ${entityField(this._t("fields.charged_today"), "entities.charged_today", e.charged_today, ["sensor"])}
         ${entityField(this._t("fields.discharged_today"), "entities.discharged_today", e.discharged_today, ["sensor"])}
+        ${entityField(this._t("fields.cycle_count"), "entities.cycle_count", e.cycle_count, ["sensor"])}
+        ${entityField(this._t("fields.cycle_count_calc"), "entities.cycle_count_calc", e.cycle_count_calc, ["sensor"])}
+        ${entityField(this._t("fields.max_cell_voltage"), "entities.max_cell_voltage", e.max_cell_voltage, ["sensor"])}
+        ${entityField(this._t("fields.min_cell_voltage"), "entities.min_cell_voltage", e.min_cell_voltage, ["sensor"])}
         <label>${this._t("fields.grid_loss_return_default")}<input data-path="grid_loss_return_default" type="checkbox" ${b.grid_loss_return_default?"checked":""}></label>
         <label>${this._t("fields.grid_return_resume")}<input data-path="grid_return_resume" type="checkbox" ${b.grid_return_resume?"checked":""} ${b.grid_loss_return_default?"":"disabled"}></label>
       </div></fieldset>
@@ -601,26 +704,39 @@ class BatteryManagerPanel extends HTMLElement {
     const rangeDischarge = range.discharge_w ?? defaults.discharge_w;
     const rangeMinSoc = range.min_soc ?? selected.limits.min_soc;
     const rangeMaxSoc = range.max_soc ?? selected.limits.max_soc;
-    const toTime = (slot) => `${String(Math.floor(slot/4)).padStart(2,"0")}:${String((slot%4)*15).padStart(2,"0")}`;
-    return `<div class="toolbar"><label>${this._t("fields.battery")}<select id="batterySelect">${this._config.batteries.map((x,i)=>`<option value="${i}" ${i===this._selected?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>
+    const days=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+    const ensure=(battery)=>{ battery.schedules ||= {}; battery.schedules[this._editingProfile] ||= emptyWeek(); return battery.schedules[this._editingProfile]; };
+    const toolbar = `<div class="toolbar schedule-toolbar"><label>${this._t("fields.battery")}<select id="batterySelect">${this._config.batteries.map((x,i)=>`<option value="${i}" ${i===this._selected?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>
       <label>${this._t("schedule.start")}<input id="rangeStart" type="time" step="900" value="${range.start}"></label><label>${this._t("schedule.end")}<input id="rangeEnd" type="time" step="900" value="${range.end}"></label>
       <label>${this._t("overview.action")}<select id="rangeAction">${Object.keys(ACTIONS).filter((key)=>key!=="native_self_consumption" || selected.adapter==="marstek_entities").map((key)=>`<option value="${key}" ${range.action===key?"selected":""}>${this._action(key)}</option>`).join("")}</select></label>
       <label>${this._t("schedule.max_charge")}<input id="rangeCharge" type="number" value="${rangeCharge}"></label><label>${this._t("schedule.max_discharge")}<input id="rangeDischarge" type="number" value="${rangeDischarge}"></label>
       <label>${this._t("schedule.min_soc")}<input id="rangeMinSoc" type="number" min="0" max="100" step="0.1" value="${rangeMinSoc}"></label><label>${this._t("schedule.max_soc")}<input id="rangeMaxSoc" type="number" min="0" max="100" step="0.1" value="${rangeMaxSoc}"></label>
-      <button id="applyRange" class="primary">${this._t("buttons.apply_range")}</button><button id="save">${this._t("buttons.save")}</button></div>
+      <button id="applyRange" class="primary">${this._t("buttons.apply_range")}</button><details class="actions-menu"><summary>${this._t("buttons.actions")} ▾</summary><div class="actions-menu-content"><button data-schedule-action="export">${this._t("schedule.export")}</button><button data-schedule-action="import">${this._t("schedule.import")}</button><button data-schedule-action="duplicate">${this._t("schedule.duplicate_profile")}</button></div></details><input id="importPlanning" type="file" accept="application/json,.json" style="display:none"><button id="save">${this._t("buttons.save")}</button></div>`;
+    return `${toolbar}
+      <div class="profile-tabs">${(this._config.schedule_profiles||[]).map(p=>`<button data-profile-tab="${esc(p.id)}" class="${this._editingProfile===p.id?"active-edit":""} ${this._status.effective_profile===p.id?"active-run":""}">${esc(p.name)}</button>`).join("")}<button id="newProfile">+ ${this._t("profiles.new")}</button><button id="manageProfile">${this._t("profiles.manage")}</button></div>
       <div class="legend">${Object.entries(ACTIONS).map(([key,value])=>`<span style="--c:${value.color}">${this._action(key)}</span>`).join("")}</div>
-      <div class="schedule-stack">${this._config.batteries.map((battery,batteryIndex)=>`<section class="card schedule-card ${batteryIndex===this._selected?"selected":""}">
-        <div class="schedule-title"><h2>${esc(battery.name)} — ${this._t("schedule.daily")}</h2><span class="muted">${esc(this._adapter(battery.adapter))}</span></div>
-        <div class="schedule-scroll"><div class="hours">${Array.from({length:24},(_,i)=>`<span>${String(i).padStart(2,"0")}h</span>`).join("")}</div>
-        <div class="schedule">${battery.schedule.map((slot,i)=>`<button class="slot ${i%4===0?"hour":""}" data-battery-index="${batteryIndex}" data-slot="${i}" title="${toTime(i)} — ${this._action(slot.action)} — ${this._t("actions.charge")} ${slot.charge_w} W / ${this._t("actions.discharge")} ${slot.discharge_w} W — SOC ${slot.min_soc ?? battery.limits.min_soc}%–${slot.max_soc ?? battery.limits.max_soc}%" style="background:${ACTIONS[slot.action]?.color || "#78909c"}"></button>`).join("")}</div></div>
-      </section>`).join("")}</div>
-      <p class="muted">${this._t("schedule.help")}</p>`;
+      <div class="weekly-wrap">${this._config.batteries.map((battery,batteryIndex)=>{const week=ensure(battery);return `<section class="card weekly-card ${batteryIndex===this._selected?"selected":""}"><div class="schedule-title"><h2>${esc(battery.name)}</h2><span class="muted">${esc(this._adapter(battery.adapter))}</span></div><div class="week-grid">
+        <button class="day-head" data-whole-week="${batteryIndex}">↘</button>${days.map((d,day)=>`<button class="day-head" data-day-head="${day}" data-battery-index="${batteryIndex}">${d}</button>`).join("")}
+        ${Array.from({length:96},(_,slot)=>`<span class="time-label" data-time-axis="${slot}" data-battery-index="${batteryIndex}">${slot%4===0?String(slot/4).padStart(2,"0")+":00":""}</span>${days.map((_,day)=>{const s=week[day][slot];return `<button class="week-slot ${slot%4===0?"hour":""}" data-battery-index="${batteryIndex}" data-day="${day}" data-slot="${slot}" title="${days[day]} ${String(Math.floor(slot/4)).padStart(2,"0")}:${String(slot%4*15).padStart(2,"0")} — ${this._action(s.action)}" style="background:${ACTIONS[s.action]?.color||"#78909c"}"></button>`}).join("")}`).join("")}
+      </div></section>`}).join("")}</div>
+      <p class="muted">${this._t("schedule.help")}</p>
+      <dialog id="rangeDialog"><h3>${this._t("buttons.apply_range")}</h3><div class="form-grid">
+        <label>${this._t("overview.action")}<select id="modalAction">${Object.keys(ACTIONS).filter(key=>key!=="native_self_consumption"||selected.adapter==="marstek_entities").map(key=>`<option value="${key}" ${range.action===key?"selected":""}>${this._action(key)}</option>`).join("")}</select></label>
+        <label>${this._t("schedule.max_charge")}<input id="modalCharge" type="number" value="${rangeCharge}"></label><label>${this._t("schedule.max_discharge")}<input id="modalDischarge" type="number" value="${rangeDischarge}"></label>
+        <label>${this._t("schedule.min_soc")}<input id="modalMinSoc" type="number" min="0" max="100" value="${rangeMinSoc}"></label><label>${this._t("schedule.max_soc")}<input id="modalMaxSoc" type="number" min="0" max="100" value="${rangeMaxSoc}"></label>
+      </div><div class="actions"><button id="cancelRangeDialog">${this._t("buttons.cancel")}</button><button id="applyRangeDialog" class="primary">${this._t("buttons.apply_range")}</button></div></dialog>`;
   }
 
   _powerDefaults(battery) {
-    if (battery?.adapter === "marstek_entities") return { charge_w:2500, discharge_w:800 };
-    if (battery?.adapter === "hoymiles_msa2") return { charge_w:1000, discharge_w:800 };
-    return { charge_w:0, discharge_w:0 };
+    return { charge_w:Number(battery?.limits?.max_charge_w||0), discharge_w:Number(battery?.limits?.max_discharge_w||0) };
+  }
+
+  _powerForAction(battery, action) {
+    const defaults=this._powerDefaults(battery);
+    if(action==="charge"||action==="solar_charge") return {charge_w:defaults.charge_w,discharge_w:0};
+    if(action==="discharge") return {charge_w:0,discharge_w:defaults.discharge_w};
+    if(action==="self_consumption") return defaults;
+    return {charge_w:0,discharge_w:0};
   }
 
   _setPath(object, path, value) {
@@ -639,17 +755,37 @@ class BatteryManagerPanel extends HTMLElement {
       await this._loadTranslations();
       this._render();
     };
+    this.shadowRoot.querySelectorAll("[data-active-profile]").forEach(button=>button.onclick=async()=>{const profileId=button.dataset.activeProfile;button.disabled=true;try{await this._hass.callWS({type:"battery_manager/set_active_profile",profile_id:profileId});this._config.active_profile=profileId;await this._load();}catch(err){alert(this._t("errors.profile",{details:err?.message||err}));}finally{button.disabled=false;}});
     this.shadowRoot.querySelectorAll("[data-tab]").forEach((button) => button.onclick = () => {
       this._tab = button.dataset.tab; this._render();
     });
+    this.shadowRoot.querySelectorAll("[data-profile-tab]").forEach(button=>button.onclick=()=>{this._captureRangeEditor();this._editingProfile=button.dataset.profileTab;this._render();});
+    const newProfile=this.shadowRoot.querySelector("#newProfile");
+    if(newProfile) newProfile.onclick=()=>{const name=prompt(this._t("profiles.name_prompt"));if(!name?.trim())return;const id=`custom_${Date.now()}`;this._config.schedule_profiles.push({id,name:name.trim()});for(const battery of this._config.batteries)battery.schedules[id]=structuredClone(battery.schedules[this._editingProfile]||emptyWeek());this._editingProfile=id;this._render();};
+    const manageProfile=this.shadowRoot.querySelector("#manageProfile");
+    if(manageProfile) manageProfile.onclick=()=>{const profile=this._config.schedule_profiles.find(p=>p.id===this._editingProfile);if(!profile)return;const choice=prompt(`1 - Renommer « ${profile.name} »\n2 - Supprimer ce profil`);if(choice==="1"){const name=prompt(this._t("profiles.name_prompt"),profile.name);if(name?.trim())profile.name=name.trim();}else if(choice==="2"){if(["sunny","cloudy","rainy"].includes(profile.id)){alert("Les trois profils météo de base ne peuvent pas être supprimés.");return;}if(this._config.active_profile===profile.id){alert("Sélectionnez un autre profil actif avant de le supprimer.");return;}if(confirm(`Supprimer le profil « ${profile.name} » ?`)){this._config.schedule_profiles=this._config.schedule_profiles.filter(p=>p.id!==profile.id);for(const battery of this._config.batteries)delete battery.schedules[profile.id];this._editingProfile=this._config.schedule_profiles[0].id;}}this._render();};
+    const importInput=this.shadowRoot.querySelector("#importPlanning");
+    this.shadowRoot.querySelectorAll("[data-schedule-action]").forEach(button=>button.onclick=()=>{const action=button.dataset.scheduleAction;if(action==="export")this._exportPlanning();else if(action==="import")importInput?.click();else if(action==="duplicate")newProfile?.click();});
+    if(importInput) importInput.onchange=async()=>{const file=importInput.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());if(data.schema!=="battery-manager-planning"||!Array.isArray(data.profiles)||!Array.isArray(data.batteries))throw new Error("Format de planification non reconnu");if(!confirm("Remplacer la planification actuelle par le fichier importé ?"))return;this._config.schedule_profiles=data.profiles;for(const imported of data.batteries){const target=this._config.batteries.find(b=>String(b.id)===String(imported.id))||this._config.batteries.find(b=>b.name===imported.name);if(target&&imported.schedules)target.schedules=imported.schedules;}this._editingProfile=this._config.schedule_profiles[0]?.id||"sunny";await this._save();}catch(err){alert(`Import impossible : ${err.message||err}`);}};
     this.shadowRoot.querySelectorAll("details.entities[data-device-id]").forEach((details) => {
       details.addEventListener("toggle", () => {
         if (details.open) this._openDiagnostics.add(details.dataset.deviceId);
         else this._openDiagnostics.delete(details.dataset.deviceId);
       });
     });
+    this.shadowRoot.querySelectorAll("[data-more-info]").forEach((element) => {
+      element.onclick = () => {
+        const entityId = element.dataset.moreInfo;
+        if (!entityId || !this._hass?.states?.[entityId]) return;
+        this.dispatchEvent(new CustomEvent("hass-more-info", {
+          bubbles: true, composed: true, detail: { entityId },
+        }));
+      };
+    });
     const select = this.shadowRoot.querySelector("#batterySelect");
-    if (select) select.onchange = () => { this._captureRangeEditor(); this._selected = Number(select.value); this._render(); };
+    if (select) select.onchange = () => { const action=this.shadowRoot.querySelector("#rangeAction")?.value||"standby";this._selected=Number(select.value);const values=this._powerForAction(this._config.batteries[this._selected],action);this._rangeEditor={...this._rangeEditor,action,...values,min_soc:this._config.batteries[this._selected].limits.min_soc,max_soc:this._config.batteries[this._selected].limits.max_soc};this._render(); };
+    const rangeAction=this.shadowRoot.querySelector("#rangeAction");
+    if(rangeAction) rangeAction.onchange=()=>{const values=this._powerForAction(this._config.batteries[this._selected],rangeAction.value);this.shadowRoot.querySelector("#rangeCharge").value=values.charge_w;this.shadowRoot.querySelector("#rangeDischarge").value=values.discharge_w;};
     const add = this.shadowRoot.querySelector("#addBattery");
     if (add) add.onclick = () => { const battery=defaultBattery(); battery.name=this._t("config.new_battery"); this._config.batteries.push(battery); this._selected = this._config.batteries.length-1; this._tab="batteries"; this._render(); };
     const duplicate = this.shadowRoot.querySelector("#duplicateBattery");
@@ -708,11 +844,32 @@ class BatteryManagerPanel extends HTMLElement {
     this.shadowRoot.querySelectorAll("#save").forEach((b)=>b.onclick=()=>this._save());
     const apply=this.shadowRoot.querySelector("#applyRange");
     if(apply) apply.onclick=()=>this._applyRange();
-    this.shadowRoot.querySelectorAll("[data-slot][data-battery-index]").forEach((button)=>button.onclick=()=>this._cycleSlot(Number(button.dataset.batteryIndex),Number(button.dataset.slot)));
+    const dialog=this.shadowRoot.querySelector("#rangeDialog");
+    const modalAction=this.shadowRoot.querySelector("#modalAction");if(modalAction)modalAction.onchange=()=>{const values=this._powerForAction(this._config.batteries[this._selected],modalAction.value);this.shadowRoot.querySelector("#modalCharge").value=values.charge_w;this.shadowRoot.querySelector("#modalDischarge").value=values.discharge_w;};
+    const cancelDialog=this.shadowRoot.querySelector("#cancelRangeDialog"); if(cancelDialog)cancelDialog.onclick=()=>dialog.close();
+    const applyDialog=this.shadowRoot.querySelector("#applyRangeDialog"); if(applyDialog)applyDialog.onclick=()=>{const values={action:this.shadowRoot.querySelector("#modalAction").value,charge_w:Number(this.shadowRoot.querySelector("#modalCharge").value||0),discharge_w:Number(this.shadowRoot.querySelector("#modalDischarge").value||0),min_soc:Number(this.shadowRoot.querySelector("#modalMinSoc").value),max_soc:Number(this.shadowRoot.querySelector("#modalMaxSoc").value)};this.shadowRoot.querySelector("#rangeAction").value=values.action;this.shadowRoot.querySelector("#rangeCharge").value=values.charge_w;this.shadowRoot.querySelector("#rangeDischarge").value=values.discharge_w;this.shadowRoot.querySelector("#rangeMinSoc").value=values.min_soc;this.shadowRoot.querySelector("#rangeMaxSoc").value=values.max_soc;dialog.close();this._applyRange();};
+    this._bindWeekSelection();
   }
 
+  _bindWeekSelection() {
+    let start=null;
+    const cells=[...this.shadowRoot.querySelectorAll(".week-slot")];
+    const paint=(end)=>{if(!start||Number(end.dataset.batteryIndex)!==start.battery)return;const d1=Math.min(start.day,Number(end.dataset.day)),d2=Math.max(start.day,Number(end.dataset.day)),s1=Math.min(start.slot,Number(end.dataset.slot)),s2=Math.max(start.slot,Number(end.dataset.slot));cells.forEach(c=>c.classList.toggle("selected",Number(c.dataset.batteryIndex)===start.battery&&Number(c.dataset.day)>=d1&&Number(c.dataset.day)<=d2&&Number(c.dataset.slot)>=s1&&Number(c.dataset.slot)<=s2));};
+    cells.forEach(cell=>{cell.onpointerdown=(event)=>{event.preventDefault();start={battery:Number(cell.dataset.batteryIndex),day:Number(cell.dataset.day),slot:Number(cell.dataset.slot)};this._selectScheduleBattery(start.battery);paint(cell);};cell.onpointerenter=()=>{if(start)paint(cell);};cell.onpointerup=()=>{if(!start)return;const selected=cells.filter(c=>c.classList.contains("selected"));this._selectedDays=[...new Set(selected.map(c=>Number(c.dataset.day)))];const slots=selected.map(c=>Number(c.dataset.slot));this._rangeEditor.start=this._slotTime(Math.min(...slots));this._rangeEditor.end=this._slotTime(Math.min(96,Math.max(...slots)+1));start=null;this._render();setTimeout(()=>this.shadowRoot.querySelector("#rangeDialog")?.showModal(),0);};});
+    this.shadowRoot.querySelectorAll("[data-day-head]").forEach(h=>h.onclick=()=>{this._selectScheduleBattery(Number(h.dataset.batteryIndex));this._selectedDays=[Number(h.dataset.dayHead)];this._rangeEditor.start="00:00";this._rangeEditor.end="23:59";this._render();});
+    this.shadowRoot.querySelectorAll("[data-whole-week]").forEach(h=>h.onclick=()=>{this._selectScheduleBattery(Number(h.dataset.wholeWeek));this._selectedDays=[0,1,2,3,4,5,6];this._rangeEditor.start="00:00";this._rangeEditor.end="23:59";this._render();});
+    let axisStart=null;
+    this.shadowRoot.querySelectorAll("[data-time-axis]").forEach(h=>{h.onpointerdown=(event)=>{event.preventDefault();axisStart={battery:Number(h.dataset.batteryIndex),slot:Number(h.dataset.timeAxis)};};h.onpointerup=()=>{const finish=Number(h.dataset.timeAxis);this._selectScheduleBattery(Number(h.dataset.batteryIndex));this._selectedDays=[0,1,2,3,4,5,6];this._rangeEditor.start=this._slotTime(Math.min(axisStart?.slot??finish,finish));this._rangeEditor.end=this._slotTime(Math.min(96,Math.max(axisStart?.slot??finish,finish)+4));axisStart=null;this._render();};});
+  }
+
+  _selectScheduleBattery(index){if(this._selected===index)return;this._selected=index;const action=this._rangeEditor.action||"standby";this._rangeEditor={...this._rangeEditor,...this._powerForAction(this._config.batteries[index],action),min_soc:this._config.batteries[index].limits.min_soc,max_soc:this._config.batteries[index].limits.max_soc};}
+
+  _slotTime(slot){if(slot>=96)return "24:00";return `${String(Math.floor(slot/4)).padStart(2,"0")}:${String((slot%4)*15).padStart(2,"0")}`;}
+
+  _exportPlanning(){const payload={schema:"battery-manager-planning",version:1,exported_at:new Date().toISOString(),profiles:this._config.schedule_profiles,batteries:this._config.batteries.map(b=>({id:b.id,name:b.name,schedules:b.schedules}))};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`battery-manager-planning-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);}
+
   _timeSlot(value) {
-    const [h,m]=value.split(":").map(Number); return h*4+Math.floor(m/15);
+    if(value==="24:00"||value==="23:59") return 96; const [h,m]=value.split(":").map(Number); return h*4+Math.floor(m/15);
   }
 
   _applyMarstekDevice(deviceId) {
@@ -751,13 +908,15 @@ class BatteryManagerPanel extends HTMLElement {
 
   _cycleSlot(batteryIndex, index) {
     const battery = this._config.batteries[batteryIndex];
-    const current = battery.schedule[index]?.action || "standby";
+    battery.schedules ||= {}; battery.schedules[this._editingProfile] ||= emptyWeek();
+    const day=this._selectedDays[0]||0, schedule=battery.schedules[this._editingProfile][day];
+    const current = schedule[index]?.action || "standby";
     const order = battery.adapter === "marstek_entities"
       ? ["standby", "charge", "discharge", "self_consumption", "solar_charge", "native_self_consumption", "default_mode"]
       : ["standby", "charge", "discharge", "self_consumption", "solar_charge", "default_mode"];
     const action = order[(order.indexOf(current) + 1) % order.length];
     const defaults = this._powerDefaults(battery);
-    battery.schedule[index] = {
+    schedule[index] = {
       action,
       charge_w: ["charge", "self_consumption", "solar_charge"].includes(action) ? defaults.charge_w : 0,
       discharge_w: action === "discharge" || action === "self_consumption" ? defaults.discharge_w : 0,
@@ -770,9 +929,10 @@ class BatteryManagerPanel extends HTMLElement {
   _applyRange() {
     const start=this._timeSlot(this.shadowRoot.querySelector("#rangeStart").value);
     const end=this._timeSlot(this.shadowRoot.querySelector("#rangeEnd").value);
-    const slot=this._currentRangeSlot(), schedule=this._config.batteries[this._selected].schedule;
-    let i=start;
-    do { schedule[i]=structuredClone(slot); i=(i+1)%96; } while(i!==end && i!==start);
+    const slot=this._currentRangeSlot(), battery=this._config.batteries[this._selected];
+    battery.schedules ||= {}; battery.schedules[this._editingProfile] ||= emptyWeek();
+    const finalEnd=end<=start?96:end;
+    for(const day of this._selectedDays){for(let i=start;i<finalEnd;i++)battery.schedules[this._editingProfile][day][i]=structuredClone(slot);}
     this._render();
   }
 

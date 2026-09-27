@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import asyncio
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import monotonic
 from typing import Any
 
@@ -59,6 +59,13 @@ class BatteryController:
         self._grid_guards: dict[str, dict[str, Any]] = {}
         self._grid_samples: deque[tuple[float, float]] = deque()
         self._temperature_daily: dict[str, dict[str, Any]] = {}
+        self._weather_status: dict[str, Any] = {
+            "selected_profile": "sunny",
+            "condition": None,
+            "cloud_coverage": None,
+            "reason": "not_analyzed",
+        }
+        self._weather_last_refresh: datetime | None = None
 
     async def async_start(self) -> None:
         """Start periodic evaluation."""
@@ -81,10 +88,114 @@ class BatteryController:
         await self.async_stop()
         self._collective_target_w = None
         self._collective_signature = None
+        self._marstek_cache.clear()
+        self._mqtt_cache.clear()
         # Saving the configuration is the explicit manual way to clear a
         # latched grid-loss suspension (for example after four hours).
         self._grid_guards.clear()
         await self.async_start()
+
+    async def async_refresh_weather(self, force: bool = False) -> None:
+        """Retrieve and classify the hourly forecast used by Auto mode."""
+        config = self.store.data
+        if config.get("active_profile") != "auto":
+            return
+        weather = config.get("weather", {})
+        entity_id = str(weather.get("entity_id", ""))
+        if not entity_id:
+            self._weather_status.update({"reason": "weather_entity_missing", "available": False})
+            return
+        now = dt_util.now()
+        refresh = max(5, int(weather.get("refresh_minutes", 15)))
+        if not force and self._weather_last_refresh and (now - self._weather_last_refresh).total_seconds() < refresh * 60:
+            return
+        self._weather_last_refresh = now
+        try:
+            response = await self.hass.services.async_call(
+                "weather", "get_forecasts", {"type": "hourly"},
+                target={"entity_id": entity_id}, blocking=True, return_response=True,
+            )
+            payload = (response or {}).get(entity_id, {})
+            forecasts = payload.get("forecast", []) if isinstance(payload, dict) else []
+            target_time = now + timedelta(hours=max(0, int(weather.get("forecast_offset_h", 1))))
+            item = self._nearest_forecast(forecasts, target_time)
+            if not item:
+                self._weather_status.update({"reason": "forecast_unavailable", "available": False})
+                return
+            condition = str(item.get("condition") or "").lower()
+            cloud = item.get("cloud_coverage", item.get("cloudiness"))
+            try:
+                cloud = float(cloud) if cloud is not None else None
+            except (TypeError, ValueError):
+                cloud = None
+            if cloud is None:
+                cloud = _number(self.hass, str(weather.get("cloud_cover_entity", "")))
+            local_target = dt_util.as_local(target_time)
+            clock = local_target.strftime("%H:%M")
+            if not (str(weather.get("analysis_start", "06:00")) <= clock < str(weather.get("analysis_end", "22:00"))):
+                selected, reason = None, "outside_analysis_hours"
+            else:
+                selected, reason = self._classify_weather(condition, cloud, weather)
+            if selected:
+                if selected != self._weather_status.get("selected_profile"):
+                    self._collective_target_w = None
+                    self._collective_signature = None
+                    self._marstek_cache.clear()
+                    self._mqtt_cache.clear()
+                self._weather_status["selected_profile"] = selected
+            self._weather_status.update({
+                "available": True,
+                "condition": condition,
+                "cloud_coverage": cloud,
+                "forecast_time": item.get("datetime"),
+                "analyzed_at": now.isoformat(),
+                "reason": reason,
+            })
+        except Exception as err:
+            _LOGGER.exception("Unable to retrieve hourly weather forecast")
+            self._weather_status.update({"available": False, "reason": "forecast_error", "error": str(err)})
+
+    @staticmethod
+    def _nearest_forecast(forecasts: list[Any], target: datetime) -> dict[str, Any] | None:
+        candidates = []
+        for item in forecasts:
+            if not isinstance(item, dict) or not item.get("datetime"):
+                continue
+            try:
+                moment = dt_util.parse_datetime(str(item["datetime"]))
+                if moment is not None:
+                    candidates.append((abs((moment - target).total_seconds()), item))
+            except (TypeError, ValueError):
+                continue
+        return min(candidates, key=lambda value: value[0])[1] if candidates else None
+
+    def _classify_weather(self, condition: str, cloud: float | None, weather: dict[str, Any]) -> tuple[str | None, str]:
+        rainy = {"rainy", "pouring", "lightning-rainy", "hail", "snowy", "snowy-rainy"}
+        cloudy = {"cloudy", "fog", "windy", "windy-variant", "lightning"}
+        mapping = weather.get("condition_map", {})
+        mapped = mapping.get(condition)
+        if condition in rainy:
+            return (None if mapped == "ignore" else mapped or "rainy"), "precipitation_priority"
+        if mapped == "ignore":
+            return None, "clear_night_ignored"
+        threshold = float(weather.get("sunny_cloud_max", 40))
+        hysteresis = float(weather.get("cloud_hysteresis", 10)) / 2
+        previous = self._weather_status.get("selected_profile", "sunny")
+        if cloud is not None:
+            limit = threshold + hysteresis if previous == "sunny" else threshold - hysteresis
+            sunny_profile=mapping.get("sunny", "sunny"); cloudy_profile=mapping.get("cloudy", "cloudy")
+            return (sunny_profile, "cloud_threshold") if cloud <= limit else (cloudy_profile, "cloud_threshold")
+        if mapped:
+            return mapped, "condition"
+        if condition == "sunny": return "sunny", "condition"
+        if condition == "partlycloudy" or condition in cloudy: return "cloudy", "condition"
+        return None, "condition_unknown"
+
+    def _effective_profile(self) -> str:
+        selected = str(self.store.data.get("active_profile", "sunny"))
+        if selected == "auto":
+            return str(self._weather_status.get("selected_profile", "sunny"))
+        return selected
 
     async def _async_apply_default_mode(
         self, battery: dict[str, Any]
@@ -210,6 +321,9 @@ class BatteryController:
             "grid_average_1m": self._grid_average(60),
             "grid_average_15m": self._grid_average(15 * 60),
             "temperature_daily": self._temperature_daily,
+            "active_profile": self.store.data.get("active_profile", "sunny"),
+            "effective_profile": self._effective_profile(),
+            "weather": self._weather_status,
         }
 
     def _grid_average(self, seconds: int) -> float | None:
@@ -263,6 +377,7 @@ class BatteryController:
 
     async def _async_tick(self, now: datetime) -> None:
         config = self.store.data
+        await self.async_refresh_weather()
         grid = _number(self.hass, config.get("grid_power_entity", ""))
         grid_available = grid is not None
         if not grid_available:
@@ -280,6 +395,8 @@ class BatteryController:
 
         local_now = dt_util.as_local(now)
         index = slot_index(local_now)
+        weekday = local_now.weekday()
+        profile_id = self._effective_profile()
         self_consumption: list[dict[str, Any]] = []
         for battery in config.get("batteries", []):
             battery_id = str(battery.get("id") or battery.get("name"))
@@ -306,7 +423,12 @@ class BatteryController:
                     )
                 self._last_decisions[battery_id] = disabled_status
                 continue
-            slot = self._quick_slot(battery, battery["schedule"][index])
+            profile_week = battery.get("schedules", {}).get(profile_id)
+            if not isinstance(profile_week, list) or len(profile_week) != 7:
+                scheduled = battery["schedule"][index]
+            else:
+                scheduled = profile_week[weekday][index]
+            slot = self._quick_slot(battery, scheduled)
             grid_suspended, grid_reason = self._grid_guard_suspended(battery)
             if grid_suspended or slot["action"] == ACTION_DEFAULT_MODE:
                 reason = grid_reason if grid_suspended else "retour_mode_defaut"

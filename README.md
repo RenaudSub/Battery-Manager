@@ -1,33 +1,8 @@
 # Gestionnaire de batteries pour Home Assistant
-[Site Web](https://logisub.com)
 
 Première version bêta d'une intégration locale destinée à centraliser la
 surveillance, la programmation et le pilotage de plusieurs batteries de
 marques différentes.
-
-### Planificateur journalier
-[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg)](https://logisub.com/assets/bm-planificateur.jpg)
-
-### Vue d’ensemble
-[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg)](https://logisub.com/assets/bm-vue-ensemble.jpg)
-
-### Configuration générale
-[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg)](https://logisub.com/assets/bm-configuration-generale.jpg)
-
-### Protections et paliers de charge
-[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg)](https://logisub.com/assets/bm-configuration-paliers.jpg)
-
-> **Important :** Battery Manager est une intégration personnalisée Home
-> Assistant installable avec HACS ou manuellement. Ce n'est pas un module
-> complémentaire du Home Assistant Add-on Store.
-
-## Documentation
-
-- [Présentation de Battery Manager sur LogiSub](https://logisub.com/battery-manager.html#installation)
-- [Installation avec HACS ou installation manuelle](docs/INSTALLATION.md)
-- [Configuration détaillée et choix des entités](docs/CONFIGURATION.md)
-- [Guide Hoymiles MS-A2 et identification des sujets MQTT](docs/HOYMILES_MQTT.md)
-- [Ouverture d'un rapport de problème](https://github.com/RenaudSub/Battery-Manager/issues)
 
 ## Fonctionnalités présentes
 
@@ -53,31 +28,6 @@ les limites et les réactions du matériel avant d'autoriser les commandes.
 Cette intégration n'est pas un dispositif de sécurité électrique et ne remplace
 pas les protections du BMS, les disjoncteurs ou les limites du constructeur.
 
-## ⚠️ Avertissement concernant le firmware Marstek V150
-
-Depuis l’installation du firmware V150 sur des Marstek Venus E, un comportement anormal a été observé dans certains modes de fonctionnement.
-
-Sur l’installation testée :
-   - la charge en mode autoconsommation semble limitée à environ 700 W 
-   - la décharge semble plafonnée à environ 1 000 W 
-   - la valeur Max Charge Power peut être modifiée ou limitée par la batterie en fonction du mode ou du SOC 
-
-la charge solaire collective pilotée directement par Battery Manager peut continuer à fonctionner à une puissance supérieure.
-
-Ces limitations semblent provenir du firmware Marstek V150 et non du calcul de répartition de Battery Manager. Elles peuvent néanmoins modifier les puissances réellement appliquées par rapport aux consignes envoyées.
-
-Ce comportement n’est pas encore confirmé sur toutes les batteries ni toutes les installations. Les utilisateurs du firmware V150 sont invités à vérifier dans Home Assistant les valeurs réelles de Max Charge Power, Max Discharge Power et la puissance mesurée par la batterie.
-
-Si vous observez le même problème, merci d’indiquer dans une issue GitHub :
-   - le modèle exact de la batterie.
-   - la version du firmware.
-   - le mode utilisé.
-   - le SOC.
-   - la consigne envoyée.
-   - la puissance réellement mesurée.
-     
-En attendant une réponse de Marstek, commencez les essais avec une puissance réduite et gardez l’application constructeur disponible pour reprendre la main.
-
 ## Installation manuelle
 
 1. Copier `custom_components/battery_manager` dans le dossier
@@ -87,9 +37,6 @@ En attendant une réponse de Marstek, commencez les essais avec une puissance r�
 4. Rechercher **Gestionnaire collectif de batteries**.
 5. Sélectionner le capteur global de puissance réseau.
 6. Ouvrir le nouveau panneau **Gestion batteries** dans la barre latérale.
-
-Pour une installation avec HACS, les mises à jour et le dépannage, consultez
-le [guide d'installation complet](docs/INSTALLATION.md).
 
 ## Convention du capteur réseau
 
@@ -102,14 +49,14 @@ L'option d'inversion permet d'utiliser un capteur ayant la convention opposée.
 
 ## Hoymiles MS-A2
 
-Exemple avec le numéro de série fictif `XXXXXXXXXXXX` :
+Exemple avec le numéro de série `280024365727` :
 
 ```text
 Sujet mode EMS
-homeassistant/select/MSA-XXXXXXXXXXXX/ems_mode/command
+homeassistant/select/MSA-280024365727/ems_mode/command
 
 Sujet consigne
-homeassistant/number/MSA-XXXXXXXXXXXX/power_ctrl/set
+homeassistant/number/MSA-280024365727/power_ctrl/set
 ```
 
 Convention utilisée par la MS-A2 :
@@ -119,10 +66,6 @@ Convention utilisée par la MS-A2 :
 
 L'intégration envoie `mqtt_ctrl` puis renouvelle la consigne. Une alternance de
 0,1 W est volontaire afin d'éviter le retour automatique à la logique interne.
-
-La procédure complète pour écouter le broker, retrouver ces deux sujets et
-effectuer un essai sans activer le gestionnaire est disponible dans le
-[guide Hoymiles MS-A2](docs/HOYMILES_MQTT.md).
 
 ## Marstek
 
@@ -154,6 +97,45 @@ La puissance appliquée est la plus faible parmi :
 
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
+
+## Version 0.4.3
+
+- Le bouton d'enregistrement du panneau Météo est aligné complètement à droite.
+- Le bloc énergie de la vue d'ensemble utilise maintenant trois colonnes centrées avec le libellé au-dessus et la valeur avec son unité en dessous.
+- Ajout des mesures Marstek `Cycle Count`, `Cycle Count (Calc)`, `Max Cell Voltage` et `Min Cell Voltage` sous une séparation dédiée.
+- Les nouvelles mesures reprennent l'icône de leur entité Home Assistant et ouvrent leur historique au clic.
+- Les quatre nouvelles entités sont détectées automatiquement depuis l'intégration Marstek Venus Modbus et restent sélectionnables dans la configuration.
+
+## Version 0.4.2
+
+- La vue d'ensemble affiche désormais l'énergie réellement stockée (`Stored Energy`) à la place de la capacité nominale fixe du pack.
+- Les anciennes sélections `Battery Total Energy` sont automatiquement remplacées par `Stored Energy` lorsqu'elle est disponible sur le même appareil Marstek.
+- Le SOC, la puissance, les mesures AC/DC, la température, l'état de l'onduleur, les commandes réelles et les compteurs d'énergie sont cliquables et ouvrent la fenêtre d'historique Home Assistant.
+- La ligne énergie restante / chargé aujourd'hui / déchargé aujourd'hui utilise trois colonnes stables pour corriger les défauts d'alignement.
+
+## Version 0.4.1
+
+- Correction de la mise en page du panneau Météo et déplacement du bouton
+  Enregistrer sous le titre.
+- Remplacement des sélecteurs instables et des choix numériques par des menus
+  à boutons compatibles avec les tablettes.
+- Réinitialisation des puissances proposées selon la batterie et l'action.
+- Recentrage des profils entre la barre d'édition et la légende.
+
+## Version 0.4.0
+
+- Nouveau planificateur hebdomadaire sur sept jours, affiché côte à côte pour
+  les batteries et découpé en créneaux de 15 minutes.
+- Trois profils météo fournis : Ensoleillé, Nuageux et Pluvieux, avec création
+  de profils personnalisés et sélection globale manuelle ou automatique.
+- Migration automatique de l'ancien planning journalier vers les trois profils
+  sans perte de programmation.
+- Nouveau panneau Météo utilisant les prévisions horaires Home Assistant à
+  `+1 h`, la couverture nuageuse, une hystérésis configurable et la priorité
+  aux précipitations.
+- Sélection directe de plages par glisser-déposer, d'une journée, d'une heure
+  sur toute la semaine ou de la semaine complète.
+- Export et import JSON des seuls paramètres de planification.
 
 ## Version 0.3.4
 
@@ -513,14 +495,15 @@ reprise. Le même principe est appliqué à la décharge au SOC minimal.
 - Le bouton de suppression d'une batterie est maintenant visible dans la barre
   supérieure de la page Configuration.
 
-## Limites connues de la version 0.2.26
+## Limites connues de la version 0.4.3
 
-- un seul programme journalier, répété tous les jours ;
-- pas encore de profils hebdomadaires Été/Hiver/Absence ;
+- la qualité du profil automatique dépend directement de la précision de la
+  source météo Home Assistant choisie ;
+- les profils météo personnalisés sont sélectionnables manuellement, mais leur
+  association automatique avancée sera enrichie après les essais réels ;
 - pas encore de charge complète périodique pour équilibrage du BMS ;
 - pas encore de limite thermique active ;
-- interface et moteur encore en phase bêta : commencez en surveillance seule et
-  contrôlez chaque commande sur votre propre installation.
+- interface et moteur à tester sur une installation réelle avant publication HACS.
 
 ## Structure
 

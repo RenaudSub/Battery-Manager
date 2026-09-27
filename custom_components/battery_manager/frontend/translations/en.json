@@ -9,6 +9,7 @@
     },
     "tabs": {
         "overview": "Overview",
+        "weather": "Weather",
         "configuration": "Configuration",
         "schedule": "Schedule"
     },
@@ -18,8 +19,12 @@
         "delete": "Delete",
         "save": "Save",
         "retrieve_entities": "Retrieve entities",
-        "apply_range": "Apply time range"
+        "apply_range": "Apply time range",
+        "actions": "Actions",
+        "cancel": "Cancel"
     },
+    "profiles": {"active":"Active profile","auto":"Automatic","new":"New","manage":"Manage","name_prompt":"New weather profile name:"},
+    "weather": {"title":"Automatic weather profile selection","source":"Weather source","entity":"Weather entity","cloud_entity":"Cloud cover entity (%)","source_help":"The Home Assistant hourly forecast is analyzed only when Automatic is selected.","analysis":"Interpretation","conditions":"Weather condition mapping","ignore":"Ignore","offset":"Forecast offset (hours)","refresh":"Refresh (minutes)","sunny_max":"Maximum Sunny cloud cover (%)","hysteresis":"Cloud hysteresis (%)","diagnostic":"Live diagnostic","available":"Forecast available","forecast_time":"Forecast time","condition":"Condition","cloud":"Cloud cover","calculated_profile":"Calculated profile","reason":"Reason","yes":"Yes","no":"No"},
     "actions": {
         "charge": "Charge",
         "discharge": "Discharge",
@@ -60,8 +65,10 @@
         "status": "Status", "online": "Online", "offline": "Offline", "error": "Error",
         "management": "Control", "in_charge": "charging", "in_discharge": "discharging",
         "current_setpoint": "Current setpoint", "current_mode": "Current mode", "conversion": "Conversion efficiency",
-        "inverter_status": "Inverter status", "total_capacity": "Total capacity",
+        "inverter_status": "Inverter status", "total_capacity": "Stored energy",
         "charged_today": "Charged today", "discharged_today": "Discharged today",
+        "cycle_count": "Cycle Count", "cycle_count_calc": "Cycle Count (Calc)",
+        "max_cell_voltage": "Max Cell Voltage", "min_cell_voltage": "Min Cell Voltage",
         "consumption": "Consumption",
         "injection": "Export",
         "marstek_live_commands": "Live Marstek commands",
@@ -131,8 +138,10 @@
         "temperature": "Temperature",
         "grid_voltage": "Grid voltage",
         "ac_current": "AC current", "dc_voltage": "Battery DC voltage", "dc_current": "Battery DC current",
-        "dc_power": "Battery DC power", "total_capacity": "BMS total capacity",
+        "dc_power": "Battery DC power", "total_capacity": "Stored battery energy",
         "charged_today": "Energy charged today", "discharged_today": "Energy discharged today",
+        "cycle_count": "BMS cycle count", "cycle_count_calc": "Calculated cycle count",
+        "max_cell_voltage": "Maximum cell voltage", "min_cell_voltage": "Minimum cell voltage",
         "grid_loss_return_default": "Return to previous mode on grid loss",
         "grid_return_resume": "Automatically resume Schedule when grid returns (4 h max)",
         "min_soc": "Minimum SOC (%)",
@@ -171,6 +180,9 @@
         "empty": "empty = battery limit"
     },
     "schedule": {
+        "export": "Export schedule",
+        "import": "Import schedule",
+        "duplicate_profile": "Duplicate displayed profile",
         "add_first": "Add a battery first.",
         "start": "Start",
         "end": "End",
@@ -191,6 +203,7 @@
     "errors": {
         "save": "Save error: {details}",
         "control_mode": "Unable to change mode: {details}",
+        "profile": "Unable to change profile: {details}",
         "unknown": "unknown cause \u2014 check the Home Assistant logs"
     },
     "reasons": {

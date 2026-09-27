@@ -9,6 +9,7 @@
     },
     "tabs": {
         "overview": "Vista general",
+        "weather": "Tiempo",
         "configuration": "Configuraci\u00f3n",
         "schedule": "Programaci\u00f3n"
     },
@@ -18,8 +19,12 @@
         "delete": "Eliminar",
         "save": "Guardar",
         "retrieve_entities": "Obtener entidades",
-        "apply_range": "Aplicar franja"
+        "apply_range": "Aplicar franja",
+        "actions": "Acciones",
+        "cancel": "Cancelar"
     },
+    "profiles": {"active":"Perfil activo","auto":"Automático","new":"Nuevo","manage":"Gestionar","name_prompt":"Nombre del nuevo perfil meteorológico:"},
+    "weather": {"title":"Selección automática del perfil meteorológico","source":"Fuente meteorológica","entity":"Entidad meteorológica","cloud_entity":"Entidad de cobertura nubosa (%)","source_help":"La previsión horaria se analiza únicamente en modo Automático.","analysis":"Interpretación","conditions":"Asociación de condiciones meteorológicas","ignore":"Ignorar","offset":"Previsión a + (horas)","refresh":"Actualización (minutos)","sunny_max":"Cobertura máxima Soleado (%)","hysteresis":"Histéresis de nubes (%)","diagnostic":"Diagnóstico en directo","available":"Previsión disponible","forecast_time":"Hora analizada","condition":"Condición","cloud":"Cobertura nubosa","calculated_profile":"Perfil calculado","reason":"Motivo","yes":"Sí","no":"No"},
     "actions": {
         "charge": "Carga",
         "discharge": "Descarga",
@@ -60,8 +65,10 @@
         "status": "Estado", "online": "En l\u00ednea", "offline": "Fuera de l\u00ednea", "error": "Error",
         "management": "Gesti\u00f3n", "in_charge": "en carga", "in_discharge": "en descarga",
         "current_setpoint": "Consigna actual", "current_mode": "Modo actual", "conversion": "Rendimiento de conversi\u00f3n",
-        "inverter_status": "Estado del inversor", "total_capacity": "Capacidad total",
+        "inverter_status": "Estado del inversor", "total_capacity": "Energía restante",
         "charged_today": "Cargado hoy", "discharged_today": "Descargado hoy",
+        "cycle_count": "Cycle Count", "cycle_count_calc": "Cycle Count (Calc)",
+        "max_cell_voltage": "Max Cell Voltage", "min_cell_voltage": "Min Cell Voltage",
         "consumption": "Consumo",
         "injection": "Inyecci\u00f3n",
         "marstek_live_commands": "Comandos Marstek actuales",
@@ -131,8 +138,10 @@
         "temperature": "Temperatura",
         "grid_voltage": "Tensi\u00f3n de red",
         "ac_current": "Intensidad AC", "dc_voltage": "Tensi\u00f3n DC de bater\u00eda", "dc_current": "Intensidad DC de bater\u00eda",
-        "dc_power": "Potencia DC de bater\u00eda", "total_capacity": "Capacidad total BMS",
+        "dc_power": "Potencia DC de bater\u00eda", "total_capacity": "Energía almacenada en la batería",
         "charged_today": "Energ\u00eda cargada hoy", "discharged_today": "Energ\u00eda descargada hoy",
+        "cycle_count": "Conteo de ciclos BMS", "cycle_count_calc": "Conteo de ciclos calculado",
+        "max_cell_voltage": "Voltaje máximo de celda", "min_cell_voltage": "Voltaje mínimo de celda",
         "grid_loss_return_default": "Volver al modo anterior si se pierde la red",
         "grid_return_resume": "Reanudar autom\u00e1ticamente la programaci\u00f3n al volver la red (m\u00e1x. 4 h)",
         "min_soc": "SOC m\u00ednimo (%)",
@@ -171,6 +180,9 @@
         "empty": "vac\u00edo = l\u00edmite de la bater\u00eda"
     },
     "schedule": {
+        "export": "Exportar planificación",
+        "import": "Importar planificación",
+        "duplicate_profile": "Duplicar perfil mostrado",
         "add_first": "A\u00f1ada primero una bater\u00eda.",
         "start": "Inicio",
         "end": "Fin",
@@ -191,6 +203,7 @@
     "errors": {
         "save": "Error al guardar: {details}",
         "control_mode": "No se puede cambiar el modo: {details}",
+        "profile": "No se puede cambiar el perfil: {details}",
         "unknown": "causa desconocida \u2014 consulte los registros de Home Assistant"
     },
     "reasons": {

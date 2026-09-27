@@ -18,6 +18,7 @@ from .const import (
 )
 
 SLOTS_PER_DAY = 96
+DAYS_PER_WEEK = 7
 CONTROL_MODES = {
     "schedule",
     "charge",
@@ -43,6 +44,29 @@ def empty_slot() -> dict[str, Any]:
 def empty_schedule() -> list[dict[str, Any]]:
     """Return a 24-hour schedule in 15-minute slots."""
     return [empty_slot() for _ in range(SLOTS_PER_DAY)]
+
+
+def weekly_schedule(source: Any = None) -> list[list[dict[str, Any]]]:
+    """Return seven normalized days, migrating a legacy daily schedule."""
+    if isinstance(source, list) and len(source) == DAYS_PER_WEEK and all(
+        isinstance(day, list) for day in source
+    ):
+        return [normalize_schedule(day) for day in source]
+    day = normalize_schedule(source)
+    return [deepcopy(day) for _ in range(DAYS_PER_WEEK)]
+
+
+def normalize_profile_schedules(value: Any, legacy: Any = None) -> dict[str, Any]:
+    """Normalize built-in and custom profile schedules."""
+    raw = value if isinstance(value, dict) else {}
+    base = raw.get("sunny", legacy)
+    result = {}
+    for profile_id in ("sunny", "cloudy", "rainy"):
+        result[profile_id] = weekly_schedule(raw.get(profile_id, base))
+    for profile_id, schedule in raw.items():
+        if isinstance(profile_id, str) and profile_id not in result:
+            result[profile_id] = weekly_schedule(schedule)
+    return result
 
 
 def slot_index(moment: datetime) -> int:
@@ -142,6 +166,10 @@ def default_battery(name: str = "Nouvelle batterie") -> dict[str, Any]:
             "total_capacity": "",
             "charged_today": "",
             "discharged_today": "",
+            "cycle_count": "",
+            "cycle_count_calc": "",
+            "max_cell_voltage": "",
+            "min_cell_voltage": "",
             "work_mode": "",
             "force_mode": "",
             "rs485_control_mode": "",
@@ -175,6 +203,7 @@ def default_battery(name: str = "Nouvelle batterie") -> dict[str, Any]:
             {"from_soc": 95, "to_soc": 100, "max_charge_w": 700},
         ],
         "schedule": empty_schedule(),
+        "schedules": normalize_profile_schedules(None),
     }
 
 
@@ -205,6 +234,9 @@ def normalize_battery(raw: dict[str, Any]) -> dict[str, Any]:
             result[section].update(raw[section])
     result["charge_tiers"] = normalize_tiers(raw.get("charge_tiers"))
     result["schedule"] = normalize_schedule(raw.get("schedule"))
+    result["schedules"] = normalize_profile_schedules(
+        raw.get("schedules"), raw.get("schedule")
+    )
     allowed_disabled_behaviors = {
         "hoymiles_msa2": {
             "standby",

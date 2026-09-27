@@ -1,4 +1,5 @@
 {
-  "name": "Battery Manager",
-  "content_in_root": false
+  "name": "Gestionnaire collectif de batteries",
+  "content_in_root": false,
+  "render_readme": true
 }
