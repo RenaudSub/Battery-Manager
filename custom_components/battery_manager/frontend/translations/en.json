@@ -24,7 +24,7 @@
         "cancel": "Cancel"
     },
     "profiles": {"active":"Active profile","auto":"Automatic","new":"New","manage":"Manage","name_prompt":"New weather profile name:"},
-    "weather": {"title":"Automatic weather profile selection","source":"Weather source","entity":"Weather entity","cloud_entity":"Cloud cover entity (%)","source_help":"The Home Assistant hourly forecast is analyzed only when Automatic is selected.","analysis":"Interpretation","conditions":"Weather condition mapping","ignore":"Ignore","offset":"Forecast offset (hours)","refresh":"Refresh (minutes)","sunny_max":"Maximum Sunny cloud cover (%)","hysteresis":"Cloud hysteresis (%)","diagnostic":"Live diagnostic","available":"Forecast available","forecast_time":"Forecast time","condition":"Condition","cloud":"Cloud cover","calculated_profile":"Calculated profile","reason":"Reason","yes":"Yes","no":"No"},
+    "weather": {"title":"Automatic weather profile selection","source":"Weather source","entity":"Weather entity","cloud_entity":"Cloud cover entity (%)","source_help":"The Home Assistant hourly forecast is analyzed only when Automatic is selected.","analysis":"Interpretation","conditions":"Weather condition mapping","ignore":"Ignore","offset":"Forecast offset (hours)","refresh":"Refresh (minutes)","refresh_now":"Refresh now","sunny_max":"Maximum Sunny cloud cover (%)","hysteresis":"Cloud hysteresis (%)","diagnostic":"Live diagnostic","available":"Forecast available","forecast_time":"Forecast time","condition":"Condition","cloud":"Cloud cover","cloud_source":"Cloud cover source","cloud_raw":"Raw sensor value","cloud_sources":{"configured_sensor":"Configured sensor","hourly_forecast":"Hourly forecast","unavailable":"Unavailable"},"calculated_profile":"Calculated profile","reason":"Reason","yes":"Yes","no":"No"},
     "actions": {
         "charge": "Charge",
         "discharge": "Discharge",
@@ -204,6 +204,7 @@
         "save": "Save error: {details}",
         "control_mode": "Unable to change mode: {details}",
         "profile": "Unable to change profile: {details}",
+        "weather_refresh": "Unable to refresh weather: {details}",
         "unknown": "unknown cause \u2014 check the Home Assistant logs"
     },
     "reasons": {

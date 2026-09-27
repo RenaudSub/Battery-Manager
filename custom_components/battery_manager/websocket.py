@@ -107,9 +107,29 @@ async def ws_set_active_profile(hass, connection, msg) -> None:
     connection.send_result(msg["id"], {"saved": True})
 
 
+@websocket_api.websocket_command(
+    {vol.Required("type"): "battery_manager/refresh_weather"}
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def ws_refresh_weather(hass, connection, msg) -> None:
+    """Force an immediate weather forecast and cloud sensor refresh."""
+    runtime = hass.data[DOMAIN]
+    try:
+        await runtime["controller"].async_refresh_weather(force=True)
+    except Exception as err:
+        _LOGGER.exception("Unable to refresh Battery Manager weather")
+        connection.send_error(msg["id"], "weather_refresh_failed", str(err))
+        return
+    connection.send_result(
+        msg["id"], {"status": runtime["controller"].status()}
+    )
+
+
 def async_register(hass: HomeAssistant) -> None:
     """Register WebSocket commands."""
     websocket_api.async_register_command(hass, ws_get_config)
     websocket_api.async_register_command(hass, ws_save_config)
     websocket_api.async_register_command(hass, ws_set_control_mode)
     websocket_api.async_register_command(hass, ws_set_active_profile)
+    websocket_api.async_register_command(hass, ws_refresh_weather)

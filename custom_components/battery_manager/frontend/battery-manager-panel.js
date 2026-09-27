@@ -5,7 +5,7 @@ const ACTIONS = {
   default_mode: { color: "#ffffff" },
   standby: { color: "#78909c" },
 };
-const PANEL_VERSION = "0.4.3";
+const PANEL_VERSION = "0.4.5";
 const SUPPORTED_LANGUAGES = ["fr", "en", "es"];
 
 const emptySlot = () => ({ action: "standby", charge_w: 0, discharge_w: 0, min_soc: null, max_soc: null });
@@ -321,6 +321,8 @@ class BatteryManagerPanel extends HTMLElement {
       .weather-conditions { grid-row:3; }
       .weather-save { display:block; margin:0 0 14px auto; }
       .weather-diagnostic { line-height:1.8; }
+      .weather-diagnostic-actions { display:flex; justify-content:flex-end; margin:-3px 0 7px; }
+      .weather-diagnostic-actions button { padding:7px 11px; }
       dialog { color:var(--primary-text-color); background:var(--card-background-color); border:1px solid var(--divider-color); border-radius:16px; padding:20px; min-width:min(620px,90vw); box-shadow:0 12px 40px #0007; }
       dialog::backdrop { background:#0008; }
       .entity-with-option { display:grid; gap:8px; }
@@ -597,10 +599,13 @@ class BatteryManagerPanel extends HTMLElement {
       </div></fieldset>
       <fieldset class="weather-conditions"><legend>${this._t("weather.conditions")}</legend><div class="form-grid">${conditions.map(c=>`<label>${esc(c)}<select data-path="_global.weather.condition_map.${c}">${profileOptions(w.condition_map?.[c])}</select></label>`).join("")}</div></fieldset>
       <fieldset class="weather-diagnostic"><legend>${this._t("weather.diagnostic")}</legend>
+        <div class="weather-diagnostic-actions"><button id="refreshWeather">${this._t("weather.refresh_now")}</button></div>
         ${this._t("weather.available")} : <b>${d.available?this._t("weather.yes"):this._t("weather.no")}</b><br>
         ${this._t("weather.forecast_time")} : <b>${d.forecast_time?esc(new Date(d.forecast_time).toLocaleString()):"—"}</b><br>
         ${this._t("weather.condition")} : <b>${esc(d.condition||"—")}</b><br>
         ${this._t("weather.cloud")} : <b>${d.cloud_coverage==null?"—":`${esc(d.cloud_coverage)} %`}</b><br>
+        ${this._t("weather.cloud_source")} : <b>${esc(d.cloud_source?this._t(`weather.cloud_sources.${d.cloud_source}`):"—")}</b><br>
+        ${this._t("weather.cloud_raw")} : <b>${d.cloud_entity_state==null?"—":esc(d.cloud_entity_state)}</b><br>
         ${this._t("weather.calculated_profile")} : <b>${esc(profileName(d.selected_profile))}</b><br>
         ${this._t("weather.reason")} : <b>${esc(d.reason||"—")}</b>
       </fieldset></div></div>`;
@@ -765,6 +770,8 @@ class BatteryManagerPanel extends HTMLElement {
     const manageProfile=this.shadowRoot.querySelector("#manageProfile");
     if(manageProfile) manageProfile.onclick=()=>{const profile=this._config.schedule_profiles.find(p=>p.id===this._editingProfile);if(!profile)return;const choice=prompt(`1 - Renommer « ${profile.name} »\n2 - Supprimer ce profil`);if(choice==="1"){const name=prompt(this._t("profiles.name_prompt"),profile.name);if(name?.trim())profile.name=name.trim();}else if(choice==="2"){if(["sunny","cloudy","rainy"].includes(profile.id)){alert("Les trois profils météo de base ne peuvent pas être supprimés.");return;}if(this._config.active_profile===profile.id){alert("Sélectionnez un autre profil actif avant de le supprimer.");return;}if(confirm(`Supprimer le profil « ${profile.name} » ?`)){this._config.schedule_profiles=this._config.schedule_profiles.filter(p=>p.id!==profile.id);for(const battery of this._config.batteries)delete battery.schedules[profile.id];this._editingProfile=this._config.schedule_profiles[0].id;}}this._render();};
     const importInput=this.shadowRoot.querySelector("#importPlanning");
+    const refreshWeather=this.shadowRoot.querySelector("#refreshWeather");
+    if(refreshWeather) refreshWeather.onclick=async()=>{refreshWeather.disabled=true;try{const result=await this._hass.callWS({type:"battery_manager/refresh_weather"});this._status=result.status||this._status;this._render();}catch(err){alert(this._t("errors.weather_refresh",{details:err?.message||err}));}finally{refreshWeather.disabled=false;}};
     this.shadowRoot.querySelectorAll("[data-schedule-action]").forEach(button=>button.onclick=()=>{const action=button.dataset.scheduleAction;if(action==="export")this._exportPlanning();else if(action==="import")importInput?.click();else if(action==="duplicate")newProfile?.click();});
     if(importInput) importInput.onchange=async()=>{const file=importInput.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());if(data.schema!=="battery-manager-planning"||!Array.isArray(data.profiles)||!Array.isArray(data.batteries))throw new Error("Format de planification non reconnu");if(!confirm("Remplacer la planification actuelle par le fichier importé ?"))return;this._config.schedule_profiles=data.profiles;for(const imported of data.batteries){const target=this._config.batteries.find(b=>String(b.id)===String(imported.id))||this._config.batteries.find(b=>b.name===imported.name);if(target&&imported.schedules)target.schedules=imported.schedules;}this._editingProfile=this._config.schedule_profiles[0]?.id||"sunny";await this._save();}catch(err){alert(`Import impossible : ${err.message||err}`);}};
     this.shadowRoot.querySelectorAll("details.entities[data-device-id]").forEach((details) => {

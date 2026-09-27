@@ -120,6 +120,18 @@ La puissance appliquée est la plus faible parmi :
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
 
+## Version 0.4.5
+
+- Ajout d’un bouton `Mettre à jour` dans le diagnostic météo pour forcer immédiatement une nouvelle prévision et une nouvelle lecture du capteur de couverture.
+- Le rafraîchissement manuel fonctionne même lorsqu’un profil météo manuel est actif ; dans ce cas, il met à jour le diagnostic sans remplacer le profil global sélectionné.
+
+## Version 0.4.4
+
+- L’entité de couverture nuageuse configurée devient prioritaire sur la valeur éventuellement fournie par la prévision horaire.
+- Les identifiants des entités météo sont nettoyés des espaces accidentels avant leur enregistrement.
+- Le cache météo est invalidé après chaque enregistrement afin de relire immédiatement la couverture nuageuse.
+- Le diagnostic météo indique maintenant la source de la couverture et la valeur brute reçue du capteur.
+
 ## Version 0.4.3
 
 - Le bouton d'enregistrement du panneau Météo est aligné complètement à droite.

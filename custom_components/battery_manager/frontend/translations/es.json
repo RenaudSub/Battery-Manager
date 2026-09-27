@@ -24,7 +24,7 @@
         "cancel": "Cancelar"
     },
     "profiles": {"active":"Perfil activo","auto":"Automático","new":"Nuevo","manage":"Gestionar","name_prompt":"Nombre del nuevo perfil meteorológico:"},
-    "weather": {"title":"Selección automática del perfil meteorológico","source":"Fuente meteorológica","entity":"Entidad meteorológica","cloud_entity":"Entidad de cobertura nubosa (%)","source_help":"La previsión horaria se analiza únicamente en modo Automático.","analysis":"Interpretación","conditions":"Asociación de condiciones meteorológicas","ignore":"Ignorar","offset":"Previsión a + (horas)","refresh":"Actualización (minutos)","sunny_max":"Cobertura máxima Soleado (%)","hysteresis":"Histéresis de nubes (%)","diagnostic":"Diagnóstico en directo","available":"Previsión disponible","forecast_time":"Hora analizada","condition":"Condición","cloud":"Cobertura nubosa","calculated_profile":"Perfil calculado","reason":"Motivo","yes":"Sí","no":"No"},
+    "weather": {"title":"Selección automática del perfil meteorológico","source":"Fuente meteorológica","entity":"Entidad meteorológica","cloud_entity":"Entidad de cobertura nubosa (%)","source_help":"La previsión horaria se analiza únicamente en modo Automático.","analysis":"Interpretación","conditions":"Asociación de condiciones meteorológicas","ignore":"Ignorar","offset":"Previsión a + (horas)","refresh":"Actualización (minutos)","refresh_now":"Actualizar ahora","sunny_max":"Cobertura máxima Soleado (%)","hysteresis":"Histéresis de nubes (%)","diagnostic":"Diagnóstico en directo","available":"Previsión disponible","forecast_time":"Hora analizada","condition":"Condición","cloud":"Cobertura nubosa","cloud_source":"Fuente de nubosidad","cloud_raw":"Valor bruto del sensor","cloud_sources":{"configured_sensor":"Sensor configurado","hourly_forecast":"Previsión horaria","unavailable":"No disponible"},"calculated_profile":"Perfil calculado","reason":"Motivo","yes":"Sí","no":"No"},
     "actions": {
         "charge": "Carga",
         "discharge": "Descarga",
@@ -204,6 +204,7 @@
         "save": "Error al guardar: {details}",
         "control_mode": "No se puede cambiar el modo: {details}",
         "profile": "No se puede cambiar el perfil: {details}",
+        "weather_refresh": "No se puede actualizar el tiempo: {details}",
         "unknown": "causa desconocida \u2014 consulte los registros de Home Assistant"
     },
     "reasons": {

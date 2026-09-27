@@ -62,8 +62,8 @@ class BatteryManagerStore:
         weather = deepcopy(DEFAULT_CONFIG["weather"])
         if isinstance(self.data.get("weather"), dict):
             weather.update(self.data["weather"])
-        weather["entity_id"] = str(weather.get("entity_id", ""))
-        weather["cloud_cover_entity"] = str(weather.get("cloud_cover_entity", ""))
+        weather["entity_id"] = str(weather.get("entity_id", "")).strip()
+        weather["cloud_cover_entity"] = str(weather.get("cloud_cover_entity", "")).strip()
         weather["forecast_offset_h"] = max(0, min(24, int(weather.get("forecast_offset_h", 1))))
         weather["refresh_minutes"] = max(5, min(120, int(weather.get("refresh_minutes", 15))))
         for key, fallback in (("analysis_start", "06:00"), ("analysis_end", "22:00")):

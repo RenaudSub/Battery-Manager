@@ -63,6 +63,8 @@ class BatteryController:
             "selected_profile": "sunny",
             "condition": None,
             "cloud_coverage": None,
+            "cloud_source": None,
+            "cloud_entity_state": None,
             "reason": "not_analyzed",
         }
         self._weather_last_refresh: datetime | None = None
@@ -90,6 +92,7 @@ class BatteryController:
         self._collective_signature = None
         self._marstek_cache.clear()
         self._mqtt_cache.clear()
+        self._weather_last_refresh = None
         # Saving the configuration is the explicit manual way to clear a
         # latched grid-loss suspension (for example after four hours).
         self._grid_guards.clear()
@@ -98,7 +101,7 @@ class BatteryController:
     async def async_refresh_weather(self, force: bool = False) -> None:
         """Retrieve and classify the hourly forecast used by Auto mode."""
         config = self.store.data
-        if config.get("active_profile") != "auto":
+        if config.get("active_profile") != "auto" and not force:
             return
         weather = config.get("weather", {})
         entity_id = str(weather.get("entity_id", ""))
@@ -123,13 +126,20 @@ class BatteryController:
                 self._weather_status.update({"reason": "forecast_unavailable", "available": False})
                 return
             condition = str(item.get("condition") or "").lower()
-            cloud = item.get("cloud_coverage", item.get("cloudiness"))
+            forecast_cloud = item.get("cloud_coverage", item.get("cloudiness"))
             try:
-                cloud = float(cloud) if cloud is not None else None
+                forecast_cloud = float(forecast_cloud) if forecast_cloud is not None else None
             except (TypeError, ValueError):
-                cloud = None
-            if cloud is None:
-                cloud = _number(self.hass, str(weather.get("cloud_cover_entity", "")))
+                forecast_cloud = None
+            cloud_entity = str(weather.get("cloud_cover_entity", "")).strip()
+            cloud_state = self.hass.states.get(cloud_entity) if cloud_entity else None
+            sensor_cloud = _number(self.hass, cloud_entity)
+            if cloud_entity and sensor_cloud is not None:
+                cloud, cloud_source = sensor_cloud, "configured_sensor"
+            elif forecast_cloud is not None:
+                cloud, cloud_source = forecast_cloud, "hourly_forecast"
+            else:
+                cloud, cloud_source = None, "unavailable"
             local_target = dt_util.as_local(target_time)
             clock = local_target.strftime("%H:%M")
             if not (str(weather.get("analysis_start", "06:00")) <= clock < str(weather.get("analysis_end", "22:00"))):
@@ -147,6 +157,9 @@ class BatteryController:
                 "available": True,
                 "condition": condition,
                 "cloud_coverage": cloud,
+                "cloud_source": cloud_source,
+                "cloud_entity": cloud_entity,
+                "cloud_entity_state": cloud_state.state if cloud_state is not None else None,
                 "forecast_time": item.get("datetime"),
                 "analyzed_at": now.isoformat(),
                 "reason": reason,

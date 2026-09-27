@@ -24,7 +24,7 @@
         "cancel": "Annuler"
     },
     "profiles": {"active":"Profil actif","auto":"Automatique","new":"Nouveau","manage":"Gérer","name_prompt":"Nom du nouveau profil météo :"},
-    "weather": {"title":"Sélection automatique du profil météo","source":"Source météo","entity":"Entité météo","cloud_entity":"Entité de couverture nuageuse (%)","source_help":"La prévision horaire Home Assistant est analysée uniquement lorsque le profil Automatique est sélectionné.","analysis":"Interprétation","conditions":"Association des mentions météo","ignore":"Ignorer","offset":"Prévision analysée à + (heures)","refresh":"Actualisation (minutes)","sunny_max":"Couverture maximale Ensoleillé (%)","hysteresis":"Hystérésis nuageuse (%)","diagnostic":"Diagnostic en direct","available":"Prévision disponible","forecast_time":"Heure analysée","condition":"Condition reçue","cloud":"Couverture nuageuse","calculated_profile":"Profil calculé","reason":"Raison","yes":"Oui","no":"Non"},
+    "weather": {"title":"Sélection automatique du profil météo","source":"Source météo","entity":"Entité météo","cloud_entity":"Entité de couverture nuageuse (%)","source_help":"La prévision horaire Home Assistant est analysée uniquement lorsque le profil Automatique est sélectionné.","analysis":"Interprétation","conditions":"Association des mentions météo","ignore":"Ignorer","offset":"Prévision analysée à + (heures)","refresh":"Actualisation (minutes)","refresh_now":"Mettre à jour","sunny_max":"Couverture maximale Ensoleillé (%)","hysteresis":"Hystérésis nuageuse (%)","diagnostic":"Diagnostic en direct","available":"Prévision disponible","forecast_time":"Heure analysée","condition":"Condition reçue","cloud":"Couverture nuageuse","cloud_source":"Source de la couverture","cloud_raw":"Valeur brute du capteur","cloud_sources":{"configured_sensor":"Capteur configuré","hourly_forecast":"Prévision horaire","unavailable":"Indisponible"},"calculated_profile":"Profil calculé","reason":"Raison","yes":"Oui","no":"Non"},
     "actions": {
         "charge": "Charge",
         "discharge": "D\u00e9charge",
@@ -226,6 +226,7 @@
         "save": "Erreur d'enregistrement : {details}",
         "control_mode": "Impossible de changer le mode : {details}",
         "profile": "Impossible de changer le profil : {details}",
+        "weather_refresh": "Impossible d'actualiser la météo : {details}",
         "unknown": "cause inconnue \u2014 consultez les journaux Home Assistant"
     },
     "reasons": {
