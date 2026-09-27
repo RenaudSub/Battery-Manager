@@ -1,8 +1,9 @@
 # Gestionnaire de batteries pour Home Assistant
 
-Première version bêta d'une intégration locale destinée à centraliser la
-surveillance, la programmation et le pilotage de plusieurs batteries de
-marques différentes.
+intégration locale destinée à centraliser la surveillance, la programmation 
+et le pilotage de plusieurs batteries de marques différentes.
+
+🌐 [Site officiel de Battery Manager](https://logisub.com/battery-manager.html)
 
 ## Fonctionnalités présentes
 
@@ -18,6 +19,27 @@ marques différentes.
 - zone morte configurable pour l'autoconsommation ;
 - arrêt du calcul si le capteur réseau ou le SOC est indisponible ;
 - maintien du contrôle MQTT de la MS-A2 par publication périodique.
+## Captures d’écran
+
+### Vue d’ensemble
+
+[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg)](https://logisub.com/assets/bm-vue-ensemble.jpg)
+
+### Planificateur
+
+[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg)](https://logisub.com/assets/bm-planificateur.jpg)
+
+### Configuration générale
+
+[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg)](https://logisub.com/assets/bm-configuration-generale.jpg)
+
+### Protections et paliers de charge
+
+[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg)](https://logisub.com/assets/bm-configuration-paliers.jpg)
+
+### Gestion des profils météo
+
+[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg)](https://logisub.com/assets/bm-confimeteo.jpg)
 
 ## Avertissement bêta
 
