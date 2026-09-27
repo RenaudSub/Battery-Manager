@@ -23,23 +23,23 @@ et le pilotage de plusieurs batteries de marques différentes.
 
 ### Vue d’ensemble
 
-[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg)](https://logisub.com/assets/bm-vue-ensemble.jpg)
+[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg?v=0.4.5)](https://logisub.com/assets/bm-vue-ensemble.jpg)
 
 ### Planificateur
 
-[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg)](https://logisub.com/assets/bm-planificateur.jpg)
+[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg?v=0.4.5)](https://logisub.com/assets/bm-planificateur.jpg)
 
 ### Configuration générale
 
-[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg)](https://logisub.com/assets/bm-configuration-generale.jpg)
+[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg?v=0.4.5)](https://logisub.com/assets/bm-configuration-generale.jpg)
 
 ### Protections et paliers de charge
 
-[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg)](https://logisub.com/assets/bm-configuration-paliers.jpg)
+[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg?v=0.4.5)](https://logisub.com/assets/bm-configuration-paliers.jpg)
 
 ### Gestion des profils météo
 
-[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg)](https://logisub.com/assets/bm-confimeteo.jpg)
+[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.4.5)](https://logisub.com/assets/bm-confimeteo.jpg)
 
 ## Avertissement bêta
 
