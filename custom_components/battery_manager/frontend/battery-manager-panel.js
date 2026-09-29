@@ -5,7 +5,7 @@ const ACTIONS = {
   default_mode: { color: "#ffffff" },
   standby: { color: "#78909c" },
 };
-const PANEL_VERSION = "0.4.5";
+const PANEL_VERSION = "0.4.9";
 const SUPPORTED_LANGUAGES = ["fr", "en", "es"];
 
 const emptySlot = () => ({ action: "standby", charge_w: 0, discharge_w: 0, min_soc: null, max_soc: null });
@@ -108,7 +108,7 @@ class BatteryManagerPanel extends HTMLElement {
 
   _overviewControlHasFocus() {
     const active = this.shadowRoot?.activeElement;
-    return Boolean(active?.matches?.("[data-quick-mode]") || this.shadowRoot?.querySelector("details.profile-menu[open]"));
+    return Boolean(active?.matches?.("[data-quick-mode]") || this.shadowRoot?.querySelector("details.profile-menu[open], details.navigation-menu[open]"));
   }
 
   async _load() {
@@ -195,7 +195,7 @@ class BatteryManagerPanel extends HTMLElement {
     return `<style>
       :host { display:block; color:var(--primary-text-color); background:var(--primary-background-color); min-height:100vh; }
       * { box-sizing:border-box; }
-      header { position:sticky; top:0; z-index:3; display:flex; align-items:center; gap:18px; padding:14px 22px;
+      header { position:sticky; top:0; z-index:3; display:flex; align-items:center; gap:12px; padding:12px 18px;
         background:var(--app-header-background-color, var(--card-background-color)); box-shadow:0 2px 8px #0002; }
       header h1 { font-size:20px; margin:0 auto 0 0; }
       .language-select { min-width:105px; padding:7px; }
@@ -204,22 +204,28 @@ class BatteryManagerPanel extends HTMLElement {
       .profile-menu summary::-webkit-details-marker { display:none; }
       .profile-menu-content,.actions-menu-content { position:absolute; z-index:20; right:0; top:calc(100% + 5px); min-width:210px; padding:6px; border:1px solid var(--divider-color); border-radius:10px; background:var(--card-background-color); box-shadow:0 8px 24px #0005; display:grid; gap:4px; }
       .profile-menu-content button,.actions-menu-content button { text-align:left; white-space:nowrap; }
+      .navigation-menu { position:relative; }
+      .navigation-menu summary { list-style:none; display:grid; place-items:center; width:42px; height:42px; border-radius:50%; cursor:pointer; background:var(--secondary-background-color); }
+      .navigation-menu summary::-webkit-details-marker { display:none; }
+      .navigation-menu summary ha-icon { width:24px; height:24px; }
+      .navigation-menu .actions-menu-content button.active { color:#fff; background:var(--primary-color); }
       .actions-menu { position:relative; flex:0 0 auto; }
       .actions-menu summary { list-style:none; padding:10px 14px; border-radius:10px; background:var(--secondary-background-color); cursor:pointer; font-weight:600; }
       nav button, button { border:0; border-radius:10px; padding:10px 14px; cursor:pointer; color:var(--primary-text-color);
         background:var(--secondary-background-color); font-weight:600; }
       nav button.active, button.primary { color:#fff; background:var(--primary-color); }
-      main { max-width:1400px; margin:auto; padding:22px; }
-      .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:14px; }
-      .card { background:var(--card-background-color); border-radius:16px; padding:18px; box-shadow:var(--ha-card-box-shadow,0 2px 8px #0002); }
-      .battery-head { display:flex; align-items:center; gap:12px; }
-      .battery-head ha-icon { color:var(--primary-color); width:34px; height:34px; }
-      .battery-head h2 { font-size:18px; margin:0; }
+      main { max-width:1500px; margin:auto; padding:18px; }
+      .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+      .card { background:var(--card-background-color); border-radius:16px; padding:16px; box-shadow:var(--ha-card-box-shadow,0 2px 8px #0002); }
+      .battery-head { display:flex; align-items:center; gap:8px; }
+      .battery-head ha-icon { color:var(--primary-color); width:28px; height:28px; }
+      .battery-head h2 { font-size:17px; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
       .battery-head { justify-content:space-between; }
-      .battery-title { display:flex; align-items:center; gap:10px; min-width:0; }
+      .battery-title { display:flex; align-items:center; gap:7px; min-width:0; flex:1 1 auto; }
+      .battery-title > div { min-width:0; }
       .battery-online { font-weight:700; font-size:12px; }
       .online { color:#2e7d32; } .offline,.error { color:#c62828; }
-      .quick-control { min-width:155px; padding:7px; font-weight:700; }
+      .quick-control { min-width:0; width:142px; padding:7px 5px; font-weight:700; }
       .battery-summary { display:grid; grid-template-columns:94px 1fr; align-items:center; gap:14px; margin:14px 0 4px; }
       .soc-ring { --soc:0; --soc-color:#c62828; width:88px; height:88px; border-radius:50%; display:grid; place-items:center;
         background:
@@ -278,10 +284,12 @@ class BatteryManagerPanel extends HTMLElement {
       .schedule-toolbar { flex-wrap:nowrap; overflow:visible; padding-bottom:4px; }
       .schedule-toolbar label { flex:0 0 90px; }
       .schedule-toolbar label:first-child { flex-basis:150px; }
-      .schedule-toolbar label:nth-child(4) { flex-basis:185px; }
+      .schedule-toolbar label:nth-child(4) { flex-basis:175px; }
+      .schedule-toolbar label:nth-child(7),.schedule-toolbar label:nth-child(8) { flex-basis:63px; }
       .schedule-toolbar input,.schedule-toolbar select { min-width:0; width:100%; padding:8px; }
       .schedule-toolbar button { flex:0 0 auto; }
       .toolbar .save-right { margin-left:auto; }
+      .config-toolbar .language-select { margin-left:0; }
       label { display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--secondary-text-color); }
       input, select { min-width:130px; padding:10px; border:1px solid var(--divider-color); border-radius:9px;
         color:var(--primary-text-color); background:var(--card-background-color); }
@@ -312,24 +320,33 @@ class BatteryManagerPanel extends HTMLElement {
       .week-slot { border:0; border-right:1px solid #0002; border-bottom:1px solid #0001; padding:0; border-radius:0; min-width:45px; cursor:crosshair; }
       .week-slot.hour { border-top:1px solid var(--divider-color); }
       .week-slot.selected { outline:2px solid var(--primary-color); z-index:1; opacity:.65; }
-      .weather-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; align-items:start; }
+      .weather-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:start; }
       .weather-grid fieldset { min-width:0; margin:0; }
       .weather-grid ha-entity-picker { min-width:0; width:100%; overflow:hidden; }
+      .weather-source-pickers { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+      .weather-analysis .form-grid { grid-template-columns:repeat(3,max-content); gap:9px 18px; justify-content:start; }
+      .weather-analysis label { align-items:flex-start; text-align:left; }
+      .weather-analysis input { min-width:80px; width:80px; padding:8px; text-align:left; }
+      .weather-analysis input[type="time"] { min-width:100px; width:100px; }
+      .weather-conditions .form-grid { grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:8px 10px; }
+      .weather-conditions select { min-width:0; width:100%; padding:8px; }
       .weather-source,.weather-conditions { grid-column:1 / -1; }
       .weather-analysis { grid-column:1; grid-row:2; }
       .weather-diagnostic { grid-column:2; grid-row:2; }
       .weather-conditions { grid-row:3; }
-      .weather-save { display:block; margin:0 0 14px auto; }
-      .weather-diagnostic { line-height:1.8; }
-      .weather-diagnostic-actions { display:flex; justify-content:flex-end; margin:-3px 0 7px; }
-      .weather-diagnostic-actions button { padding:7px 11px; }
+      .weather-top-actions { display:flex; justify-content:flex-end; gap:8px; margin:0 0 14px auto; }
+      .weather-top-actions button { padding:7px 11px; }
+      .weather-diagnostic { line-height:1.45; }
+      .weather-diagnostic-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px 18px; }
+      .weather-diagnostic-item { min-width:0; }
       dialog { color:var(--primary-text-color); background:var(--card-background-color); border:1px solid var(--divider-color); border-radius:16px; padding:20px; min-width:min(620px,90vw); box-shadow:0 12px 40px #0007; }
       dialog::backdrop { background:#0008; }
       .entity-with-option { display:grid; gap:8px; }
       .entity-with-option > label { display:flex; flex-direction:row; align-items:center; gap:10px; }
-      .legend { display:flex; flex-wrap:wrap; gap:14px; margin:15px 0; }
+      .legend { display:flex; flex-wrap:wrap; justify-content:center; gap:14px; margin:15px 0; }
+      .schedule-help { text-align:center; }
       .legend span::before { content:""; display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:5px; background:var(--c); }
-      .tiers { width:100%; border-collapse:collapse; }
+      .tiers { width:min(100%,560px); margin:auto; border-collapse:collapse; }
       .tiers th,.tiers td { text-align:left; padding:8px; border-bottom:1px solid var(--divider-color); }
       .tiers input { min-width:70px; width:100%; }
       .actions { display:flex; gap:8px; margin-top:18px; }
@@ -343,7 +360,18 @@ class BatteryManagerPanel extends HTMLElement {
       .entity-table tr.problem { background:#c6282814; }
       .entity-table code { color:var(--secondary-text-color); }
       .ok { color:#2e7d32; } .bad { color:#c62828; font-weight:700; }
-      @media(max-width:700px){ header{flex-wrap:wrap} nav{width:100%;display:flex;overflow:auto} main{padding:12px} .grid{grid-template-columns:1fr}.weather-grid{display:block}.weather-grid fieldset{margin-bottom:14px}.grid-power-card{grid-template-columns:1fr 1.1fr 1fr;padding-left:8px;padding-right:8px}.grid-power-block strong{font-size:15px}.grid-power-now strong{font-size:21px}.grid-power-block:not(.grid-power-now) .muted{display:none} }
+      .compact-section .form-grid { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:end; justify-content:flex-start; }
+      .compact-section label { text-align:left; align-items:flex-start; }
+      .compact-section input,.compact-section select { padding:8px; text-align:left; }
+      .compact-section input[type="number"] { min-width:80px; width:80px; }
+      .grid-settings ha-entity-picker { min-width:340px; width:340px; }
+      .grid-settings label:has(input[type="checkbox"]) { min-width:140px; }
+      .general-settings input[type="text"] { min-width:220px; width:220px; }
+      .general-settings select[data-path="adapter"] { min-width:150px; width:150px; }
+      .general-settings select[data-path="disabled_behavior"] { min-width:220px; width:220px; }
+      @media(max-width:1100px){ main{padding:12px}.grid{gap:9px}.battery-card{padding:12px}.battery-head h2{font-size:15px}.quick-control{width:130px}.battery-summary{grid-template-columns:82px 1fr;gap:8px}.soc-ring{width:78px;height:78px}.soc-ring::before{width:58px;height:58px}.soc-ring strong{font-size:17px}.live-power{font-size:18px}.capacity-line{gap:5px;font-size:12px}.bms-details{gap:7px 8px}.bms-detail{grid-template-columns:18px minmax(0,1fr);gap:4px}.bms-detail strong{grid-column:2;text-align:left}.command-row{padding-left:5px;padding-right:5px}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content)} }
+      @media(max-width:820px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.weather-conditions .form-grid{grid-template-columns:repeat(4,minmax(110px,1fr))}.schedule-toolbar{overflow-x:auto}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content)} }
+      @media(max-width:700px){ header{gap:8px;padding:10px 12px}header h1{font-size:17px}.profile-menu summary{min-width:0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}main{padding:10px}.grid{grid-template-columns:1fr}.weather-grid{display:block}.weather-grid fieldset{margin-bottom:10px}.weather-source-pickers{grid-template-columns:1fr}.weather-conditions .form-grid{grid-template-columns:repeat(2,minmax(115px,1fr))}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content);gap:9px 12px}.weather-diagnostic-grid{grid-template-columns:1fr}.grid-power-card{grid-template-columns:1fr 1.1fr 1fr;padding-left:8px;padding-right:8px}.grid-power-block strong{font-size:15px}.grid-power-now strong{font-size:21px}.grid-power-block:not(.grid-power-now) .muted{display:none}.config-toolbar{align-items:end}.config-toolbar .save-right{margin-left:0}.grid-settings ha-entity-picker{min-width:260px;width:100%} }
     </style>`;
   }
 
@@ -355,19 +383,16 @@ class BatteryManagerPanel extends HTMLElement {
       : this._scheduleEditor();
     this.shadowRoot.innerHTML = `${this._styles()}
       <header><ha-icon icon="mdi:battery-charging"></ha-icon><h1>${this._t("title")} v${PANEL_VERSION}</h1>
-      <select id="languageSelect" class="language-select" aria-label="${esc(this._t("language.label"))}">
-        ${["auto", ...SUPPORTED_LANGUAGES].map((language) => `<option value="${language}" ${this._languageOverride===language?"selected":""}>${this._t(`language.${language}`)}</option>`).join("")}
-      </select>
-      <details class="profile-menu"><summary>${this._t("profiles.active")} : ${this._config.active_profile==="auto"?`${this._t("profiles.auto")} → ${esc((this._config.schedule_profiles||[]).find(p=>p.id===this._status.effective_profile)?.name||this._status.effective_profile||"—")}`:esc((this._config.schedule_profiles||[]).find(p=>p.id===this._config.active_profile)?.name||this._config.active_profile)}</summary><div class="profile-menu-content">
+      <details class="profile-menu"><summary>${this._config.active_profile==="auto"?`${this._t("profiles.auto")} → ${esc((this._config.schedule_profiles||[]).find(p=>p.id===this._status.effective_profile)?.name||this._status.effective_profile||"—")}`:`${this._t("profiles.manual")} → ${esc((this._config.schedule_profiles||[]).find(p=>p.id===this._config.active_profile)?.name||this._config.active_profile)}`}</summary><div class="profile-menu-content">
         <button data-active-profile="auto">${this._t("profiles.auto")}</button>
         ${(this._config.schedule_profiles||[]).map(p=>`<button data-active-profile="${esc(p.id)}">${esc(p.name)}</button>`).join("")}
       </div></details>
-      <nav>
+      <details class="navigation-menu"><summary aria-label="${esc(this._t("tabs.configuration"))}"><ha-icon icon="mdi:cog"></ha-icon></summary><div class="actions-menu-content">
         <button data-tab="overview" class="${this._tab === "overview" ? "active" : ""}">${this._t("tabs.overview")}</button>
         <button data-tab="weather" class="${this._tab === "weather" ? "active" : ""}">${this._t("tabs.weather")}</button>
         <button data-tab="batteries" class="${this._tab === "batteries" ? "active" : ""}">${this._t("tabs.configuration")}</button>
         <button data-tab="schedule" class="${this._tab === "schedule" ? "active" : ""}">${this._t("tabs.schedule")}</button>
-      </nav></header><main>${body}</main>`;
+      </div></details></header><main>${body}</main>`;
     this._bind();
   }
 
@@ -409,7 +434,7 @@ class BatteryManagerPanel extends HTMLElement {
         : this._t("control_modes.standby");
       return `<section class="card battery-card"><div class="battery-head"><div class="battery-title"><ha-icon icon="mdi:battery-medium"></ha-icon>
         <div><h2>${esc(b.name)}</h2><div class="battery-online ${connectivity.className}">${this._t("overview.status")} : ${this._t(`overview.${connectivity.label}`)}</div></div></div>
-        <label>${this._t("overview.management")}<select class="quick-control" data-quick-mode="${esc(decisionKey)}">${this._controlOptions(b.control_mode || (b.enabled ? "schedule" : "disabled"))}</select></label></div>
+        <select class="quick-control" aria-label="${esc(this._t("overview.management"))}" data-quick-mode="${esc(decisionKey)}">${this._controlOptions(b.control_mode || (b.enabled ? "schedule" : "disabled"))}</select></div>
         <div class="battery-summary"><div class="soc-ring" data-more-info="${esc(b.entities.soc)}" style="--soc:${socNumber};--soc-color:${socColor}"><strong>${Number.isFinite(Number(soc.state)) ? `${Math.round(Number(soc.state))}%` : "—"}</strong></div>
         <div class="live-power ${powerClass}" data-more-info="${esc(b.entities.power)}">${esc(powerText)}</div></div>
         ${b.adapter === "marstek_entities" ? this._marstekCommandStatus(b) : ""}
@@ -584,11 +609,11 @@ class BatteryManagerPanel extends HTMLElement {
     const profileName=(id)=>(this._config.schedule_profiles||[]).find(p=>p.id===id)?.name||id||"—";
     const conditions=["sunny","partlycloudy","cloudy","fog","windy","windy-variant","rainy","pouring","lightning","lightning-rainy","hail","snowy","snowy-rainy","clear-night"];
     const profileOptions=(selected)=>`<option value="ignore" ${selected==="ignore"?"selected":""}>${this._t("weather.ignore")}</option>${(this._config.schedule_profiles||[]).map(p=>`<option value="${esc(p.id)}" ${selected===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}`;
-    return `<div class="card"><h2>${this._t("weather.title")}</h2><button id="save" class="primary weather-save">${this._t("buttons.save")}</button><div class="weather-grid">
-      <fieldset class="weather-source"><legend>${this._t("weather.source")}</legend>
+    return `<div class="card"><h2>${this._t("weather.title")}</h2><div class="weather-top-actions"><button id="refreshWeather">${this._t("weather.refresh_now")}</button><button id="save" class="primary">${this._t("buttons.save")}</button></div><div class="weather-grid">
+      <fieldset class="weather-source"><legend>${this._t("weather.source")}</legend><div class="weather-source-pickers">
         <ha-entity-picker data-entity-path="_global.weather.entity_id" data-label="${this._t("weather.entity")}" data-domains="weather" value="${esc(w.entity_id||"")}"></ha-entity-picker>
         <ha-entity-picker data-entity-path="_global.weather.cloud_cover_entity" data-label="${this._t("weather.cloud_entity")}" data-domains="sensor" value="${esc(w.cloud_cover_entity||"")}"></ha-entity-picker>
-        <p class="muted">${this._t("weather.source_help")}</p></fieldset>
+        </div><p class="muted">${this._t("weather.source_help")}</p></fieldset>
       <fieldset class="weather-analysis"><legend>${this._t("weather.analysis")}</legend><div class="form-grid">
         <label>${this._t("weather.offset")}<input data-path="_global.weather.forecast_offset_h" type="number" min="0" max="24" value="${esc(w.forecast_offset_h??1)}"></label>
         <label>${this._t("weather.refresh")}<input data-path="_global.weather.refresh_minutes" type="number" min="5" max="120" value="${esc(w.refresh_minutes??15)}"></label>
@@ -599,15 +624,16 @@ class BatteryManagerPanel extends HTMLElement {
       </div></fieldset>
       <fieldset class="weather-conditions"><legend>${this._t("weather.conditions")}</legend><div class="form-grid">${conditions.map(c=>`<label>${esc(c)}<select data-path="_global.weather.condition_map.${c}">${profileOptions(w.condition_map?.[c])}</select></label>`).join("")}</div></fieldset>
       <fieldset class="weather-diagnostic"><legend>${this._t("weather.diagnostic")}</legend>
-        <div class="weather-diagnostic-actions"><button id="refreshWeather">${this._t("weather.refresh_now")}</button></div>
-        ${this._t("weather.available")} : <b>${d.available?this._t("weather.yes"):this._t("weather.no")}</b><br>
-        ${this._t("weather.forecast_time")} : <b>${d.forecast_time?esc(new Date(d.forecast_time).toLocaleString()):"—"}</b><br>
-        ${this._t("weather.condition")} : <b>${esc(d.condition||"—")}</b><br>
-        ${this._t("weather.cloud")} : <b>${d.cloud_coverage==null?"—":`${esc(d.cloud_coverage)} %`}</b><br>
-        ${this._t("weather.cloud_source")} : <b>${esc(d.cloud_source?this._t(`weather.cloud_sources.${d.cloud_source}`):"—")}</b><br>
-        ${this._t("weather.cloud_raw")} : <b>${d.cloud_entity_state==null?"—":esc(d.cloud_entity_state)}</b><br>
-        ${this._t("weather.calculated_profile")} : <b>${esc(profileName(d.selected_profile))}</b><br>
-        ${this._t("weather.reason")} : <b>${esc(d.reason||"—")}</b>
+        <div class="weather-diagnostic-grid">
+          <div class="weather-diagnostic-item">${this._t("weather.available")} : <b>${d.available?this._t("weather.yes"):this._t("weather.no")}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.forecast_time")} : <b>${d.forecast_time?esc(new Date(d.forecast_time).toLocaleString()):"—"}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.condition")} : <b>${esc(d.condition||"—")}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.cloud")} : <b>${d.cloud_coverage==null?"—":`${esc(d.cloud_coverage)} %`}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.cloud_source")} : <b>${esc(d.cloud_source?this._t(`weather.cloud_sources.${d.cloud_source}`):"—")}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.cloud_raw")} : <b>${d.cloud_entity_state==null?"—":esc(d.cloud_entity_state)}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.calculated_profile")} : <b>${esc(profileName(d.selected_profile))}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.reason")} : <b>${esc(d.reason||"—")}</b></div>
+        </div>
       </fieldset></div></div>`;
   }
 
@@ -648,17 +674,19 @@ class BatteryManagerPanel extends HTMLElement {
     const hoymilesCommands = b.adapter === "hoymiles_msa2" ? `<fieldset><legend>${this._t("sections.hoymiles_commands")}</legend><div class="form-grid">
         ${field(this._t("fields.ems_topic"), "mqtt.mode_topic", m.mode_topic)}${field(this._t("fields.power_topic"), "mqtt.power_topic", m.power_topic)}
       </div></fieldset>` : "";
-    return `<div class="toolbar"><label>${this._t("fields.battery")}<select id="batterySelect">${batteries.map((x,i)=>`<option value="${i}" ${i===this._selected?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>
-      <button id="addBattery">${this._t("buttons.add")}</button><button id="duplicateBattery">${this._t("buttons.duplicate")}</button><button id="deleteBattery" class="danger">${this._t("buttons.delete")}</button><button id="save" class="primary save-right">${this._t("buttons.save")}</button></div>
+    return `<div class="toolbar config-toolbar"><label>${this._t("fields.battery")}<select id="batterySelect">${batteries.map((x,i)=>`<option value="${i}" ${i===this._selected?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>
+      <button id="addBattery">${this._t("buttons.add")}</button><button id="duplicateBattery">${this._t("buttons.duplicate")}</button><button id="deleteBattery" class="danger">${this._t("buttons.delete")}</button>
+      <select id="languageSelect" class="language-select" aria-label="${esc(this._t("language.label"))}">${["auto", ...SUPPORTED_LANGUAGES].map((language) => `<option value="${language}" ${this._languageOverride===language?"selected":""}>${this._t(`language.${language}`)}</option>`).join("")}</select>
+      <button id="save" class="primary save-right">${this._t("buttons.save")}</button></div>
       <div class="notice">${this._t("config.safety_notice")}</div>
-      <section class="card"><fieldset><legend>${this._t("sections.grid")}</legend><div class="form-grid">
+      <section class="card"><fieldset class="compact-section grid-settings"><legend>${this._t("sections.grid")}</legend><div class="form-grid">
         ${entityField(this._t("fields.grid_power_entity"), "_global.grid_power_entity", this._config.grid_power_entity, ["sensor"])}
         ${field(this._t("fields.grid_zero_correction"), "_global.grid_zero_correction_w", this._config.grid_zero_correction_w ?? 0, "number", 'min="-200" max="200" step="1"')}
         ${field(this._t("fields.deadband"), "_global.deadband_w", this._config.deadband_w, "number")}
         ${field(this._t("fields.command_hysteresis"), "_global.command_hysteresis_w", this._config.command_hysteresis_w ?? 30, "number")}
         ${field(this._t("fields.control_interval"), "_global.control_interval_s", this._config.control_interval_s, "number")}
         <label>${this._t("fields.invert_grid")}<input data-global="grid_power_inverted" type="checkbox" ${this._config.grid_power_inverted?"checked":""}></label>
-      </div></fieldset><fieldset><legend>${this._t("sections.general")}</legend><div class="form-grid">
+      </div></fieldset><fieldset class="compact-section general-settings"><legend>${this._t("sections.general")}</legend><div class="form-grid">
         ${field(this._t("fields.name"), "name", b.name)}${field(this._t("fields.capacity"), "capacity_kwh", b.capacity_kwh, "number")}
         ${field(this._t("fields.charge_compensation"), "charge_compensation_w", b.charge_compensation_w ?? 0, "number", 'min="-200" max="200" step="1"')}
         ${field(this._t("fields.discharge_compensation"), "discharge_compensation_w", b.discharge_compensation_w ?? 0, "number", 'min="-200" max="200" step="1"')}
@@ -685,7 +713,7 @@ class BatteryManagerPanel extends HTMLElement {
         <label>${this._t("fields.grid_loss_return_default")}<input data-path="grid_loss_return_default" type="checkbox" ${b.grid_loss_return_default?"checked":""}></label>
         <label>${this._t("fields.grid_return_resume")}<input data-path="grid_return_resume" type="checkbox" ${b.grid_return_resume?"checked":""} ${b.grid_loss_return_default?"":"disabled"}></label>
       </div></fieldset>
-      <fieldset><legend>${this._t("sections.protection")}</legend><div class="form-grid">
+      <fieldset class="compact-section"><legend>${this._t("sections.protection")}</legend><div class="form-grid">
         ${field(this._t("fields.min_soc"), "limits.min_soc", l.min_soc, "number")}${field(this._t("fields.discharge_resume"), "limits.min_soc_resume", l.min_soc_resume, "number")}
         ${field(this._t("fields.max_soc"), "limits.max_soc", l.max_soc, "number")}${field(this._t("fields.charge_resume"), "limits.max_soc_resume", l.max_soc_resume, "number")}
         ${field(this._t("fields.max_charge_w"), "limits.max_charge_w", l.max_charge_w, "number")}${field(this._t("fields.max_discharge_w"), "limits.max_discharge_w", l.max_discharge_w, "number")}
@@ -695,7 +723,7 @@ class BatteryManagerPanel extends HTMLElement {
   }
 
   _tierEditor(b) {
-    return `<fieldset><legend>${this._t("sections.charge_tiers")}</legend><table class="tiers"><thead><tr><th>${this._t("tiers.from")}</th><th>${this._t("tiers.to")}</th><th>${this._t("tiers.maximum")}<br><span class="muted">${this._t("tiers.empty")}</span></th></tr></thead><tbody>
+    return `<fieldset class="compact-section"><legend>${this._t("sections.charge_tiers")}</legend><table class="tiers"><thead><tr><th>${this._t("tiers.from")}</th><th>${this._t("tiers.to")}</th><th>${this._t("tiers.maximum")}<br><span class="muted">${this._t("tiers.empty")}</span></th></tr></thead><tbody>
       ${b.charge_tiers.map((t,i)=>`<tr><td><input type="number" data-tier="${i}.from_soc" value="${t.from_soc}" ${i>0?"readonly":""}></td><td><input type="number" data-tier="${i}.to_soc" value="${t.to_soc}"></td><td><input type="number" data-tier="${i}.max_charge_w" value="${t.max_charge_w ?? ""}"></td></tr>`).join("")}
       </tbody></table></fieldset>`;
   }
@@ -724,7 +752,7 @@ class BatteryManagerPanel extends HTMLElement {
         <button class="day-head" data-whole-week="${batteryIndex}">↘</button>${days.map((d,day)=>`<button class="day-head" data-day-head="${day}" data-battery-index="${batteryIndex}">${d}</button>`).join("")}
         ${Array.from({length:96},(_,slot)=>`<span class="time-label" data-time-axis="${slot}" data-battery-index="${batteryIndex}">${slot%4===0?String(slot/4).padStart(2,"0")+":00":""}</span>${days.map((_,day)=>{const s=week[day][slot];return `<button class="week-slot ${slot%4===0?"hour":""}" data-battery-index="${batteryIndex}" data-day="${day}" data-slot="${slot}" title="${days[day]} ${String(Math.floor(slot/4)).padStart(2,"0")}:${String(slot%4*15).padStart(2,"0")} — ${this._action(s.action)}" style="background:${ACTIONS[s.action]?.color||"#78909c"}"></button>`}).join("")}`).join("")}
       </div></section>`}).join("")}</div>
-      <p class="muted">${this._t("schedule.help")}</p>
+      <p class="muted schedule-help">${this._t("schedule.help")}</p>
       <dialog id="rangeDialog"><h3>${this._t("buttons.apply_range")}</h3><div class="form-grid">
         <label>${this._t("overview.action")}<select id="modalAction">${Object.keys(ACTIONS).filter(key=>key!=="native_self_consumption"||selected.adapter==="marstek_entities").map(key=>`<option value="${key}" ${range.action===key?"selected":""}>${this._action(key)}</option>`).join("")}</select></label>
         <label>${this._t("schedule.max_charge")}<input id="modalCharge" type="number" value="${rangeCharge}"></label><label>${this._t("schedule.max_discharge")}<input id="modalDischarge" type="number" value="${rangeDischarge}"></label>

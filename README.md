@@ -120,6 +120,31 @@ La puissance appliquée est la plus faible parmi :
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
 
+## Version 0.4.9
+
+- Correction du débordement des champs Début et Hystérésis dans le diagnostic météo sur les écrans étroits.
+- Le bloc Interprétation passe désormais sur deux colonnes dès la largeur tablette.
+
+## Version 0.4.8
+
+- Les champs horaires Début et Fin du panneau Météo passent à 100 px.
+- Le bouton de mise à jour météo est placé à gauche du bouton Enregistrer.
+- Le diagnostic météo est présenté sur deux colonnes et quatre lignes afin de réduire sa hauteur.
+
+## Version 0.4.7
+
+- Les saisies numériques de l’interprétation météo, de la mesure réseau et des réglages généraux sont limitées à 80 px et alignées à gauche.
+- Les libellés du zéro réseau, de l’hystérésis, de l’intervalle, des compensations et de la retransmission sont raccourcis pour réduire la hauteur des panneaux.
+- Les champs qui nécessitent réellement de l’espace conservent leur largeur : entité réseau, nom, type de batterie et mode de retour à la désactivation.
+
+## Version 0.4.6
+
+- Barre supérieure compacte : le profil actif affiche directement `Automatique → profil` ou `Manuel → profil`, et une roue dentée regroupe la navigation.
+- Le sélecteur de langue est déplacé dans la barre du panneau Configuration et l’onglet `Programmation` devient `Planificateur`.
+- La vue d’ensemble est adaptée aux tablettes afin de conserver trois batteries sur une ligne, avec des en-têtes et des libellés énergétiques/BMS raccourcis.
+- Les panneaux Météo et Configuration sont compactés pour limiter le défilement, sans modifier les sections de détection et d’entités Marstek.
+- La légende et l’aide du Planificateur sont centrées, les champs SOC réduits et les tableaux de paliers recentrés.
+
 ## Version 0.4.5
 
 - Ajout d’un bouton `Mettre à jour` dans le diagnostic météo pour forcer immédiatement une nouvelle prévision et une nouvelle lecture du capteur de couverture.
