@@ -10,6 +10,7 @@ from homeassistant.helpers.storage import Store
 
 from .const import DEFAULT_CONFIG, STORAGE_KEY, STORAGE_VERSION
 from .model import normalize_battery
+from .notification_rules import normalize_notifications
 
 
 class BatteryManagerStore:
@@ -38,6 +39,7 @@ class BatteryManagerStore:
             if isinstance(item, dict)
         ]
         self._normalize_profiles()
+        self.data["notifications"] = normalize_notifications(self.data.get("notifications"), self.data["batteries"])
 
     def _normalize_profiles(self) -> None:
         """Normalize global profile metadata and weather selection."""
@@ -104,8 +106,10 @@ class BatteryManagerStore:
             for item in data.get("batteries", [])
             if isinstance(item, dict)
         ]
+        clean["notifications"] = normalize_notifications(data.get("notifications"), clean["batteries"])
         self.data = clean
         self._normalize_profiles()
+        self.data["notifications"] = normalize_notifications(self.data.get("notifications"), self.data["batteries"])
         await self._store.async_save(self.data)
 
     async def async_set_active_profile(self, profile_id: str) -> None:

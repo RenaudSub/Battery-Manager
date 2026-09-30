@@ -299,6 +299,50 @@ def charge_tier_limit(battery: dict[str, Any], soc: float) -> int | None:
     return None
 
 
+def estimate_charge_minutes(
+    battery: dict[str, Any],
+    soc: float,
+    average_ac_power_w: float,
+    average_dc_power_w: float | None = None,
+) -> float | None:
+    """Estimate remaining charge time while respecting every SOC tier.
+
+    Capacity is stored on the DC side.  When a DC measurement is available,
+    its rolling AC/DC ratio is retained for the remaining tiers; otherwise the
+    AC measurement is used as a deliberately simple approximation.
+    """
+    capacity = float(battery.get("capacity_kwh") or 0)
+    target = float(battery.get("limits", {}).get("max_soc", 100))
+    ac_power = float(average_ac_power_w or 0)
+    if capacity <= 0 or ac_power < 50 or soc >= target or soc < 0:
+        return None
+
+    dc_power = float(average_dc_power_w or 0)
+    dc_per_ac = dc_power / ac_power if dc_power >= 50 else 1.0
+    # Reject incoherent sensors without making the estimate disappear.
+    if not 0.5 <= dc_per_ac <= 1.2:
+        dc_per_ac = 1.0
+
+    boundaries = {target}
+    for tier in battery.get("charge_tiers", []):
+        boundary = float(tier.get("to_soc", target))
+        if soc < boundary < target:
+            boundaries.add(boundary)
+
+    hours = 0.0
+    start = float(soc)
+    for end in sorted(boundaries):
+        tier_limit = charge_tier_limit(battery, start + 0.0001)
+        segment_ac = min(ac_power, float(tier_limit)) if tier_limit else ac_power
+        segment_dc = segment_ac * dc_per_ac
+        if segment_dc < 50:
+            return None
+        hours += capacity * ((end - start) / 100) / (segment_dc / 1000)
+        start = end
+    minutes = hours * 60
+    return minutes if 0 < minutes <= 7 * 24 * 60 else None
+
+
 def decide(
     battery: dict[str, Any],
     slot: dict[str, Any],

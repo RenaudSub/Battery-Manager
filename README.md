@@ -23,23 +23,31 @@ et le pilotage de plusieurs batteries de marques différentes.
 
 ### Vue d’ensemble
 
-[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg?v=0.4.5)](https://logisub.com/assets/bm-vue-ensemble.jpg)
+[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg?v=0.5.1)](https://logisub.com/assets/bm-vue-ensemble.jpg)
 
 ### Planificateur
 
-[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg?v=0.4.5)](https://logisub.com/assets/bm-planificateur.jpg)
+[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg?v=0.5.1)](https://logisub.com/assets/bm-planificateur.jpg)
 
 ### Configuration générale
 
-[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg?v=0.4.5)](https://logisub.com/assets/bm-configuration-generale.jpg)
+[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg?v=0.5.1)](https://logisub.com/assets/bm-configuration-generale.jpg)
 
 ### Protections et paliers de charge
 
-[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg?v=0.4.5)](https://logisub.com/assets/bm-configuration-paliers.jpg)
+[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg?v=0.5.1)](https://logisub.com/assets/bm-configuration-paliers.jpg)
 
 ### Gestion des profils météo
 
-[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.4.5)](https://logisub.com/assets/bm-confimeteo.jpg)
+[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.1)](https://logisub.com/assets/bm-confimeteo.jpg)
+
+### Gestion des notifications
+
+[![Gestion des notifications](https://logisub.com/assets/bm-notifications.jpg?v=0.5.1)](https://logisub.com/assets/bm-confimeteo.jpg)
+
+### Gestion des journaux
+
+[![Gestion des journaux](https://logisub.com/assets/bm-journaux.jpg?v=0.5.1)](https://logisub.com/assets/bm-journaux.jpg)
 
 ## Avertissement bêta
 
@@ -119,6 +127,26 @@ La puissance appliquée est la plus faible parmi :
 
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
+
+## Version 0.5.1
+
+- estimation de l'heure d'atteinte du SOC maximal, actualisée chaque minute à partir d'une moyenne glissante et des paliers SOC ;
+- colonne des journaux Consignes et Planificateur élargie ;
+- conditions et motifs météo traduits dans le diagnostic et les journaux.
+
+## Version 0.5.0
+
+- panneau **Notifications** accessible par la roue dentée ;
+- création, modification, test et suppression des cibles `notify.mobile_app_*` ;
+- un créneau quotidien par cible, **07:00–22:00** par défaut, sans passage à minuit ;
+- catalogue de 37 notifications, choix des batteries, seuils et destinataires ;
+- seuils liés à Configuration lorsqu’une valeur correspondante existe, avec possibilité de personnaliser puis de rétablir le lien ;
+- batteries cochées et destinataires décochés par défaut : aucun envoi sans sélection ;
+- confirmation, réarmement et délai minimal entre alertes ;
+- alertes persistantes envoyées à l’ouverture du créneau seulement si la condition est encore présente ;
+- panneau **Journaux** avec Consignes, Planificateur, Gestion météo, Notifications et Actions utilisateurs ;
+- historique persistant, **30 jours et 50 Mo au total**, suppression automatique des entrées les plus anciennes, recherche et pagination ;
+- interface des nouveaux panneaux en français, anglais et espagnol.
 
 ## Version 0.4.9
 

@@ -5,6 +5,7 @@ from datetime import datetime
 from custom_components.battery_manager.model import (
     charge_tier_limit,
     decide,
+    estimate_charge_minutes,
     default_battery,
     empty_schedule,
     normalize_schedule,
@@ -12,6 +13,28 @@ from custom_components.battery_manager.model import (
     normalize_tiers,
     slot_index,
 )
+
+
+def test_charge_estimate_integrates_soc_tiers() -> None:
+    battery = default_battery()
+    battery["capacity_kwh"] = 5.12
+    battery["limits"]["max_soc"] = 100
+    # From 90 to 92 at 746 W, 92 to 95 at 746 W and 95 to 100 at 700 W.
+    result = estimate_charge_minutes(battery, 90, 746)
+    expected_hours = 5.12 * 0.05 / 746 * 1000 + 5.12 * 0.05 / 700 * 1000
+    assert result is not None
+    assert abs(result - expected_hours * 60) < 0.01
+
+
+def test_charge_estimate_uses_dc_conversion_ratio() -> None:
+    battery = default_battery()
+    battery["capacity_kwh"] = 5.12
+    battery["limits"]["max_soc"] = 100
+    result = estimate_charge_minutes(battery, 95, 746, 680)
+    # The 700 W tier scales the observed DC power by 700 / 746.
+    expected_dc = 680 * 700 / 746
+    assert result is not None
+    assert abs(result - (5.12 * 0.05 / (expected_dc / 1000) * 60)) < 0.01
 
 
 def test_schedule_has_96_slots() -> None:

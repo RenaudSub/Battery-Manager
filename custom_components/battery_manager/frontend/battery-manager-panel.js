@@ -5,7 +5,7 @@ const ACTIONS = {
   default_mode: { color: "#ffffff" },
   standby: { color: "#78909c" },
 };
-const PANEL_VERSION = "0.4.9";
+const PANEL_VERSION = "0.5.1";
 const SUPPORTED_LANGUAGES = ["fr", "en", "es"];
 
 const emptySlot = () => ({ action: "standby", charge_w: 0, discharge_w: 0, min_soc: null, max_soc: null });
@@ -77,6 +77,15 @@ class BatteryManagerPanel extends HTMLElement {
     this._rangeEditor = { start:"00:00", end:"00:00", action:"charge", charge_w:null, discharge_w:null, min_soc:null, max_soc:null };
     this._editingProfile = "sunny";
     this._selectedDays = [0];
+    this._notificationCatalog = [];
+    this._notificationActions = [];
+    this._manageTargets = false;
+    this._targetDraft = {id:"",name:"",action:"",enabled:true,start:"07:00",end:"22:00"};
+    this._journalCategory = "commands";
+    this._journal = {entries:[]};
+    this._journalSearch = "";
+    this._journalSince = "";
+    this._journalUntil = "";
   }
 
   set hass(value) {
@@ -119,6 +128,8 @@ class BatteryManagerPanel extends HTMLElement {
       this._config = result.config;
       this._status = result.status || {};
       this._marstekDevices = result.marstek_devices || [];
+      this._notificationCatalog = result.notification_catalog || [];
+      this._notificationActions = result.notification_actions || [];
       this._editingProfile = this._config.schedule_profiles?.some(p=>p.id===this._editingProfile) ? this._editingProfile : (this._config.schedule_profiles?.[0]?.id || "sunny");
       for (const battery of this._config.batteries || []) {
         if (battery.adapter !== "marstek_entities" || !battery.source_device_id) continue;
@@ -236,6 +247,8 @@ class BatteryManagerPanel extends HTMLElement {
       [data-more-info] { cursor:pointer; }
       [data-more-info]:hover { filter:brightness(.92); }
       .live-power { font-size:22px; font-weight:800; line-height:1.2; }
+      .battery-power-block{align-self:stretch;display:grid;grid-template-rows:1fr auto;align-items:center;min-width:0}
+      .charge-estimate{justify-self:end;font-size:12px;font-weight:700;color:var(--secondary-text-color);white-space:nowrap}
       .charging { color:#2e7d32; } .discharging { color:#c62828; } .waiting-power { color:var(--primary-text-color); }
       .section-divider { border-top:1px solid var(--divider-color); margin-top:12px; padding-top:10px; }
       .setpoint-box { font-size:13px; line-height:1.45; }
@@ -372,6 +385,25 @@ class BatteryManagerPanel extends HTMLElement {
       @media(max-width:1100px){ main{padding:12px}.grid{gap:9px}.battery-card{padding:12px}.battery-head h2{font-size:15px}.quick-control{width:130px}.battery-summary{grid-template-columns:82px 1fr;gap:8px}.soc-ring{width:78px;height:78px}.soc-ring::before{width:58px;height:58px}.soc-ring strong{font-size:17px}.live-power{font-size:18px}.capacity-line{gap:5px;font-size:12px}.bms-details{gap:7px 8px}.bms-detail{grid-template-columns:18px minmax(0,1fr);gap:4px}.bms-detail strong{grid-column:2;text-align:left}.command-row{padding-left:5px;padding-right:5px}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content)} }
       @media(max-width:820px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.weather-conditions .form-grid{grid-template-columns:repeat(4,minmax(110px,1fr))}.schedule-toolbar{overflow-x:auto}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content)} }
       @media(max-width:700px){ header{gap:8px;padding:10px 12px}header h1{font-size:17px}.profile-menu summary{min-width:0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}main{padding:10px}.grid{grid-template-columns:1fr}.weather-grid{display:block}.weather-grid fieldset{margin-bottom:10px}.weather-source-pickers{grid-template-columns:1fr}.weather-conditions .form-grid{grid-template-columns:repeat(2,minmax(115px,1fr))}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content);gap:9px 12px}.weather-diagnostic-grid{grid-template-columns:1fr}.grid-power-card{grid-template-columns:1fr 1.1fr 1fr;padding-left:8px;padding-right:8px}.grid-power-block strong{font-size:15px}.grid-power-now strong{font-size:21px}.grid-power-block:not(.grid-power-now) .muted{display:none}.config-toolbar{align-items:end}.config-toolbar .save-right{margin-left:0}.grid-settings ha-entity-picker{min-width:260px;width:100%} }
+      .notification-targets,.notification-batteries,.notification-recipients {display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:12px 0}
+      .notification-targets label,.notification-recipients label{display:flex;flex-direction:row;gap:6px;align-items:center;flex-wrap:wrap}
+      .notification-battery{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px;border:1px solid var(--divider-color);border-radius:7px}
+      .notification-battery input[type=number]{min-width:0;width:70px;padding:7px}
+      .notification-battery label{display:flex;flex-direction:row;align-items:center;gap:6px}
+      .notification-rule h3{margin:0}.notification-rule{border-top:1px solid var(--divider-color);padding:15px 0}
+      .notification-rule .muted{margin:6px 0}.notification-group{margin-bottom:16px}
+      .notification-group>summary{cursor:pointer;font-weight:600;padding:8px}
+      .notification-advanced{margin-top:10px}.notification-advanced .form-grid{margin-top:10px}
+      .target-manager{margin:15px 0;padding:12px;border:1px solid var(--divider-color);border-radius:8px}
+      .journal-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:12px 0}
+      .journal-toolbar label{display:flex;flex-direction:column;gap:5px}.journal-toolbar input{max-width:190px}
+      .journal-lines{--journal-kind-width:190px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;line-height:1.5}
+      .journal-lines.journal-wide-kind{--journal-kind-width:260px}
+      .journal-line{display:grid;grid-template-columns:158px var(--journal-kind-width) minmax(0,1fr);gap:14px;padding:5px 8px;border-bottom:1px solid var(--divider-color)}
+      .journal-line span{overflow-wrap:anywhere;white-space:pre-wrap}.journal-line time{white-space:nowrap;color:var(--secondary-text-color)}
+      .journal-line:nth-child(even){background:var(--secondary-background-color)}
+      .journal-tabs{display:flex;flex-wrap:wrap;gap:7px}.journal-tabs .active{background:var(--primary-color);color:var(--text-primary-color,#fff)}
+      @media(max-width:700px){header{flex-wrap:wrap}header h1{flex:1 1 calc(100% - 60px);min-width:0;order:0}.navigation-menu{order:1;flex-shrink:0}.profile-menu{order:2;max-width:100%}.profile-menu summary{max-width:100%}.target-manager select{min-width:0;max-width:100%}.target-manager .form-grid{grid-template-columns:minmax(0,1fr)}.journal-line{grid-template-columns:minmax(0,1fr);gap:2px}.notification-battery{width:100%}.notification-batteries{display:block}.notification-battery{margin:8px 0;box-sizing:border-box}.journal-toolbar input{max-width:100%}}
     </style>`;
   }
 
@@ -379,6 +411,8 @@ class BatteryManagerPanel extends HTMLElement {
     if (!this._config) return;
     const body = this._tab === "overview" ? this._overview()
       : this._tab === "weather" ? this._weatherEditor()
+      : this._tab === "notifications" ? this._notificationsEditor()
+      : this._tab === "journal" ? this._journalEditor()
       : this._tab === "batteries" ? this._batteryEditor()
       : this._scheduleEditor();
     this.shadowRoot.innerHTML = `${this._styles()}
@@ -392,8 +426,130 @@ class BatteryManagerPanel extends HTMLElement {
         <button data-tab="weather" class="${this._tab === "weather" ? "active" : ""}">${this._t("tabs.weather")}</button>
         <button data-tab="batteries" class="${this._tab === "batteries" ? "active" : ""}">${this._t("tabs.configuration")}</button>
         <button data-tab="schedule" class="${this._tab === "schedule" ? "active" : ""}">${this._t("tabs.schedule")}</button>
+        <button data-tab="notifications" class="${this._tab === "notifications" ? "active" : ""}">${this._t("tabs.notifications")}</button>
+        <button data-tab="journal" class="${this._tab === "journal" ? "active" : ""}">${this._t("tabs.journal")}</button>
       </div></details></header><main>${body}</main>`;
     this._bind();
+    this._bindNotificationsAndJournal();
+  }
+
+
+  _notificationsEditor() {
+    const n=this._config.notifications||{targets:[],rules:{}},t=(key)=>this._t(`notifications.${key}`);
+    const draft=this._targetDraft;
+    const actionOptions=[...new Set([...this._notificationActions,...n.targets.map(x=>x.action)])];
+    const manager=this._manageTargets?`<div class="target-manager"><div class="toolbar">
+      <select id="targetSelect"><option value="">${t("new_target")}</option>${n.targets.map(x=>`<option value="${esc(x.id)}" ${draft.id===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select></div>
+      <div class="form-grid"><label>${t("action")}<select data-target-field="action"><option value="">${t("choose")}</option>${actionOptions.map(a=>`<option value="${esc(a)}" ${draft.action===a?"selected":""}>${esc(a)}${this._notificationActions.includes(a)?"":` (${t("unavailable")})`}</option>`).join("")}</select></label>
+      <label>${t("name")}<input data-target-field="name" maxlength="100" value="${esc(draft.name)}"></label>
+      <label>${this._t("schedule.start")}<input data-target-field="start" type="time" value="${esc(draft.start)}"></label>
+      <label>${this._t("schedule.end")}<input data-target-field="end" type="time" value="${esc(draft.end)}"></label></div>
+      <p class="muted">${t("hours_help")}</p><div class="toolbar"><button id="applyTarget">${draft.id?t("update"):this._t("buttons.add")}</button>${draft.id?`<button id="testDraftTarget">${t("test_target")}</button><button id="deleteTarget" class="danger">${this._t("buttons.delete")}</button>`:""}</div></div>`:"";
+    const groups=[
+      ["soc",["soc_low","soc_high","full","soc_recovered","soc_gap"]],
+      ["temperature",["temperature_high","temperature_low","temperature_recovered"]],
+      ["battery",["charge_start","charge_end","discharge_start","discharge_end","standby","mode_unexpected"]],
+      ["power",["underpower","charge_overpower","discharge_overpower","standby_power"]],
+      ["commands",["command_error","command_unconfirmed","command_recovered"]],
+      ["scheduler",["program_start","program_end","program_blocked","automatic_mode"]],
+      ["weather",["weather_change","weather_unavailable","weather_recovered"]],
+      ["availability",["battery_unavailable","battery_recovered","sensor_unavailable","sensor_stale","grid_unavailable","grid_recovered","connection_lost","connection_recovered"]],
+      ["summary",["daily_summary"]]
+    ];
+    return `<div class="card"><div class="toolbar"><h2>${t("targets")}</h2><button id="manageTargets" class="save-right">${t("manage")}</button><button id="save" class="primary">${this._t("buttons.save")}</button></div>
+      <div class="notification-targets">${n.targets.map(x=>`<label><input type="checkbox" data-target-enabled="${esc(x.id)}" ${x.enabled?"checked":""}><b>${esc(x.name)}</b><span class="muted">${esc(x.start)}–${esc(x.end)}</span></label>`).join("")||`<span class="muted">${t("no_targets")}</span>`}</div>${manager}
+      <p class="muted">${t("delivery_help")}</p></div>
+      ${groups.map(([group,ids])=>`<details class="card notification-group" data-notification-group="${group}" ${this._openNotificationGroups?.has(group)||(!this._openNotificationGroups&&group==="soc")?"open":""}><summary>${t(`groups.${group}`)}</summary>${ids.map(id=>this._notificationRule(id)).join("")}</details>`).join("")}`;
+  }
+
+  _notificationRule(id) {
+    const n=this._config.notifications,spec=this._notificationCatalog.find(x=>x.id===id);
+    if(!spec)return "";
+    const rule=n.rules[id],t=(key)=>this._t(`notifications.${key}`);
+    const batteries=spec.scope==="battery"?`<div class="notification-batteries">${this._config.batteries.map(b=>{
+      const key=String(b.id||b.name),cfg=rule.batteries[key]||{enabled:true,threshold:null};
+      const fallback=spec.source?(b.limits?.[spec.source]??spec.default):spec.default;
+      const value=cfg.threshold??fallback;
+      const minimum=spec.unit==="°C"?-100:0, maximum=spec.unit==="%"?100:spec.unit==="°C"?200:spec.unit==="min"?1440:100000;
+      return `<div class="notification-battery"><label><input type="checkbox" data-rule-battery="${id}" data-battery-id="${esc(key)}" ${cfg.enabled?"checked":""}>${esc(b.name)}</label>${spec.default!==null?`<label>${spec.unit==="%"&&id.startsWith("soc")?"SOC":t("threshold")}<input aria-label="${esc(b.name)} ${t("threshold")}" type="number" min="${minimum}" max="${maximum}" step="any" data-rule-threshold="${id}" data-battery-id="${esc(key)}" value="${esc(value)}" ${cfg.enabled?"":"disabled"}>${esc(spec.unit)}</label>${spec.source?`<span class="muted">${cfg.threshold==null?t("from_config"):t("custom")}</span>${cfg.threshold!=null?`<button data-reset-threshold="${id}" data-battery-id="${esc(key)}">${t("reset_config")}</button>`:""}`:""}`:""}</div>`;
+    }).join("")}</div>`:"";
+    return `<section class="notification-rule"><h3>${t(`rules.${id}.title`)}</h3><p class="muted">${t(`rules.${id}.description`)}</p>${batteries}
+      ${id==="daily_summary"?`<label>${t("summary_time")} <input type="time" data-rule-time="${id}" value="${esc(rule.time||"20:00")}"></label>`:""}
+      <div class="notification-recipients"><b>${t("recipients")} :</b>${n.targets.map(x=>`<label><input type="checkbox" data-rule-target="${id}" data-target-id="${esc(x.id)}" ${rule.targets.includes(x.id)?"checked":""}>${esc(x.name)}${x.enabled?"":` (${t("disabled")})`}</label>`).join("")}${rule.targets.length?"":`<span class="muted">${t("no_recipients")}</span>`}</div>
+      <details class="notification-advanced"><summary>${t("advanced")}</summary><div class="form-grid"><label>${t("confirm")}<input type="number" min="0" max="86400" data-rule-setting="${id}" data-setting="confirm_s" value="${rule.confirm_s}"></label><label>${t("cooldown")}<input type="number" min="0" max="86400" data-rule-setting="${id}" data-setting="cooldown_s" value="${rule.cooldown_s}"></label></div><p class="muted">${t("test_help")}</p><button data-test-rule="${id}" ${rule.targets.length?"":"disabled"}>${t("test_rule")}</button></details></section>`;
+  }
+
+  _journalEditor() {
+    const t=(key)=>this._t(`journal.${key}`);
+    return `<div class="card"><div class="toolbar"><h2>${this._t("tabs.journal")}</h2><button id="clearJournal" class="danger save-right">${t("clear")}</button></div>
+      <div class="journal-tabs">${["commands","scheduler","weather","notifications","users"].map(id=>`<button data-journal-category="${id}" class="${id===this._journalCategory?"active":""}">${t(`tabs.${id}`)}</button>`).join("")}</div>
+      <div class="journal-toolbar"><label>${t("search")}<input id="journalSearch" type="search" value="${esc(this._journalSearch)}"></label><label>${t("from")}<input id="journalSince" type="date" value="${esc(this._journalSince)}"></label><label>${t("until")}<input id="journalUntil" type="date" value="${esc(this._journalUntil)}"></label><button id="refreshJournal">${t("refresh")}</button></div>
+      <p class="muted" id="journalMeta">${t("retention")}</p><div class="journal-lines ${["commands","scheduler"].includes(this._journalCategory)?"journal-wide-kind":""}" id="journalLines">${this._journalRows()}</div><button id="moreJournal" ${this._journal.next?"":"hidden"}>${t("more")}</button></div>`;
+  }
+
+  _journalRows() {
+    const zone=this._hass.config?.time_zone||undefined;
+    return this._journal.entries?.length?this._journal.entries.map(row=>`<div class="journal-line"><time>${esc(new Date(row.stamp*1000).toLocaleString("fr-FR",{timeZone:zone,day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"}).replace(",", ""))}</time><span>${esc(row.kind)}</span><span>${esc(row.content)}</span></div>`).join(""):`<p class="muted">${this._t("journal.empty")}</p>`;
+  }
+
+  async _loadJournal(append=false) {
+    if(this._journalLoading)return;
+    this._journalLoading=true;
+    const requestCategory=this._journalCategory;
+    try{
+      const request={type:"battery_manager/journal",category:requestCategory,search:this._journalSearch};
+      if(append&&this._journal.next)request.before=this._journal.next;
+      if(this._journalSince)request.since=new Date(this._journalSince+"T00:00:00").getTime()/1000;
+      if(this._journalUntil)request.until=new Date(this._journalUntil+"T00:00:00").getTime()/1000+86400;
+      const result=await this._hass.callWS(request);
+      if(requestCategory!==this._journalCategory)return;
+      this._journal={...result,entries:append?[...this._journal.entries,...result.entries]:result.entries};
+      const rows=this.shadowRoot.querySelector("#journalLines");if(rows)rows.innerHTML=this._journalRows();
+      const meta=this.shadowRoot.querySelector("#journalMeta");if(meta)meta.textContent=`${this._t("journal.retention")} · ${(result.bytes/1000000).toFixed(2)} / 50 Mo · ${result.count} ${this._t("journal.entries")}`;
+      const more=this.shadowRoot.querySelector("#moreJournal");if(more)more.hidden=!result.next;
+    }catch(err){alert(this._t("journal.error",{details:err.message||err}));}
+    finally{this._journalLoading=false;}
+  }
+
+  async _testNotification(payload) {
+    try{
+      const result=await this._hass.callWS({type:"battery_manager/test_notification",...payload});
+      alert(result.results.map(x=>`${x.target} : ${this._t(`notifications.${x.sent?"test_ok":"test_failed"}`)}`).join("\n"));
+    }catch(err){alert(this._t("journal.error",{details:err.message||err}));}
+  }
+
+  _bindNotificationsAndJournal() {
+    const q=(s)=>this.shadowRoot.querySelector(s),all=(s)=>this.shadowRoot.querySelectorAll(s), n=this._config.notifications;
+    if(q("#manageTargets"))q("#manageTargets").onclick=()=>{this._manageTargets=!this._manageTargets;this._render();};
+    if(q("#targetSelect"))q("#targetSelect").onchange=e=>{const target=n.targets.find(x=>x.id===e.target.value);this._targetDraft=target?structuredClone(target):{id:"",name:"",action:"",enabled:true,start:"07:00",end:"22:00"};this._render();};
+    all("[data-target-field]").forEach(el=>el.onchange=()=>this._targetDraft[el.dataset.targetField]=el.value);
+    if(q("#applyTarget"))q("#applyTarget").onclick=()=>{
+      // Capture fields on click, including input not yet blurred.
+      all("[data-target-field]").forEach(el=>this._targetDraft[el.dataset.targetField]=el.value);
+      const d=this._targetDraft;
+      if(!d.name.trim()||!this._notificationActions.includes(d.action)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(d.start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(d.end)||d.start>=d.end){alert(this._t("notifications.invalid_target"));return;}
+      if(n.targets.some(x=>x.action===d.action&&x.id!==d.id)){alert(this._t("notifications.duplicate_target"));return;}
+      const target={...d,id:d.id||(crypto.randomUUID?.()||`target_${Date.now()}_${Math.random().toString(36).slice(2)}`),name:d.name.trim()};
+      const index=n.targets.findIndex(x=>x.id===target.id);if(index<0)n.targets.push(target);else n.targets[index]=target;
+      this._targetDraft={id:"",name:"",action:"",enabled:true,start:"07:00",end:"22:00"};this._render();
+    };
+    if(q("#deleteTarget"))q("#deleteTarget").onclick=()=>{if(!confirm(this._t("notifications.confirm_delete")))return;const id=this._targetDraft.id;n.targets=n.targets.filter(x=>x.id!==id);for(const rule of Object.values(n.rules))rule.targets=rule.targets.filter(x=>x!==id);this._targetDraft={id:"",name:"",action:"",enabled:true,start:"07:00",end:"22:00"};this._render();};
+    if(q("#testDraftTarget"))q("#testDraftTarget").onclick=()=>this._testNotification({target:this._targetDraft});
+    all("[data-target-enabled]").forEach(el=>el.onchange=()=>{n.targets.find(x=>x.id===el.dataset.targetEnabled).enabled=el.checked;this._render();});
+    all("[data-rule-battery]").forEach(el=>el.onchange=()=>{n.rules[el.dataset.ruleBattery].batteries[el.dataset.batteryId].enabled=el.checked;this._render();});
+    all("[data-rule-threshold]").forEach(el=>el.onchange=()=>{if(!el.checkValidity()||el.value===""){el.reportValidity();this._render();return;}n.rules[el.dataset.ruleThreshold].batteries[el.dataset.batteryId].threshold=Number(el.value);this._render();});
+    all("[data-reset-threshold]").forEach(el=>el.onclick=()=>{n.rules[el.dataset.resetThreshold].batteries[el.dataset.batteryId].threshold=null;this._render();});
+    all("[data-rule-target]").forEach(el=>el.onchange=()=>{const rule=n.rules[el.dataset.ruleTarget],id=el.dataset.targetId;rule.targets=el.checked?[...new Set([...rule.targets,id])]:rule.targets.filter(x=>x!==id);this._render();});
+    all("[data-rule-setting]").forEach(el=>el.onchange=()=>{if(!el.checkValidity()){el.reportValidity();return;}n.rules[el.dataset.ruleSetting][el.dataset.setting]=Number(el.value);});
+    all("[data-rule-time]").forEach(el=>el.onchange=()=>n.rules[el.dataset.ruleTime].time=el.value);
+    all("[data-test-rule]").forEach(el=>el.onclick=async()=>{if(await this._save())await this._testNotification({rule_id:el.dataset.testRule});});
+    all("details[data-notification-group]").forEach(el=>el.ontoggle=()=>{this._openNotificationGroups||=new Set(["soc"]);if(el.open)this._openNotificationGroups.add(el.dataset.notificationGroup);else this._openNotificationGroups.delete(el.dataset.notificationGroup);});
+    all("[data-journal-category]").forEach(el=>el.onclick=()=>{if(this._journalLoading)return;this._journalCategory=el.dataset.journalCategory;this._journal={entries:[]};this._render();this._loadJournal();});
+    for(const [id,field] of [["journalSearch","_journalSearch"],["journalSince","_journalSince"],["journalUntil","_journalUntil"]])if(q("#"+id))q("#"+id).onchange=e=>{this[field]=e.target.value;this._loadJournal();};
+    if(q("#journalSearch"))q("#journalSearch").onkeydown=e=>{if(e.key==="Enter"){this._journalSearch=e.target.value;this._loadJournal();}};
+    if(q("#refreshJournal"))q("#refreshJournal").onclick=()=>this._loadJournal();
+    if(q("#moreJournal"))q("#moreJournal").onclick=()=>this._loadJournal(true);
+    if(q("#clearJournal"))q("#clearJournal").onclick=async()=>{if(!confirm(this._t("journal.confirm_clear")))return;try{await this._hass.callWS({type:"battery_manager/clear_journal"});await this._loadJournal();}catch(err){alert(this._t("journal.error",{details:err.message||err}));}};
   }
 
   _overview() {
@@ -432,11 +588,12 @@ class BatteryManagerPanel extends HTMLElement {
         : normalizedPower > 10 ? `${Math.round(Math.abs(normalizedPower))} W ${this._t("overview.in_charge")}`
         : normalizedPower < -10 ? `${Math.round(Math.abs(normalizedPower))} W ${this._t("overview.in_discharge")}`
         : this._t("control_modes.standby");
+      const chargeEstimate = this._chargeEstimate(decisionKey, normalizedPower);
       return `<section class="card battery-card"><div class="battery-head"><div class="battery-title"><ha-icon icon="mdi:battery-medium"></ha-icon>
         <div><h2>${esc(b.name)}</h2><div class="battery-online ${connectivity.className}">${this._t("overview.status")} : ${this._t(`overview.${connectivity.label}`)}</div></div></div>
         <select class="quick-control" aria-label="${esc(this._t("overview.management"))}" data-quick-mode="${esc(decisionKey)}">${this._controlOptions(b.control_mode || (b.enabled ? "schedule" : "disabled"))}</select></div>
         <div class="battery-summary"><div class="soc-ring" data-more-info="${esc(b.entities.soc)}" style="--soc:${socNumber};--soc-color:${socColor}"><strong>${Number.isFinite(Number(soc.state)) ? `${Math.round(Number(soc.state))}%` : "—"}</strong></div>
-        <div class="live-power ${powerClass}" data-more-info="${esc(b.entities.power)}">${esc(powerText)}</div></div>
+        <div class="battery-power-block"><div class="live-power ${powerClass}" data-more-info="${esc(b.entities.power)}">${esc(powerText)}</div>${chargeEstimate}</div></div>
         ${b.adapter === "marstek_entities" ? this._marstekCommandStatus(b) : ""}
         ${b.adapter === "hoymiles_msa2" ? this._msa2CommandStatus(b, decision) : ""}
         <div class="section-divider setpoint-box"><b>${this._t("overview.current_setpoint")}</b><br>
@@ -452,6 +609,17 @@ class BatteryManagerPanel extends HTMLElement {
   _controlOptions(selected) {
     const modes = ["schedule", "charge", "self_consumption", "native_self_consumption", "solar_charge", "standby", "disabled"];
     return modes.map((mode) => `<option value="${mode}" ${mode===selected?"selected":""}>${this._t(`control_modes.${mode}`)}</option>`).join("");
+  }
+
+  _chargeEstimate(batteryId, power) {
+    const estimate = this._status.charge_estimates?.[batteryId];
+    if (!estimate || !Number.isFinite(power) || power < 50 || !estimate.completion_at) return "";
+    const date = new Date(estimate.completion_at);
+    if (Number.isNaN(date.getTime())) return "";
+    const time = date.toLocaleTimeString(this._locale(), {hour:"2-digit", minute:"2-digit"});
+    const target = Number(estimate.target_soc);
+    const targetLabel = Number.isFinite(target) ? String(Number(target.toFixed(1))) : "100";
+    return `<div class="charge-estimate">${esc(this._t("overview.charge_eta", {target:targetLabel, time}))}</div>`;
   }
 
   _gridTrend(currentValue, averageValue) {
@@ -627,12 +795,12 @@ class BatteryManagerPanel extends HTMLElement {
         <div class="weather-diagnostic-grid">
           <div class="weather-diagnostic-item">${this._t("weather.available")} : <b>${d.available?this._t("weather.yes"):this._t("weather.no")}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.forecast_time")} : <b>${d.forecast_time?esc(new Date(d.forecast_time).toLocaleString()):"—"}</b></div>
-          <div class="weather-diagnostic-item">${this._t("weather.condition")} : <b>${esc(d.condition||"—")}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.condition")} : <b>${esc(d.condition?this._translatedValue("weather.condition_values",d.condition):"—")}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.cloud")} : <b>${d.cloud_coverage==null?"—":`${esc(d.cloud_coverage)} %`}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.cloud_source")} : <b>${esc(d.cloud_source?this._t(`weather.cloud_sources.${d.cloud_source}`):"—")}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.cloud_raw")} : <b>${d.cloud_entity_state==null?"—":esc(d.cloud_entity_state)}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.calculated_profile")} : <b>${esc(profileName(d.selected_profile))}</b></div>
-          <div class="weather-diagnostic-item">${this._t("weather.reason")} : <b>${esc(d.reason||"—")}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.reason")} : <b>${esc(d.reason?this._reason(d.reason):"—")}</b></div>
         </div>
       </fieldset></div></div>`;
   }
@@ -791,6 +959,7 @@ class BatteryManagerPanel extends HTMLElement {
     this.shadowRoot.querySelectorAll("[data-active-profile]").forEach(button=>button.onclick=async()=>{const profileId=button.dataset.activeProfile;button.disabled=true;try{await this._hass.callWS({type:"battery_manager/set_active_profile",profile_id:profileId});this._config.active_profile=profileId;await this._load();}catch(err){alert(this._t("errors.profile",{details:err?.message||err}));}finally{button.disabled=false;}});
     this.shadowRoot.querySelectorAll("[data-tab]").forEach((button) => button.onclick = () => {
       this._tab = button.dataset.tab; this._render();
+      if (this._tab === "journal") this._loadJournal();
     });
     this.shadowRoot.querySelectorAll("[data-profile-tab]").forEach(button=>button.onclick=()=>{this._captureRangeEditor();this._editingProfile=button.dataset.profileTab;this._render();});
     const newProfile=this.shadowRoot.querySelector("#newProfile");
@@ -973,12 +1142,15 @@ class BatteryManagerPanel extends HTMLElement {
 
   async _save() {
     try {
+      if(this._config.notifications) this._config.notifications.language=this._locale();
       await this._hass.callWS({type:"battery_manager/save",config:this._config});
       this._hass.callService("persistent_notification","create",{title:this._t("notification.title"),message:this._t("notification.saved"),notification_id:"battery_manager_saved"});
       await this._load();
+      return true;
     } catch(err) {
       const details = err?.message || err?.code || (typeof err === "string" ? err : JSON.stringify(err));
       alert(this._t("errors.save", {details:details || this._t("errors.unknown")}));
+      return false;
     }
   }
 }

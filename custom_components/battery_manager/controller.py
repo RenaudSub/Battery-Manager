@@ -23,7 +23,7 @@ from .const import (
     ACTION_STANDBY,
     MODE_SCHEDULE,
 )
-from .model import Decision, charge_tier_limit, decide, slot_index
+from .model import Decision, charge_tier_limit, decide, estimate_charge_minutes, slot_index
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +45,8 @@ class BatteryController:
     """Evaluate schedules and send guarded commands."""
 
     def __init__(self, hass: HomeAssistant, store: Any) -> None:
+        self.notifications = None
+        self._notification_task = None
         self.hass = hass
         self.store = store
         self._remove_timer = None
@@ -58,6 +60,9 @@ class BatteryController:
         self._collective_signature: tuple[tuple[str, str], ...] | None = None
         self._grid_guards: dict[str, dict[str, Any]] = {}
         self._grid_samples: deque[tuple[float, float]] = deque()
+        self._charge_samples: dict[str, deque[tuple[float, float, float | None]]] = {}
+        self._charge_estimates: dict[str, dict[str, Any]] = {}
+        self._charge_estimate_updates: dict[str, float] = {}
         self._temperature_daily: dict[str, dict[str, Any]] = {}
         self._weather_status: dict[str, Any] = {
             "selected_profile": "sunny",
@@ -84,6 +89,12 @@ class BatteryController:
         if self._remove_timer:
             self._remove_timer()
             self._remove_timer = None
+
+    async def async_stop_notifications(self) -> None:
+        """Drain the observer without dropping pending journal entries."""
+        if self._notification_task:
+            await self._notification_task
+            self._notification_task = None
 
     async def async_restart(self) -> None:
         """Restart after a configuration change."""
@@ -214,11 +225,14 @@ class BatteryController:
         self, battery: dict[str, Any]
     ) -> dict[str, Any] | None:
         """Apply the configured fallback without disabling the schedule."""
+        command = None
         if battery.get("adapter") == "marstek_entities":
-            return await self._async_apply_disabled_marstek(battery)
-        if battery.get("adapter") == "hoymiles_msa2":
-            return await self._async_apply_disabled_msa2(battery)
-        return None
+            command = await self._async_apply_disabled_marstek(battery)
+        elif battery.get("adapter") == "hoymiles_msa2":
+            command = await self._async_apply_disabled_msa2(battery)
+        if command and self.notifications:
+            self.notifications.note_command(battery, command["command_action"], command["command_power_w"], "mode par défaut")
+        return command
 
     def _grid_guard_suspended(self, battery: dict[str, Any]) -> tuple[bool, str]:
         """Track a valid out-of-range AC voltage for sixty seconds.
@@ -307,6 +321,8 @@ class BatteryController:
                     "reason": "gestion_desactivee",
                 }
                 if command:
+                    if self.notifications:
+                        self.notifications.note_command(battery, command["command_action"], command["command_power_w"], "gestion désactivée")
                     status.update(command)
                     self._last_commands[battery_id] = command
                 self._last_decisions[battery_id] = status
@@ -337,6 +353,7 @@ class BatteryController:
             "active_profile": self.store.data.get("active_profile", "sunny"),
             "effective_profile": self._effective_profile(),
             "weather": self._weather_status,
+            "charge_estimates": self._charge_estimates,
         }
 
     def _grid_average(self, seconds: int) -> float | None:
@@ -355,6 +372,51 @@ class BatteryController:
         cutoff = now_mono - 15 * 60
         while self._grid_samples and self._grid_samples[0][0] < cutoff:
             self._grid_samples.popleft()
+
+    def _update_charge_estimate(
+        self, battery_id: str, battery: dict[str, Any], local_now: datetime
+    ) -> None:
+        """Maintain a five-minute power average and refresh the ETA once a minute."""
+        ac_power = _number(self.hass, battery.get("entities", {}).get("power", ""))
+        if ac_power is None:
+            self._charge_estimates.pop(battery_id, None)
+            return
+        if battery.get("power_inverted"):
+            ac_power = -ac_power
+        if ac_power < 50:
+            self._charge_estimates.pop(battery_id, None)
+            return
+
+        dc_value = _number(self.hass, battery.get("entities", {}).get("dc_power", ""))
+        dc_power = abs(dc_value) if dc_value is not None else None
+        now_mono = monotonic()
+        samples = self._charge_samples.setdefault(battery_id, deque())
+        samples.append((now_mono, float(ac_power), dc_power))
+        cutoff = now_mono - 5 * 60
+        while samples and samples[0][0] < cutoff:
+            samples.popleft()
+        if now_mono - self._charge_estimate_updates.get(battery_id, 0) < 60:
+            return
+        self._charge_estimate_updates[battery_id] = now_mono
+
+        soc = _number(self.hass, battery.get("entities", {}).get("soc", ""))
+        if soc is None:
+            self._charge_estimates.pop(battery_id, None)
+            return
+        average_ac = sum(item[1] for item in samples) / len(samples)
+        dc_samples = [item[2] for item in samples if item[2] is not None and item[2] >= 50]
+        average_dc = sum(dc_samples) / len(dc_samples) if dc_samples else None
+        minutes = estimate_charge_minutes(battery, soc, average_ac, average_dc)
+        if minutes is None:
+            self._charge_estimates.pop(battery_id, None)
+            return
+        completion = local_now + timedelta(minutes=minutes)
+        self._charge_estimates[battery_id] = {
+            "target_soc": float(battery.get("limits", {}).get("max_soc", 100)),
+            "remaining_minutes": round(minutes),
+            "completion_at": completion.isoformat(),
+            "average_power_w": round(average_ac),
+        }
 
     def _record_temperature(
         self, battery_id: str, battery: dict[str, Any], local_now: datetime
@@ -414,6 +476,7 @@ class BatteryController:
         for battery in config.get("batteries", []):
             battery_id = str(battery.get("id") or battery.get("name"))
             self._record_temperature(battery_id, battery, local_now)
+            self._update_charge_estimate(battery_id, battery, local_now)
             if not battery.get("enabled") or battery.get("operation_mode") != MODE_SCHEDULE:
                 self._grid_guards.pop(battery_id, None)
                 previous = self._last_decisions.get(battery_id, {})
@@ -677,6 +740,10 @@ class BatteryController:
             self._collective_target_w = None
             self._collective_signature = None
 
+        if self.notifications and (self._notification_task is None or self._notification_task.done()):
+            from copy import deepcopy
+            self._notification_task = self.hass.async_create_task(self.notifications.async_tick(deepcopy(self.status())))
+
     def _allocate_collective(
         self, items: list[dict[str, Any]], target_w: float
     ) -> list[float]:
@@ -745,6 +812,8 @@ class BatteryController:
                 "command_sent_at": dt_util.now().isoformat(),
             }
         )
+        if self.notifications:
+            self.notifications.note_command(battery, decision.action, power_w, decision.reason)
         self._last_commands[battery_id] = {
             key: current[key]
             for key in (

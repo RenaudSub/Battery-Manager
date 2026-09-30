@@ -1,232 +1,525 @@
 {
-    "title": "Gestor de bater\u00edas",
-    "language": {
-        "label": "Idioma",
-        "auto": "Autom\u00e1tico",
-        "fr": "Fran\u00e7ais",
-        "en": "English",
-        "es": "Espa\u00f1ol"
+  "title": "Gestor de baterías",
+  "language": {
+    "label": "Idioma",
+    "auto": "Automático",
+    "fr": "Français",
+    "en": "English",
+    "es": "Español"
+  },
+  "tabs": {
+    "overview": "Vista general",
+    "weather": "Tiempo",
+    "configuration": "Configuración",
+    "schedule": "Planificador",
+    "notifications": "Notificaciones",
+    "journal": "Registros"
+  },
+  "buttons": {
+    "add": "Añadir",
+    "duplicate": "Duplicar",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "retrieve_entities": "Obtener entidades",
+    "apply_range": "Aplicar franja",
+    "actions": "Acciones",
+    "cancel": "Cancelar"
+  },
+  "profiles": {
+    "active": "Perfil activo",
+    "auto": "Automático",
+    "manual": "Manual",
+    "new": "Nuevo",
+    "manage": "Gestionar",
+    "name_prompt": "Nombre del nuevo perfil meteorológico:"
+  },
+  "weather": {
+    "title": "Selección automática del perfil meteorológico",
+    "source": "Fuente meteorológica",
+    "entity": "Entidad meteorológica",
+    "cloud_entity": "Entidad de cobertura nubosa (%)",
+    "source_help": "La previsión horaria se analiza únicamente en modo Automático.",
+    "analysis": "Interpretación",
+    "conditions": "Asociación de condiciones meteorológicas",
+    "ignore": "Ignorar",
+    "offset": "Previsión a + (horas)",
+    "refresh": "Actualización (minutos)",
+    "refresh_now": "Actualizar ahora",
+    "sunny_max": "Cobertura máxima Soleado (%)",
+    "hysteresis": "Histéresis de nubes (%)",
+    "diagnostic": "Diagnóstico en directo",
+    "available": "Previsión disponible",
+    "forecast_time": "Hora analizada",
+    "condition": "Condición",
+    "cloud": "Cobertura nubosa",
+    "cloud_source": "Fuente de nubosidad",
+    "cloud_raw": "Valor bruto del sensor",
+    "cloud_sources": {
+      "configured_sensor": "Sensor configurado",
+      "hourly_forecast": "Previsión horaria",
+      "unavailable": "No disponible"
     },
-    "tabs": {
-        "overview": "Vista general",
-        "weather": "Tiempo",
-        "configuration": "Configuraci\u00f3n",
-        "schedule": "Planificador"
+    "condition_values": {
+      "sunny": "Soleado", "partlycloudy": "Parcialmente nublado", "cloudy": "Nublado",
+      "fog": "Niebla", "windy": "Ventoso", "windy-variant": "Ventoso y nublado",
+      "rainy": "Lluvioso", "pouring": "Lluvia intensa", "lightning": "Tormenta",
+      "lightning-rainy": "Tormenta con lluvia", "hail": "Granizo", "snowy": "Nevado",
+      "snowy-rainy": "Nieve y lluvia", "clear-night": "Noche despejada"
     },
-    "buttons": {
-        "add": "A\u00f1adir",
-        "duplicate": "Duplicar",
-        "delete": "Eliminar",
-        "save": "Guardar",
-        "retrieve_entities": "Obtener entidades",
-        "apply_range": "Aplicar franja",
-        "actions": "Acciones",
-        "cancel": "Cancelar"
+    "calculated_profile": "Perfil calculado",
+    "reason": "Motivo",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "actions": {
+    "charge": "Carga",
+    "discharge": "Descarga",
+    "self_consumption": "Autoconsumo colectivo",
+    "solar_charge": "Carga solar colectiva",
+    "native_self_consumption": "Autoconsumo nativo Marstek",
+    "default_mode": "Volver al modo predeterminado",
+    "standby": "Espera",
+    "waiting": "En espera",
+    "disabled": "Desactivado",
+    "blocked": "Bloqueado"
+  },
+  "adapters": {
+    "generic": "Genérica",
+    "marstek_entities": "Marstek",
+    "hoymiles_msa2": "Hoymiles MS-A2"
+  },
+  "modes": {
+    "disabled": "Desactivado",
+    "schedule": "Programación"
+  },
+  "control_modes": {
+    "schedule": "Planificador",
+    "charge": "Carga",
+    "self_consumption": "Autoconsumo colectivo",
+    "native_self_consumption": "Autoconsumo nativo",
+    "solar_charge": "Carga solar",
+    "standby": "En espera",
+    "disabled": "Desactivado"
+  },
+  "overview": {
+    "none": "No hay ninguna batería configurada.",
+    "control_enabled": "control autorizado",
+    "monitoring": "supervisión",
+    "action": "Acción",
+    "pilotage_activation": "Activación del control",
+    "enabled": "Activado",
+    "disabled": "Desactivado",
+    "disabled_return": "Retorno al desactivar el control",
+    "network_power": "Potencia de red",
+    "average_1m": "Media de 1 minuto",
+    "average_15m": "Media de 15 minutos",
+    "status": "Estado",
+    "online": "En línea",
+    "offline": "Fuera de línea",
+    "error": "Error",
+    "management": "Gestión",
+    "in_charge": "en carga",
+    "in_discharge": "en descarga",
+    "current_setpoint": "Consigna actual",
+    "current_mode": "Modo actual",
+    "conversion": "Rendimiento de conversión",
+    "inverter_status": "Estado del inversor",
+    "total_capacity": "Energía restante",
+    "charged_today": "Cargado",
+    "discharged_today": "Descargado",
+    "cycle_count": "Ciclo",
+    "cycle_count_calc": "Ciclo (Calc)",
+    "max_cell_voltage": "Celda máx.",
+    "min_cell_voltage": "Celda mín.",
+    "consumption": "Consumo",
+    "injection": "Inyección",
+    "marstek_live_commands": "Comandos Marstek actuales",
+    "msa2_live_commands": "Comandos MQTT MS-A2",
+    "transmitted_command": "Consigna transmitida",
+    "calculated_command": "Consigna calculada",
+    "compensation": "Compensación",
+    "sent_at": "Última publicación:",
+    "not_sent": "ningún comando enviado",
+    "charge_eta": "{target} % hacia las {time}",
+    "last_mqtt_mode": "Último modo MQTT enviado",
+    "last_mqtt_power": "Última potencia MQTT enviada"
+  },
+  "diagnostic": {
+    "summary": "Diagnóstico de entidades — {total} en total · {active} activas · {problems} no disponibles",
+    "entity": "Entidad",
+    "id": "Identificador",
+    "state": "Estado",
+    "role": "Función",
+    "disabled": "Desactivada",
+    "not_loaded": "No cargada",
+    "unavailable": "No disponible"
+  },
+  "config": {
+    "none": "No hay batería.",
+    "add_battery": "Añadir una batería",
+    "new_battery": "Nueva batería",
+    "copy_suffix": "copia",
+    "safety_notice": "Seleccione el modo principal desde el menú Gestión de la vista general. Desactivado aplica una vez el retorno configurado y luego deja de enviar comandos.",
+    "entities_found": "{total} entidades vinculadas · {managed} entidades de gestión reconocidas",
+    "marstek_found": "{total} batería(s) Marstek detectada(s)"
+  },
+  "sections": {
+    "grid": "Medición de red y controlador colectivo",
+    "general": "General",
+    "marstek_detection": "Detección Marstek Venus Modbus",
+    "info_entities": "Entidades de información",
+    "protection": "Protección y potencias",
+    "charge_tiers": "Niveles de carga según el SOC",
+    "marstek_commands": "Comandos Marstek",
+    "hoymiles_commands": "Comandos MQTT MS-A2"
+  },
+  "fields": {
+    "battery": "Batería",
+    "detected_battery": "Batería detectada",
+    "choose_battery": "Elegir una batería…",
+    "grid_power_entity": "Entidad de potencia de red",
+    "grid_zero_correction": "Cero de red (W)",
+    "deadband": "Zona muerta (W)",
+    "command_hysteresis": "Histéresis (W)",
+    "control_interval": "Intervalo (s)",
+    "command_refresh_s": "Retrans. (s)",
+    "invert_grid": "Invertir el signo de red",
+    "name": "Nombre",
+    "capacity": "Capacidad (kWh)",
+    "battery_type": "Tipo de batería",
+    "mode": "Modo",
+    "allow_commands": "Permitir comandos",
+    "pilotage_activation": "Activación del control",
+    "disabled_return": "Retorno al desactivar el control",
+    "invert_power": "Invertir el signo de potencia",
+    "force_mode": "Force Mode",
+    "user_work_mode": "User Work Mode",
+    "rs485_control_mode": "RS485 Control Mode",
+    "power": "Potencia",
+    "soc": "SOC",
+    "state": "Estado",
+    "temperature": "Temperatura",
+    "grid_voltage": "Tensión de red",
+    "ac_current": "Intensidad AC",
+    "dc_voltage": "Tensión DC de batería",
+    "dc_current": "Intensidad DC de batería",
+    "dc_power": "Potencia DC de batería",
+    "total_capacity": "Energía almacenada en la batería",
+    "charged_today": "Energía cargada hoy",
+    "discharged_today": "Energía descargada hoy",
+    "cycle_count": "Conteo de ciclos BMS",
+    "cycle_count_calc": "Conteo de ciclos calculado",
+    "max_cell_voltage": "Voltaje máximo de celda",
+    "min_cell_voltage": "Voltaje mínimo de celda",
+    "grid_loss_return_default": "Volver al modo anterior si se pierde la red",
+    "grid_return_resume": "Reanudar automáticamente la programación al volver la red (máx. 4 h)",
+    "min_soc": "SOC mínimo (%)",
+    "discharge_resume": "Reanudar descarga (%)",
+    "max_soc": "SOC máximo (%)",
+    "charge_resume": "Reanudar carga (%)",
+    "max_charge_w": "Carga máxima (W)",
+    "max_discharge_w": "Descarga máxima (W)",
+    "charge_compensation": "Comp. carga (W)",
+    "discharge_compensation": "Comp. descarga (W)",
+    "charge_setpoint": "Consigna de carga",
+    "discharge_setpoint": "Consigna de descarga",
+    "max_charge": "Carga máxima",
+    "max_discharge": "Descarga máxima",
+    "manual_value": "Valor manual de User Work Mode",
+    "force_charge_value": "Valor de carga de Force Mode",
+    "force_discharge_value": "Valor de descarga de Force Mode",
+    "force_standby_value": "Valor de espera de Force Mode",
+    "native_self_consumption_value": "Valor de autoconsumo nativo de User Work Mode",
+    "ai_optimization_value": "Valor de Optimización IA de User Work Mode",
+    "ems_topic": "Tema del modo EMS",
+    "power_topic": "Tema de consigna"
+  },
+  "fallback": {
+    "standby": "Standby",
+    "native_self_consumption": "Autoconsumo nativo Marstek",
+    "native_self_consumption_hoymiles": "Autoconsumo nativo Hoymiles",
+    "native_schedule": "Programación nativa Hoymiles",
+    "manual": "Manual",
+    "ai_optimization": "Optimización IA"
+  },
+  "tiers": {
+    "from": "Desde",
+    "to": "Hasta",
+    "maximum": "Máximo W",
+    "empty": "vacío = límite de la batería"
+  },
+  "schedule": {
+    "export": "Exportar planificación",
+    "import": "Importar planificación",
+    "duplicate_profile": "Duplicar perfil mostrado",
+    "add_first": "Añada primero una batería.",
+    "start": "Inicio",
+    "end": "Fin",
+    "max_charge": "Carga máxima en W",
+    "max_discharge": "Descarga máxima en W",
+    "min_soc": "SOC mínimo del intervalo (%)",
+    "max_soc": "SOC máximo del intervalo (%)",
+    "daily": "programación diaria",
+    "help": "La franja se aplica a la batería seleccionada arriba. La carga solar colectiva solo utiliza el excedente inyectado y nunca descarga. Una Marstek también ofrece autoconsumo nativo."
+  },
+  "confirm": {
+    "delete": "¿Eliminar definitivamente esta batería del gestor?"
+  },
+  "notification": {
+    "title": "Gestión de baterías",
+    "saved": "Configuración guardada"
+  },
+  "errors": {
+    "save": "Error al guardar: {details}",
+    "control_mode": "No se puede cambiar el modo: {details}",
+    "profile": "No se puede cambiar el perfil: {details}",
+    "weather_refresh": "No se puede actualizar el tiempo: {details}",
+    "unknown": "causa desconocida — consulte los registros de Home Assistant"
+  },
+  "reasons": {
+    "gestion_desactivee": "Gestión desactivada",
+    "soc_maximum": "SOC máximo alcanzado",
+    "soc_minimum": "SOC mínimo alcanzado",
+    "zone_morte": "Potencia de red dentro de la zona muerta",
+    "surplus_solaire_absent": "No hay excedente solar disponible",
+    "grid_sensor_unavailable": "Sensor de red no disponible",
+    "soc_unavailable": "Sensor SOC no disponible",
+    "power_sensor_unavailable": "Sensor de potencia no disponible",
+    "retour_mode_defaut": "Retorno programado al modo predeterminado",
+    "grid_loss_pending": "Tensión de red fuera de rango — confirmación en curso",
+    "grid_loss_detected": "Pérdida de red confirmada durante 60 segundos",
+    "grid_loss_latched": "Control suspendido tras la pérdida de red",
+    "grid_voltage_unavailable": "Entidad de tensión de red no disponible — se conserva el estado anterior",
+    "grid_returned": "Red restablecida — programación reanudada",
+    "rs485_control_missing": "Falta la entidad RS485 Control Mode",
+    "native_mode": "Autoconsumo nativo Marstek",
+    "native_mode_unsupported": "Modo nativo no compatible",
+    "palier_soc": "Límite del nivel SOC",
+    "programme": "Programación",
+    "command_error": "Error al enviar el comando",
+    "cloud_threshold": "Umbral de cobertura nubosa",
+    "precipitation_priority": "Prioridad de precipitación",
+    "condition_map": "Asociación de condición meteorológica",
+    "condition_unknown": "Condición meteorológica desconocida",
+    "clear_night_ignored": "Noche despejada ignorada",
+    "forecast_unavailable": "Previsión no disponible",
+    "forecast_error": "Error de previsión meteorológica",
+    "weather_entity_missing": "Entidad meteorológica no configurada",
+    "outside_analysis_hours": "Fuera del horario de análisis",
+    "not_analyzed": "Aún no analizado",
+    "manual": "Selección manual"
+  },
+  "notifications": {
+    "targets": "Destinos de notificaciones",
+    "manage": "Gestionar",
+    "new_target": "Añadir un destino",
+    "action": "Destino de Home Assistant",
+    "choose": "Elegir un destino",
+    "name": "Nombre del destino",
+    "hours_help": "Un horario diario sin cruzar medianoche. Inicio incluido, fin excluido. Predeterminado: 07:00–22:00.",
+    "delivery_help": "Sin destinatarios seleccionados = sin envíos. Guarde para aplicar los cambios. Las alertas persistentes se envían si continúan al abrir el horario; los eventos puntuales fuera del horario no se repiten.",
+    "no_targets": "Sin destinos. Use Gestionar para añadir un dispositivo.",
+    "unavailable": "no disponible",
+    "update": "Modificar",
+    "test_target": "Enviar prueba",
+    "threshold": "Umbral",
+    "from_config": "Configuración",
+    "custom": "Personalizado",
+    "reset_config": "Usar Configuración",
+    "recipients": "Destinatarios de notificaciones",
+    "disabled": "desactivado",
+    "no_recipients": "Sin destinatarios seleccionados",
+    "advanced": "Plazo y prueba",
+    "confirm": "Duración de confirmación (segundos)",
+    "cooldown": "Tiempo mínimo entre alertas (segundos)",
+    "test_help": "La prueba ignora el horario y la activación del destino. Comprueba el envío sin simular una condición de batería.",
+    "test_rule": "Probar envío",
+    "summary_time": "Hora del resumen",
+    "invalid_target": "Elija un destino disponible y un nombre. El inicio debe preceder al fin.",
+    "duplicate_target": "Este destino ya está añadido.",
+    "confirm_delete": "¿Eliminar este destino y sus asociaciones?",
+    "test_ok": "Acción ejecutada",
+    "test_failed": "Error — consulte Registros",
+    "groups": {
+      "soc": "SOC",
+      "temperature": "Temperatura",
+      "battery": "Estado de batería",
+      "power": "Potencia",
+      "commands": "Órdenes",
+      "scheduler": "Planificador",
+      "weather": "Meteorología",
+      "availability": "Medidas y conexiones",
+      "summary": "Resumen"
     },
-    "profiles": {"active":"Perfil activo","auto":"Automático","manual":"Manual","new":"Nuevo","manage":"Gestionar","name_prompt":"Nombre del nuevo perfil meteorológico:"},
-    "weather": {"title":"Selección automática del perfil meteorológico","source":"Fuente meteorológica","entity":"Entidad meteorológica","cloud_entity":"Entidad de cobertura nubosa (%)","source_help":"La previsión horaria se analiza únicamente en modo Automático.","analysis":"Interpretación","conditions":"Asociación de condiciones meteorológicas","ignore":"Ignorar","offset":"Previsión a + (horas)","refresh":"Actualización (minutos)","refresh_now":"Actualizar ahora","sunny_max":"Cobertura máxima Soleado (%)","hysteresis":"Histéresis de nubes (%)","diagnostic":"Diagnóstico en directo","available":"Previsión disponible","forecast_time":"Hora analizada","condition":"Condición","cloud":"Cobertura nubosa","cloud_source":"Fuente de nubosidad","cloud_raw":"Valor bruto del sensor","cloud_sources":{"configured_sensor":"Sensor configurado","hourly_forecast":"Previsión horaria","unavailable":"No disponible"},"calculated_profile":"Perfil calculado","reason":"Motivo","yes":"Sí","no":"No"},
-    "actions": {
-        "charge": "Carga",
-        "discharge": "Descarga",
-        "self_consumption": "Autoconsumo colectivo",
-        "solar_charge": "Carga solar colectiva",
-        "native_self_consumption": "Autoconsumo nativo Marstek",
-        "default_mode": "Volver al modo predeterminado",
-        "standby": "Espera",
-        "waiting": "En espera",
-        "disabled": "Desactivado",
-        "blocked": "Bloqueado"
-    },
-    "adapters": {
-        "generic": "Gen\u00e9rica",
-        "marstek_entities": "Marstek",
-        "hoymiles_msa2": "Hoymiles MS-A2"
-    },
-    "modes": {
-        "disabled": "Desactivado",
-        "schedule": "Programaci\u00f3n"
-    },
-    "control_modes": {
-        "schedule": "Planificador", "charge": "Carga", "self_consumption": "Autoconsumo colectivo",
-        "native_self_consumption": "Autoconsumo nativo", "solar_charge": "Carga solar",
-        "standby": "En espera", "disabled": "Desactivado"
-    },
-    "overview": {
-        "none": "No hay ninguna bater\u00eda configurada.",
-        "control_enabled": "control autorizado",
-        "monitoring": "supervisi\u00f3n",
-        "action": "Acci\u00f3n",
-        "pilotage_activation": "Activaci\u00f3n del control",
-        "enabled": "Activado",
-        "disabled": "Desactivado",
-        "disabled_return": "Retorno al desactivar el control",
-        "network_power": "Potencia de red",
-        "average_1m": "Media de 1 minuto", "average_15m": "Media de 15 minutos",
-        "status": "Estado", "online": "En l\u00ednea", "offline": "Fuera de l\u00ednea", "error": "Error",
-        "management": "Gesti\u00f3n", "in_charge": "en carga", "in_discharge": "en descarga",
-        "current_setpoint": "Consigna actual", "current_mode": "Modo actual", "conversion": "Rendimiento de conversi\u00f3n",
-        "inverter_status": "Estado del inversor", "total_capacity": "Energía restante",
-        "charged_today": "Cargado", "discharged_today": "Descargado",
-        "cycle_count": "Ciclo", "cycle_count_calc": "Ciclo (Calc)",
-        "max_cell_voltage": "Celda máx.", "min_cell_voltage": "Celda mín.",
-        "consumption": "Consumo",
-        "injection": "Inyecci\u00f3n",
-        "marstek_live_commands": "Comandos Marstek actuales",
-        "msa2_live_commands": "Comandos MQTT MS-A2",
-        "transmitted_command": "Consigna transmitida",
-        "calculated_command": "Consigna calculada",
-        "compensation": "Compensación",
-        "sent_at": "\u00daltima publicaci\u00f3n:",
-        "not_sent": "ning\u00fan comando enviado",
-        "last_mqtt_mode": "\u00daltimo modo MQTT enviado",
-        "last_mqtt_power": "\u00daltima potencia MQTT enviada"
-    },
-    "diagnostic": {
-        "summary": "Diagn\u00f3stico de entidades \u2014 {total} en total \u00b7 {active} activas \u00b7 {problems} no disponibles",
-        "entity": "Entidad",
-        "id": "Identificador",
-        "state": "Estado",
-        "role": "Funci\u00f3n",
-        "disabled": "Desactivada",
-        "not_loaded": "No cargada",
-        "unavailable": "No disponible"
-    },
-    "config": {
-        "none": "No hay bater\u00eda.",
-        "add_battery": "A\u00f1adir una bater\u00eda",
-        "new_battery": "Nueva bater\u00eda",
-        "copy_suffix": "copia",
-        "safety_notice": "Seleccione el modo principal desde el men\u00fa Gesti\u00f3n de la vista general. Desactivado aplica una vez el retorno configurado y luego deja de enviar comandos.",
-        "entities_found": "{total} entidades vinculadas \u00b7 {managed} entidades de gesti\u00f3n reconocidas",
-        "marstek_found": "{total} bater\u00eda(s) Marstek detectada(s)"
-    },
-    "sections": {
-        "grid": "Medici\u00f3n de red y controlador colectivo",
-        "general": "General",
-        "marstek_detection": "Detecci\u00f3n Marstek Venus Modbus",
-        "info_entities": "Entidades de informaci\u00f3n",
-        "protection": "Protecci\u00f3n y potencias",
-        "charge_tiers": "Niveles de carga seg\u00fan el SOC",
-        "marstek_commands": "Comandos Marstek",
-        "hoymiles_commands": "Comandos MQTT MS-A2"
-    },
-    "fields": {
-        "battery": "Bater\u00eda",
-        "detected_battery": "Bater\u00eda detectada",
-        "choose_battery": "Elegir una bater\u00eda\u2026",
-        "grid_power_entity": "Entidad de potencia de red",
-        "grid_zero_correction": "Cero de red (W)",
-        "deadband": "Zona muerta (W)",
-        "command_hysteresis": "Histéresis (W)",
-        "control_interval": "Intervalo (s)",
-        "command_refresh_s": "Retrans. (s)",
-        "invert_grid": "Invertir el signo de red",
-        "name": "Nombre",
-        "capacity": "Capacidad (kWh)",
-        "battery_type": "Tipo de bater\u00eda",
-        "mode": "Modo",
-        "allow_commands": "Permitir comandos",
-        "pilotage_activation": "Activaci\u00f3n del control",
-        "disabled_return": "Retorno al desactivar el control",
-        "invert_power": "Invertir el signo de potencia",
-        "force_mode": "Force Mode",
-        "user_work_mode": "User Work Mode",
-        "rs485_control_mode": "RS485 Control Mode",
-        "power": "Potencia",
-        "soc": "SOC",
-        "state": "Estado",
-        "temperature": "Temperatura",
-        "grid_voltage": "Tensi\u00f3n de red",
-        "ac_current": "Intensidad AC", "dc_voltage": "Tensi\u00f3n DC de bater\u00eda", "dc_current": "Intensidad DC de bater\u00eda",
-        "dc_power": "Potencia DC de bater\u00eda", "total_capacity": "Energía almacenada en la batería",
-        "charged_today": "Energ\u00eda cargada hoy", "discharged_today": "Energ\u00eda descargada hoy",
-        "cycle_count": "Conteo de ciclos BMS", "cycle_count_calc": "Conteo de ciclos calculado",
-        "max_cell_voltage": "Voltaje máximo de celda", "min_cell_voltage": "Voltaje mínimo de celda",
-        "grid_loss_return_default": "Volver al modo anterior si se pierde la red",
-        "grid_return_resume": "Reanudar autom\u00e1ticamente la programaci\u00f3n al volver la red (m\u00e1x. 4 h)",
-        "min_soc": "SOC m\u00ednimo (%)",
-        "discharge_resume": "Reanudar descarga (%)",
-        "max_soc": "SOC m\u00e1ximo (%)",
-        "charge_resume": "Reanudar carga (%)",
-        "max_charge_w": "Carga m\u00e1xima (W)",
-        "max_discharge_w": "Descarga m\u00e1xima (W)",
-        "charge_compensation": "Comp. carga (W)",
-        "discharge_compensation": "Comp. descarga (W)",
-        "charge_setpoint": "Consigna de carga",
-        "discharge_setpoint": "Consigna de descarga",
-        "max_charge": "Carga m\u00e1xima",
-        "max_discharge": "Descarga m\u00e1xima",
-        "manual_value": "Valor manual de User Work Mode",
-        "force_charge_value": "Valor de carga de Force Mode",
-        "force_discharge_value": "Valor de descarga de Force Mode",
-        "force_standby_value": "Valor de espera de Force Mode",
-        "native_self_consumption_value": "Valor de autoconsumo nativo de User Work Mode",
-        "ai_optimization_value": "Valor de Optimización IA de User Work Mode",
-        "ems_topic": "Tema del modo EMS",
-        "power_topic": "Tema de consigna"
-    },
-    "fallback": {
-        "standby": "Standby",
-        "native_self_consumption": "Autoconsumo nativo Marstek",
-        "native_self_consumption_hoymiles": "Autoconsumo nativo Hoymiles",
-        "native_schedule": "Programación nativa Hoymiles",
-        "manual": "Manual",
-        "ai_optimization": "Optimización IA"
-    },
-    "tiers": {
-        "from": "Desde",
-        "to": "Hasta",
-        "maximum": "M\u00e1ximo W",
-        "empty": "vac\u00edo = l\u00edmite de la bater\u00eda"
-    },
-    "schedule": {
-        "export": "Exportar planificación",
-        "import": "Importar planificación",
-        "duplicate_profile": "Duplicar perfil mostrado",
-        "add_first": "A\u00f1ada primero una bater\u00eda.",
-        "start": "Inicio",
-        "end": "Fin",
-        "max_charge": "Carga m\u00e1xima en W",
-        "max_discharge": "Descarga m\u00e1xima en W",
-        "min_soc": "SOC m\u00ednimo del intervalo (%)",
-        "max_soc": "SOC m\u00e1ximo del intervalo (%)",
-        "daily": "programaci\u00f3n diaria",
-        "help": "La franja se aplica a la bater\u00eda seleccionada arriba. La carga solar colectiva solo utiliza el excedente inyectado y nunca descarga. Una Marstek tambi\u00e9n ofrece autoconsumo nativo."
-    },
-    "confirm": {
-        "delete": "\u00bfEliminar definitivamente esta bater\u00eda del gestor?"
-    },
-    "notification": {
-        "title": "Gesti\u00f3n de bater\u00edas",
-        "saved": "Configuraci\u00f3n guardada"
-    },
-    "errors": {
-        "save": "Error al guardar: {details}",
-        "control_mode": "No se puede cambiar el modo: {details}",
-        "profile": "No se puede cambiar el perfil: {details}",
-        "weather_refresh": "No se puede actualizar el tiempo: {details}",
-        "unknown": "causa desconocida \u2014 consulte los registros de Home Assistant"
-    },
-    "reasons": {
-        "gestion_desactivee": "Gesti\u00f3n desactivada",
-        "soc_maximum": "SOC m\u00e1ximo alcanzado",
-        "soc_minimum": "SOC m\u00ednimo alcanzado",
-        "zone_morte": "Potencia de red dentro de la zona muerta",
-        "surplus_solaire_absent": "No hay excedente solar disponible",
-        "grid_sensor_unavailable": "Sensor de red no disponible",
-        "soc_unavailable": "Sensor SOC no disponible",
-        "power_sensor_unavailable": "Sensor de potencia no disponible",
-        "retour_mode_defaut": "Retorno programado al modo predeterminado",
-        "grid_loss_pending": "Tensi\u00f3n de red fuera de rango \u2014 confirmaci\u00f3n en curso",
-        "grid_loss_detected": "P\u00e9rdida de red confirmada durante 60 segundos",
-        "grid_loss_latched": "Control suspendido tras la p\u00e9rdida de red",
-        "grid_voltage_unavailable": "Entidad de tensi\u00f3n de red no disponible \u2014 se conserva el estado anterior",
-        "grid_returned": "Red restablecida \u2014 programaci\u00f3n reanudada",
-        "rs485_control_missing": "Falta la entidad RS485 Control Mode",
-        "native_mode": "Autoconsumo nativo Marstek",
-        "native_mode_unsupported": "Modo nativo no compatible",
-        "palier_soc": "L\u00edmite del nivel SOC",
-        "programme": "Programaci\u00f3n",
-        "command_error": "Error al enviar el comando"
+    "rules": {
+      "soc_low": {
+        "title": "SOC inferior a…",
+        "description": "Avisa si una batería seleccionada baja de su umbral SOC."
+      },
+      "soc_high": {
+        "title": "SOC superior a…",
+        "description": "Avisa cuando el SOC supera el umbral de la batería."
+      },
+      "full": {
+        "title": "Batería llena",
+        "description": "Avisa cuando el SOC alcanza el umbral de fin de carga."
+      },
+      "soc_recovered": {
+        "title": "SOC recuperado",
+        "description": "Avisa al superar el umbral de recuperación tras un SOC bajo."
+      },
+      "soc_gap": {
+        "title": "Diferencia de SOC",
+        "description": "Compara el SOC de cada batería seleccionada con las demás, usando su propio umbral. Requiere al menos dos medidas SOC disponibles."
+      },
+      "temperature_high": {
+        "title": "Temperatura alta",
+        "description": "Avisa si la temperatura supera el umbral; requiere una entidad de temperatura."
+      },
+      "temperature_low": {
+        "title": "Temperatura baja",
+        "description": "Avisa si la temperatura baja del umbral configurado."
+      },
+      "temperature_recovered": {
+        "title": "Temperatura normal",
+        "description": "Utiliza los umbrales de temperatura alta y baja para detectar la recuperación."
+      },
+      "charge_start": {
+        "title": "Inicio de carga",
+        "description": "Avisa de una transición a carga según la potencia medida."
+      },
+      "charge_end": {
+        "title": "Fin de carga",
+        "description": "Avisa del fin de carga después de una fase de carga observada."
+      },
+      "discharge_start": {
+        "title": "Inicio de descarga",
+        "description": "Avisa de una transición a descarga según la potencia medida."
+      },
+      "discharge_end": {
+        "title": "Fin de descarga",
+        "description": "Avisa del fin de descarga tras una fase observada."
+      },
+      "standby": {
+        "title": "En espera",
+        "description": "Avisa cuando la potencia medida está entre los umbrales positivos y negativos."
+      },
+      "mode_unexpected": {
+        "title": "Modo inesperado",
+        "description": "Compara Force Mode de Marstek con el modo solicitado. Requiere esa entidad y no deduce una causa de firmware."
+      },
+      "underpower": {
+        "title": "Potencia inferior a la consigna",
+        "description": "Avisa si la potencia baja del porcentaje elegido de la consigna durante el plazo. El BMS o los límites físicos pueden explicar la diferencia."
+      },
+      "charge_overpower": {
+        "title": "Potencia de carga excesiva",
+        "description": "Avisa si la potencia de carga medida supera el umbral."
+      },
+      "discharge_overpower": {
+        "title": "Potencia de descarga excesiva",
+        "description": "Avisa si la potencia de descarga medida supera el umbral."
+      },
+      "standby_power": {
+        "title": "Potencia con orden de espera",
+        "description": "Avisa si hay potencia superior al umbral mientras se solicita espera."
+      },
+      "command_error": {
+        "title": "Error al enviar una orden",
+        "description": "Avisa de un error al enviar una orden desde Battery Manager."
+      },
+      "command_unconfirmed": {
+        "title": "Consigna no seguida",
+        "description": "Compara potencia medida y solicitada con tolerancia en vatios y duración. El envío correcto no confirma su aplicación."
+      },
+      "command_recovered": {
+        "title": "Órdenes recuperadas",
+        "description": "Avisa cuando desaparece un error de envío observado."
+      },
+      "program_start": {
+        "title": "Inicio de programa",
+        "description": "Avisa al iniciar un tramo o perfil distinto, sin duplicar tramos idénticos."
+      },
+      "program_end": {
+        "title": "Fin de programa",
+        "description": "Avisa cuando un programa se sustituye por el siguiente."
+      },
+      "program_blocked": {
+        "title": "Programa bloqueado",
+        "description": "Avisa de protección SOC o datos/órdenes no disponibles. Solo se informa de protecciones de temperatura si existen en el controlador."
+      },
+      "automatic_mode": {
+        "title": "Cambio de modo automático",
+        "description": "Avisa de un cambio solicitado por el planificador, separado de los modos rápidos manuales."
+      },
+      "weather_change": {
+        "title": "Cambio de perfil meteorológico",
+        "description": "Avisa de un cambio de perfil determinado por el análisis meteorológico."
+      },
+      "weather_unavailable": {
+        "title": "Datos meteorológicos no disponibles",
+        "description": "Avisa si las previsiones de la fuente configurada no están disponibles."
+      },
+      "weather_recovered": {
+        "title": "Datos meteorológicos recuperados",
+        "description": "Avisa al recuperar las previsiones tras una interrupción."
+      },
+      "battery_unavailable": {
+        "title": "Batería no disponible",
+        "description": "Avisa cuando SOC y potencia no están disponibles."
+      },
+      "battery_recovered": {
+        "title": "Batería recuperada",
+        "description": "Avisa cuando vuelven las medidas después de una interrupción."
+      },
+      "sensor_unavailable": {
+        "title": "Medida no disponible",
+        "description": "Supervisa entidades SOC, potencia y temperatura configuradas. Ignora las no configuradas."
+      },
+      "sensor_stale": {
+        "title": "Medida antigua",
+        "description": "Utiliza el último informe de Home Assistant, incluso con valor estable; un SOC estable no es una avería."
+      },
+      "grid_unavailable": {
+        "title": "Medida de red no disponible",
+        "description": "Supervisa la entidad de potencia de red configurada."
+      },
+      "grid_recovered": {
+        "title": "Medida de red recuperada",
+        "description": "Avisa cuando vuelve la medida de red tras una interrupción."
+      },
+      "connection_lost": {
+        "title": "Conexión MQTT perdida",
+        "description": "Para baterías MQTT: supervisa la conexión de Home Assistant al broker. Para Modbus use alertas de medidas; no se expone el estado del transporte."
+      },
+      "connection_recovered": {
+        "title": "Conexión MQTT recuperada",
+        "description": "Avisa al recuperar la conexión de Home Assistant al broker MQTT."
+      },
+      "daily_summary": {
+        "title": "Resumen diario",
+        "description": "Resumen de baterías seleccionadas: SOC, energía del día disponible y anomalías. Un envío diario por destino."
+      }
     }
+  },
+  "journal": {
+    "clear": "Borrar registros",
+    "search": "Buscar",
+    "from": "Desde",
+    "until": "Hasta",
+    "refresh": "Actualizar",
+    "retention": "Conservación: 30 días · 50 MB máximo entre todos los registros",
+    "more": "Mostrar entradas anteriores",
+    "empty": "Sin entradas",
+    "entries": "entradas",
+    "error": "Error: {details}",
+    "confirm_clear": "¿Borrar todos los registros de las cinco pestañas? No se puede deshacer.",
+    "tabs": {
+      "commands": "Consignas",
+      "scheduler": "Planificador",
+      "weather": "Gestión meteorológica",
+      "notifications": "Notificaciones",
+      "users": "Acciones de usuarios"
+    }
+  }
 }
