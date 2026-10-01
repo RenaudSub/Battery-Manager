@@ -35,6 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await notifications.async_load()
     controller = BatteryController(hass, store)
     controller.notifications = notifications
+    controller.journal = journal
     await controller.async_start()
     runtime = hass.data.setdefault(DOMAIN, {})
     runtime.update({"store": store, "controller": controller, "journal": journal, "notifications": notifications})
@@ -62,7 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         frontend_url_path=PANEL_URL,
         sidebar_title=PANEL_TITLE,
         sidebar_icon=PANEL_ICON,
-        module_url="/battery_manager/frontend/battery-manager-panel.js?v=0.5.1",
+        module_url="/battery_manager/frontend/battery-manager-panel.js?v=0.5.2",
         require_admin=True,
     )
     return True

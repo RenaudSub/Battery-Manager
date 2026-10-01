@@ -79,6 +79,12 @@ async def ws_set_control_mode(hass, connection, msg) -> None:
     runtime = hass.data[DOMAIN]
     try:
         old_config = deepcopy(runtime["store"].data)
+        if msg["mode"] == "backup":
+            await runtime["controller"].async_enable_backup(msg["battery_id"])
+            _audit(runtime, connection, f"Activation du mode Backup sur {msg['battery_id']}")
+            await runtime["journal"].async_flush()
+            connection.send_result(msg["id"], {"saved": True, "mode": "backup"})
+            return
         await runtime["store"].async_set_control_mode(
             msg["battery_id"], msg["mode"]
         )

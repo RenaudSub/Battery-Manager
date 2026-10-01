@@ -39,6 +39,11 @@ class BatteryManagerStore:
             if isinstance(item, dict)
         ]
         self._normalize_profiles()
+        actions = self.data.get("backup_actions", {}) if isinstance(self.data.get("backup_actions"), dict) else {}
+        self.data["backup_actions"] = {
+            "entity_id": str(actions.get("entity_id", "")).strip(),
+            "restore_on_exit": bool(actions.get("restore_on_exit", False)),
+        }
         self.data["notifications"] = normalize_notifications(self.data.get("notifications"), self.data["batteries"])
 
     def _normalize_profiles(self) -> None:
@@ -98,6 +103,11 @@ class BatteryManagerStore:
         clean["control_interval_s"] = max(
             1, min(60, int(data.get("control_interval_s", 5)))
         )
+        actions = data.get("backup_actions", {}) if isinstance(data.get("backup_actions"), dict) else {}
+        clean["backup_actions"] = {
+            "entity_id": str(actions.get("entity_id", "")).strip(),
+            "restore_on_exit": bool(actions.get("restore_on_exit", False)),
+        }
         clean["schedule_profiles"] = deepcopy(data.get("schedule_profiles", DEFAULT_CONFIG["schedule_profiles"]))
         clean["active_profile"] = str(data.get("active_profile", "sunny"))
         clean["weather"] = deepcopy(data.get("weather", DEFAULT_CONFIG["weather"]))

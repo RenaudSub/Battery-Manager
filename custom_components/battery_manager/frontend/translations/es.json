@@ -13,7 +13,9 @@
     "configuration": "Configuración",
     "schedule": "Planificador",
     "notifications": "Notificaciones",
-    "journal": "Registros"
+    "journal": "Registros",
+    "actions": "Acciones",
+    "about": "Acerca de"
   },
   "buttons": {
     "add": "Añadir",
@@ -99,7 +101,8 @@
     "native_self_consumption": "Autoconsumo nativo",
     "solar_charge": "Carga solar",
     "standby": "En espera",
-    "disabled": "Desactivado"
+    "disabled": "Desactivado",
+    "backup": "Backup"
   },
   "overview": {
     "none": "No hay ninguna batería configurada.",
@@ -120,6 +123,9 @@
     "management": "Gestión",
     "in_charge": "en carga",
     "in_discharge": "en descarga",
+    "backup_mode": "Modo BACKUP",
+    "backup_recovery": "Retorno de red — confirmación 30 s",
+    "no_backup_command": "Ninguna orden durante Backup",
     "current_setpoint": "Consigna actual",
     "current_mode": "Modo actual",
     "conversion": "Rendimiento de conversión",
@@ -200,6 +206,7 @@
     "state": "Estado",
     "temperature": "Temperatura",
     "grid_voltage": "Tensión de red",
+    "backup_function": "Backup Function",
     "ac_current": "Intensidad AC",
     "dc_voltage": "Tensión DC de batería",
     "dc_current": "Intensidad DC de batería",
@@ -308,6 +315,8 @@
     "outside_analysis_hours": "Fuera del horario de análisis",
     "not_analyzed": "Aún no analizado",
     "manual": "Selección manual"
+    ,"backup_active": "Modo Backup activo — ninguna orden enviada",
+    "backup_grid_confirmation": "Salida de Backup — confirmación de red durante 30 segundos"
   },
   "notifications": {
     "targets": "Destinos de notificaciones",
@@ -331,7 +340,8 @@
     "no_recipients": "Sin destinatarios seleccionados",
     "advanced": "Plazo y prueba",
     "confirm": "Duración de confirmación (segundos)",
-    "cooldown": "Tiempo mínimo entre alertas (segundos)",
+    "rearm_hours": "Rearme (horas)",
+    "rearm_help": "Tras un envío correcto, esta notificación queda inhibida para esta batería durante el tiempo elegido. Cero permite un nuevo evento después de que la condición desaparezca y vuelva.",
     "test_help": "La prueba ignora el horario y la activación del destino. Comprueba el envío sin simular una condición de batería.",
     "test_rule": "Probar envío",
     "summary_time": "Hora del resumen",
@@ -500,6 +510,33 @@
         "title": "Resumen diario",
         "description": "Resumen de baterías seleccionadas: SOC, energía del día disponible y anomalías. Un envío diario por destino."
       }
+    }
+  },
+  "backup_actions": {
+    "title": "Acciones en modo Backup", "entity": "Entidad que se desactivará",
+    "restore": "Restablecer al salir del modo Backup",
+    "help": "Cuando la primera batería entra en Backup, Battery Manager memoriza el estado de esta entidad y la apaga una sola vez si estaba activa.",
+    "once": "El estado no se impone durante Backup. La restauración opcional se realiza cuando todas las baterías salen y la red permanece válida durante 30 segundos."
+  },
+  "about": {
+    "project": "Proyecto GitHub", "website": "Sitio oficial", "guide": "Manual de uso",
+    "introduction": "Battery Manager centraliza la supervisión, planificación y control local de varias baterías en Home Assistant. Las protecciones se aplican antes de cada orden.",
+    "sections": {
+      "installation":{"title":"Instalación y actualización","text":"Instale el repositorio con HACS o copie custom_components/battery_manager, reinicie Home Assistant Core y añada la integración. Reinicie y actualice el navegador tras cada versión."},
+      "configuration":{"title":"Configuración inicial","text":"Configure primero la entidad de red y después cada batería. Use la detección Venus Modbus para Marstek o introduzca los temas MQTT de la MS-A2. Compruebe los signos de potencia."},
+      "overview":{"title":"Vista general","text":"Reúne SOC, potencia, conexión, órdenes reales, medidas AC/DC, rendimiento, temperaturas, energía y ciclos. Un clic abre el historial de Home Assistant."},
+      "quick_modes":{"title":"Control rápido","text":"Permite Planificador, Carga, autoconsumo colectivo o nativo, Carga solar, Espera, Backup Marstek o Desactivado. Durante Backup no se envía ninguna orden."},
+      "scheduler":{"title":"Planificador","text":"Cree periodos de 15 minutos durante siete días para cada perfil meteorológico. Defina acción, potencias y límites SOC. La planificación se puede importar o exportar."},
+      "weather":{"title":"Perfiles meteorológicos","text":"El modo automático analiza la previsión horaria y la nubosidad. El diagnóstico muestra valores, fuente, perfil calculado y motivo."},
+      "collective":{"title":"Regulación colectiva","text":"El autoconsumo colectivo reparte la corrección de red. La carga solar colectiva solo absorbe excedentes y nunca descarga."},
+      "protections":{"title":"Protecciones y niveles SOC","text":"Los SOC mínimo y máximo detienen descarga y carga. Los umbrales de retorno añaden histéresis y los niveles reducen progresivamente la potencia."},
+      "compensation":{"title":"Compensación y estimación","text":"Las compensaciones corrigen cada batería. El cero de red corrige el sesgo colectivo. La hora estimada usa potencia media, capacidad, rendimiento AC/DC y niveles SOC."},
+      "backup":{"title":"Red y modo Backup","text":"Configure Tensión Grid y Backup Function. Battery Manager detiene todas las órdenes durante Backup y reanuda tras 30 segundos entre 200 y 250 V."},
+      "actions":{"title":"Acciones Backup","text":"El panel Acciones apaga una entidad una sola vez, memoriza su estado y puede restaurarlo después de Backup."},
+      "notifications":{"title":"Notificaciones","text":"Añada destinos mobile_app, horarios, reglas, baterías y umbrales. La confirmación filtra eventos breves y el rearme evita repeticiones."},
+      "journal":{"title":"Registros","text":"Órdenes, planificador, decisiones meteorológicas, notificaciones y acciones se conservan 30 días hasta 50 MB."},
+      "diagnostics":{"title":"Diagnóstico","text":"Muestra la disponibilidad y los roles de las entidades. Una entidad desconocida o no disponible no provoca órdenes repetidas a ciegas."},
+      "maintenance":{"title":"Copia y solución de problemas","text":"Guarde Home Assistant y exporte la planificación antes de cambios importantes. Pruebe las entidades en Espera y consulte Registros ante cualquier anomalía."}
     }
   },
   "journal": {

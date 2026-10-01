@@ -13,7 +13,9 @@
     "configuration": "Configuration",
     "schedule": "Schedule",
     "notifications": "Notifications",
-    "journal": "Journal"
+    "journal": "Journal",
+    "actions": "Actions",
+    "about": "About"
   },
   "buttons": {
     "add": "Add",
@@ -99,7 +101,8 @@
     "native_self_consumption": "Native self-consumption",
     "solar_charge": "Solar charge",
     "standby": "Standby",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "backup": "Backup"
   },
   "overview": {
     "none": "No battery configured.",
@@ -120,6 +123,9 @@
     "management": "Control",
     "in_charge": "charging",
     "in_discharge": "discharging",
+    "backup_mode": "BACKUP mode",
+    "backup_recovery": "Grid return — 30 s confirmation",
+    "no_backup_command": "No command during Backup",
     "current_setpoint": "Current setpoint",
     "current_mode": "Current mode",
     "conversion": "Conversion efficiency",
@@ -200,6 +206,7 @@
     "state": "State",
     "temperature": "Temperature",
     "grid_voltage": "Grid voltage",
+    "backup_function": "Backup Function",
     "ac_current": "AC current",
     "dc_voltage": "Battery DC voltage",
     "dc_current": "Battery DC current",
@@ -308,6 +315,8 @@
     "outside_analysis_hours": "Outside analysis hours",
     "not_analyzed": "Not analyzed yet",
     "manual": "Manual selection"
+    ,"backup_active": "Backup mode active — no command sent",
+    "backup_grid_confirmation": "Leaving Backup — confirming Grid for 30 seconds"
   },
   "notifications": {
     "targets": "Notification targets",
@@ -331,7 +340,8 @@
     "no_recipients": "No recipients selected",
     "advanced": "Delay and test",
     "confirm": "Confirmation duration (seconds)",
-    "cooldown": "Minimum time between alerts (seconds)",
+    "rearm_hours": "Rearm (hours)",
+    "rearm_help": "After a successful delivery, this notification is inhibited for this battery for the selected duration. Zero allows a new event after the condition clears and returns.",
     "test_help": "The test bypasses target activation and quiet hours. It checks delivery without simulating a battery condition.",
     "test_rule": "Test delivery",
     "summary_time": "Summary time",
@@ -500,6 +510,33 @@
         "title": "Daily summary",
         "description": "Summary of selected batteries: SOC, daily energy when available and current anomalies. One delivery per day and target."
       }
+    }
+  },
+  "backup_actions": {
+    "title": "Backup mode actions", "entity": "Entity to turn off",
+    "restore": "Restore after leaving Backup mode",
+    "help": "When the first battery enters Backup, Battery Manager stores this entity's state and turns it off once if it was on.",
+    "once": "The state is not enforced during Backup. Optional restoration occurs after all batteries leave Backup and the Grid has been valid for 30 seconds."
+  },
+  "about": {
+    "project": "GitHub project", "website": "Official website", "guide": "User guide",
+    "introduction": "Battery Manager centralizes monitoring, scheduling and local control of multiple batteries in Home Assistant. Configured protections are applied before every command.",
+    "sections": {
+      "installation":{"title":"Installation and updates","text":"Install the repository through HACS or copy custom_components/battery_manager, restart Home Assistant Core and add the integration. Restart Core and refresh the browser after every update."},
+      "configuration":{"title":"Initial configuration","text":"Configure the grid power entity first, then each battery. Use Venus Modbus discovery for Marstek or enter the MS-A2 MQTT topics. Verify all power signs before enabling control."},
+      "overview":{"title":"Overview","text":"The overview combines SOC, power, connectivity, real commands, AC/DC measurements, efficiency, temperatures, energy and cycles. Clicking a value opens its Home Assistant history."},
+      "quick_modes":{"title":"Quick control","text":"Select Schedule, Charge, collective or native self-consumption, Solar charge, Standby, Marstek Backup or Disabled. No battery command is sent while Backup is active."},
+      "scheduler":{"title":"Scheduler","text":"Create 15-minute periods across seven days and every weather profile. Set the action, powers and SOC limits, then save. Planning can be imported or exported."},
+      "weather":{"title":"Weather profiles","text":"Automatic mode analyzes the hourly forecast and cloud cover. The diagnostic shows the received values, source, calculated profile and decision reason."},
+      "collective":{"title":"Collective regulation","text":"Collective self-consumption shares grid correction between available batteries. Collective solar charging only absorbs exported surplus and never discharges."},
+      "protections":{"title":"SOC protections and tiers","text":"Minimum and maximum SOC stop discharge and charge. Resume thresholds provide hysteresis. Charge tiers progressively reduce power and take priority over scheduling."},
+      "compensation":{"title":"Compensation and estimate","text":"Per-battery charge and discharge compensation correct measured AC offsets. Grid zero corrects a remaining collective bias. Charge ETA uses rolling power, capacity, AC/DC efficiency and SOC tiers."},
+      "backup":{"title":"Grid and Backup mode","text":"Configure Grid voltage and Backup Function for Marstek. Battery Manager stops every command while Backup is on and resumes only after 30 seconds between 200 and 250 V."},
+      "actions":{"title":"Backup actions","text":"The Actions panel can turn one entity off once when Backup starts, remember its previous state and optionally restore it after Backup."},
+      "notifications":{"title":"Notifications","text":"Add mobile_app targets, schedules, rules, batteries and thresholds. Confirmation filters short events; rearm prevents repeated delivery for the configured number of hours."},
+      "journal":{"title":"Logs","text":"Commands, scheduler changes, weather decisions, notifications and user actions are retained for 30 days, up to 50 MB in total."},
+      "diagnostics":{"title":"Diagnostics","text":"Entity diagnostics show availability and recognized roles. Unknown or unavailable entities never cause blind repeated commands."},
+      "maintenance":{"title":"Backup and troubleshooting","text":"Back up Home Assistant and export planning before major updates. Test changed entities in Standby first. Disable control and inspect Logs if behavior is unexpected."}
     }
   },
   "journal": {

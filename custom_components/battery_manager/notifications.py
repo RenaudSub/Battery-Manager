@@ -278,7 +278,7 @@ class NotificationManager:
         if state.get("fingerprint") != fingerprint or (token is not None and state.get("token") != token):
             last_sent = state.get("last_sent", {})
             state.clear()
-            state.update({"fingerprint": fingerprint, "token": token, "delivered": [], "last_sent": last_sent})
+            state.update({"fingerprint": fingerprint, "token": token, "delivered": [], "last_sent": last_sent, "inhibited": []})
         if condition is None:
             if not state.get("active"):
                 state["since"] = None
@@ -287,7 +287,7 @@ class NotificationManager:
             if state.get("pending"):
                 for target_id in state["pending"]:
                     self.journal.add("notifications", "Notification abandonnée", f"{message} — condition disparue avant l’ouverture du créneau ({target_id})")
-            state.update({"since": None, "active": False, "delivered": [], "pending": []})
+            state.update({"since": None, "active": False, "delivered": [], "pending": [], "inhibited": []})
             return
         stamp = now.timestamp()
         if state.get("since") is None:
@@ -315,7 +315,14 @@ class NotificationManager:
                 continue
             if transient and stamp - state["since"] > max(60, rule["confirm_s"] + 60):
                 continue
-            if stamp - state.get("last_sent", {}).get(tid, 0) < rule["cooldown_s"]:
+            rearm_seconds = float(rule.get("rearm_h", 0)) * 3600
+            elapsed = stamp - state.get("last_sent", {}).get(tid, 0)
+            if elapsed < rearm_seconds:
+                if tid not in state.setdefault("inhibited", []):
+                    remaining = max(0, rearm_seconds - elapsed)
+                    hours, minutes = divmod(int(remaining // 60), 60)
+                    self.journal.add("notifications", "Notification inhibée", f"{target['name']} : {message} — ré-enclenchement dans {hours} h {minutes:02d} min")
+                    state["inhibited"].append(tid)
                 continue
             if stamp - state.get("attempts", {}).get(tid, 0) < 300:
                 continue

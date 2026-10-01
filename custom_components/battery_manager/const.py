@@ -9,6 +9,7 @@ PANEL_ICON = "mdi:battery-charging"
 
 MODE_DISABLED = "disabled"
 MODE_SCHEDULE = "schedule"
+MODE_BACKUP = "backup"
 
 ACTION_CHARGE = "charge"
 ACTION_DISCHARGE = "discharge"
@@ -34,6 +35,10 @@ DEFAULT_CONFIG = {
     "deadband_w": 30,
     "command_hysteresis_w": 30,
     "control_interval_s": 5,
+    "backup_actions": {
+        "entity_id": "",
+        "restore_on_exit": False,
+    },
     "schedule_profiles": [
         {"id": "sunny", "name": "Ensoleillé"},
         {"id": "cloudy", "name": "Nuageux"},

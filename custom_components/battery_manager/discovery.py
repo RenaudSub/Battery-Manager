@@ -17,6 +17,7 @@ ROLE_SUFFIXES = {
     # to balance an AC grid meter.
     "power": ("ac_power",),
     "grid_voltage": ("ac_voltage",),
+    "backup_function": ("backup_function",),
     "ac_current": ("ac_current",),
     "dc_voltage": ("battery_voltage", "dc_voltage"),
     "dc_current": ("battery_current", "dc_current"),
@@ -53,6 +54,7 @@ ROLE_SUFFIXES = {
 ROLE_NAMES = {
     "ac power": "power",
     "ac voltage": "grid_voltage",
+    "backup function": "backup_function",
     "ac current": "ac_current",
     "battery voltage": "dc_voltage",
     "battery current": "dc_current",

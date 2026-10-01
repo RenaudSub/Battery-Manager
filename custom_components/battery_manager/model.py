@@ -27,6 +27,7 @@ CONTROL_MODES = {
     "solar_charge",
     "standby",
     "disabled",
+    "backup",
 }
 
 
@@ -159,6 +160,7 @@ def default_battery(name: str = "Nouvelle batterie") -> dict[str, Any]:
             "state": "",
             "temperature": "",
             "grid_voltage": "",
+            "backup_function": "",
             "ac_current": "",
             "dc_voltage": "",
             "dc_current": "",
@@ -268,6 +270,10 @@ def normalize_battery(raw: dict[str, Any]) -> dict[str, Any]:
             else "disabled"
         )
     if result["control_mode"] not in CONTROL_MODES:
+        result["control_mode"] = "disabled"
+    # Backup is an immediate hardware action from the overview and is never
+    # persisted as the normal operating mode.
+    if result["control_mode"] == "backup":
         result["control_mode"] = "disabled"
     result["enabled"] = result["control_mode"] != "disabled"
     result["operation_mode"] = "schedule" if result["enabled"] else "disabled"

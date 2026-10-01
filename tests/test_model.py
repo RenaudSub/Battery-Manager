@@ -120,6 +120,19 @@ def test_grid_loss_options_and_voltage_entity_are_preserved() -> None:
     assert battery["entities"]["grid_voltage"] == "sensor.marstek_ac_voltage"
 
 
+def test_backup_entity_is_preserved_but_backup_mode_is_not_persisted() -> None:
+    battery = normalize_battery(
+        {
+            "adapter": "marstek_entities",
+            "control_mode": "backup",
+            "entities": {"backup_function": "switch.marstek_backup_function"},
+        }
+    )
+    assert battery["entities"]["backup_function"] == "switch.marstek_backup_function"
+    assert battery["control_mode"] == "disabled"
+    assert battery["enabled"] is False
+
+
 def test_charge_tiers_are_forced_contiguous() -> None:
     tiers = normalize_tiers(
         [

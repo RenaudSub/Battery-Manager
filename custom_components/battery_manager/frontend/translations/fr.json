@@ -13,7 +13,9 @@
     "configuration": "Configuration",
     "schedule": "Planificateur",
     "notifications": "Notifications",
-    "journal": "Journaux"
+    "journal": "Journaux",
+    "actions": "Actions",
+    "about": "À propos"
   },
   "buttons": {
     "add": "Ajouter",
@@ -99,7 +101,8 @@
     "native_self_consumption": "Autoconso Native",
     "solar_charge": "Charge Solaire",
     "standby": "En attente",
-    "disabled": "Désactivé"
+    "disabled": "Désactivé",
+    "backup": "Backup"
   },
   "overview": {
     "none": "Aucune batterie configurée.",
@@ -120,6 +123,9 @@
     "management": "Gestion",
     "in_charge": "en charge",
     "in_discharge": "en décharge",
+    "backup_mode": "Mode BACKUP",
+    "backup_recovery": "Retour Grid — confirmation 30 s",
+    "no_backup_command": "Aucune commande pendant le Backup",
     "current_setpoint": "Consigne en cours",
     "current_mode": "Mode actuel",
     "conversion": "Rendement de conversion",
@@ -200,6 +206,7 @@
     "state": "État",
     "temperature": "Température",
     "grid_voltage": "Tension Grid",
+    "backup_function": "Backup Function",
     "ac_current": "Intensité AC",
     "dc_voltage": "Tension DC batterie",
     "dc_current": "Intensité DC batterie",
@@ -308,6 +315,8 @@
     "outside_analysis_hours": "Hors de la plage d'analyse",
     "not_analyzed": "Pas encore analysé",
     "manual": "Sélection manuelle"
+    ,"backup_active": "Mode Backup actif — aucune commande envoyée",
+    "backup_grid_confirmation": "Sortie Backup — confirmation du Grid pendant 30 secondes"
   },
   "notifications": {
     "targets": "Cibles des notifications",
@@ -331,7 +340,8 @@
     "no_recipients": "Aucun destinataire sélectionné",
     "advanced": "Délai et test",
     "confirm": "Durée de confirmation (secondes)",
-    "cooldown": "Délai minimal entre deux alertes (secondes)",
+    "rearm_hours": "Ré-enclenchement (heures)",
+    "rearm_help": "Après un envoi réussi, cette notification reste inhibée pour cette batterie pendant la durée indiquée. La valeur 0 autorise un nouveau déclenchement dès que la condition a disparu puis revient.",
     "test_help": "Le test ignore le créneau et l’activation de la cible. Il vérifie l’envoi, sans simuler la condition sur la batterie.",
     "test_rule": "Tester l’envoi",
     "summary_time": "Heure du bilan",
@@ -500,6 +510,36 @@
         "title": "Bilan quotidien",
         "description": "Résumé des batteries cochées : SOC, énergie du jour si les entités existent et anomalies en cours. Un seul envoi par jour et par cible."
       }
+    }
+  },
+  "backup_actions": {
+    "title": "Actions en mode Backup",
+    "entity": "Entité à désactiver",
+    "restore": "Rétablir en cas de sortie du mode Backup",
+    "help": "Lors de l'entrée de la première batterie en Backup, Battery Manager mémorise l'état de cette entité et la désactive une seule fois si elle était active.",
+    "once": "L'état n'est pas imposé pendant le Backup : l'utilisateur peut réactiver manuellement l'entité. Le rétablissement éventuel intervient après la sortie de toutes les batteries et 30 secondes de Grid valide."
+  },
+  "about": {
+    "project": "Projet GitHub",
+    "website": "Site officiel",
+    "guide": "Notice d'utilisation",
+    "introduction": "Battery Manager centralise la surveillance, la planification et le pilotage de plusieurs batteries dans Home Assistant. Les commandes restent locales et les protections configurées sont appliquées avant chaque consigne.",
+    "sections": {
+      "installation": {"title":"Installation et mise à jour","text":"Installez le dépôt avec HACS ou copiez le dossier custom_components/battery_manager dans Home Assistant, redémarrez le Core puis ajoutez l'intégration. Après une mise à jour, redémarrez Home Assistant et forcez l'actualisation du navigateur avec Ctrl+F5."},
+      "configuration": {"title":"Configuration initiale","text":"Configurez d'abord l'entité de puissance réseau, puis ajoutez chaque batterie. Pour une Marstek, utilisez la détection Venus Modbus et vérifiez les entités récupérées. Pour une Hoymiles MS-A2, renseignez les sujets MQTT de mode et de puissance. Contrôlez toujours les signes de puissance avant d'autoriser les commandes."},
+      "overview": {"title":"Vue d'ensemble","text":"La vue d'ensemble réunit le SOC, la puissance, l'état de connexion, les commandes réelles, les mesures AC/DC, le rendement, les températures, l'énergie et les cycles. Un clic sur une mesure ouvre son historique Home Assistant. La puissance réseau affiche la valeur instantanée et les moyennes sur une et quinze minutes."},
+      "quick_modes": {"title":"Gestion rapide","text":"Le sélecteur de chaque batterie permet de choisir le Planificateur, la Charge, l'Autoconsommation collective ou native, la Charge solaire, l'Attente, le Backup Marstek ou la désactivation. Les modes rapides persistent jusqu'à un nouveau choix. En Backup, le sélecteur est verrouillé et aucune consigne n'est envoyée."},
+      "scheduler": {"title":"Planificateur","text":"Le planificateur travaille par quarts d'heure, sur sept jours et pour chaque profil météo. Sélectionnez une plage à la souris ou utilisez les champs Début et Fin, choisissez l'action, les puissances et les limites SOC, puis enregistrez. L'import et l'export permettent de sauvegarder ou recopier les programmations."},
+      "weather": {"title":"Profils météo","text":"Le mode Automatique analyse la prévision horaire et la couverture nuageuse à l'heure configurée. Les conditions sont associées aux profils Ensoleillé, Nuageux, Pluvieux ou à un profil personnalisé. Le diagnostic indique la donnée reçue, sa source, le profil calculé et la raison de la décision."},
+      "collective": {"title":"Régulation collective","text":"L'autoconsommation collective répartit la correction réseau entre les batteries disponibles selon leur capacité et leurs limites. La charge solaire collective utilise uniquement le surplus injecté et ne provoque jamais de décharge. La zone morte, l'hystérésis et le zéro réseau stabilisent la régulation."},
+      "protections": {"title":"Protections et paliers SOC","text":"Les SOC minimal et maximal bloquent respectivement la décharge et la charge. Les seuils de reprise ajoutent une hystérésis. Les paliers réduisent progressivement la puissance de charge selon le SOC et restent prioritaires sur la programmation."},
+      "compensation": {"title":"Compensation et estimation","text":"Les compensations de charge et de décharge corrigent séparément l'écart entre consigne et puissance AC mesurée. Le zéro réseau corrige uniquement un décalage collectif résiduel. Pendant la charge, l'heure estimée du SOC cible utilise une moyenne glissante, la capacité, le rendement AC/DC disponible et chaque palier SOC."},
+      "backup": {"title":"Grid et mode Backup","text":"Pour une Marstek, configurez Tension Grid et Backup Function. Dès que Backup Function est actif, Battery Manager cesse toute commande vers cette batterie. Après sa désactivation, la reprise attend une tension comprise entre 200 et 250 V pendant 30 secondes. Une valeur zéro est distinguée d'une entité indisponible."},
+      "actions": {"title":"Actions Backup","text":"Le panneau Actions peut désactiver une entité une seule fois à l'entrée en Backup. Son état initial est mémorisé. Si le rétablissement est activé, cet état est restauré après la sortie complète du Backup ; sinon Battery Manager ne touche plus à l'entité."},
+      "notifications": {"title":"Notifications","text":"Ajoutez une ou plusieurs destinations mobile_app, définissez leurs horaires, puis choisissez les règles, batteries et seuils. La confirmation filtre les événements trop courts. Le ré-enclenchement empêche la répétition d'une même notification pendant la durée choisie et reste mémorisé après redémarrage."},
+      "journal": {"title":"Journaux","text":"Les journaux enregistrent les consignes, transitions du planificateur, décisions météo, notifications et actions utilisateur. Ils sont conservés trente jours dans une limite totale de 50 Mo. Les filtres permettent de rechercher une période ou un texte précis."},
+      "diagnostics": {"title":"Diagnostics","text":"Le diagnostic des entités affiche toutes les entités du périphérique, leur disponibilité et les rôles reconnus. Une batterie hors ligne ou une entité unknown/unavailable ne doit pas entraîner de commandes aveugles. Consultez également les journaux Home Assistant en cas d'erreur de service."},
+      "maintenance": {"title":"Sauvegarde et dépannage","text":"Sauvegardez Home Assistant avant une mise à jour importante et conservez un export du planificateur. Après une modification d'entités, vérifiez la vue d'ensemble en mode Attente avant d'autoriser charge ou décharge. En cas de comportement inattendu, désactivez le pilotage de la batterie concernée et examinez les Journaux."}
     }
   },
   "journal": {

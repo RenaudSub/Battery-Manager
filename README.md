@@ -128,6 +128,19 @@ La puissance appliquée est la plus faible parmi :
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
 
+## Version 0.5.2
+
+- ajout de la sécurité **Backup Marstek** : arrêt complet des commandes et verrouillage de la gestion rapide lorsque `Backup Function` est actif ;
+- reprise automatique du mode précédent après désactivation du Backup et maintien d’une tension Grid comprise entre 200 et 250 V pendant 30 secondes ;
+- ajout du mode rapide **Backup**, qui active le switch configuré sans remplacer le mode de fonctionnement précédent ;
+- nouveau panneau **Actions** permettant de désactiver une entité à l’entrée en Backup et, facultativement, de restaurer son état initial après le retour du Grid ;
+- mémorisation persistante de l’état initial de l’entité pendant les redémarrages de Home Assistant ;
+- ajout d’une durée de réarmement des notifications, configurable en heures et mémorisée séparément pour chaque batterie et chaque destination ;
+- durée de réarmement fixée par défaut à 14 heures pour les notifications de début de charge et de décharge ;
+- journalisation unique des notifications inhibées pendant un même épisode ;
+- ajout des panneaux **Actions** et **À propos** dans le menu principal ;
+- ajout d’une documentation intégrée couvrant l’installation, la configuration, les modes, la planification, la météo, les protections, le Backup, les notifications, les journaux et le dépannage.
+
 ## Version 0.5.1
 
 - estimation de l'heure d'atteinte du SOC maximal, actualisée chaque minute à partir d'une moyenne glissante et des paliers SOC ;

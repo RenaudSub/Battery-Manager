@@ -5,7 +5,7 @@ const ACTIONS = {
   default_mode: { color: "#ffffff" },
   standby: { color: "#78909c" },
 };
-const PANEL_VERSION = "0.5.1";
+const PANEL_VERSION = "0.5.2";
 const SUPPORTED_LANGUAGES = ["fr", "en", "es"];
 
 const emptySlot = () => ({ action: "standby", charge_w: 0, discharge_w: 0, min_soc: null, max_soc: null });
@@ -27,7 +27,7 @@ const defaultBattery = () => ({
   grid_return_resume: false,
   source_device_id: "",
   entities: {
-    power: "", soc: "", state: "", temperature: "", grid_voltage: "", ac_current: "",
+    power: "", soc: "", state: "", temperature: "", grid_voltage: "", backup_function: "", ac_current: "",
     dc_voltage: "", dc_current: "", dc_power: "", total_capacity: "",
     charged_today: "", discharged_today: "", cycle_count: "", cycle_count_calc: "",
     max_cell_voltage: "", min_cell_voltage: "", work_mode: "",
@@ -249,6 +249,7 @@ class BatteryManagerPanel extends HTMLElement {
       .live-power { font-size:22px; font-weight:800; line-height:1.2; }
       .battery-power-block{align-self:stretch;display:grid;grid-template-rows:1fr auto;align-items:center;min-width:0}
       .charge-estimate{justify-self:end;font-size:12px;font-weight:700;color:var(--secondary-text-color);white-space:nowrap}
+      .backup-power{color:#ef6c00!important;display:flex;align-items:center;gap:7px}.backup-power ha-icon{color:#ef6c00}
       .charging { color:#2e7d32; } .discharging { color:#c62828; } .waiting-power { color:var(--primary-text-color); }
       .section-divider { border-top:1px solid var(--divider-color); margin-top:12px; padding-top:10px; }
       .setpoint-box { font-size:13px; line-height:1.45; }
@@ -403,7 +404,8 @@ class BatteryManagerPanel extends HTMLElement {
       .journal-line span{overflow-wrap:anywhere;white-space:pre-wrap}.journal-line time{white-space:nowrap;color:var(--secondary-text-color)}
       .journal-line:nth-child(even){background:var(--secondary-background-color)}
       .journal-tabs{display:flex;flex-wrap:wrap;gap:7px}.journal-tabs .active{background:var(--primary-color);color:var(--text-primary-color,#fff)}
-      @media(max-width:700px){header{flex-wrap:wrap}header h1{flex:1 1 calc(100% - 60px);min-width:0;order:0}.navigation-menu{order:1;flex-shrink:0}.profile-menu{order:2;max-width:100%}.profile-menu summary{max-width:100%}.target-manager select{min-width:0;max-width:100%}.target-manager .form-grid{grid-template-columns:minmax(0,1fr)}.journal-line{grid-template-columns:minmax(0,1fr);gap:2px}.notification-battery{width:100%}.notification-batteries{display:block}.notification-battery{margin:8px 0;box-sizing:border-box}.journal-toolbar input{max-width:100%}}
+      .about-hero{text-align:center;padding:28px 12px}.about-hero h2{font-size:32px;margin:0 0 14px}.about-links{display:flex;justify-content:center;gap:18px;flex-wrap:wrap}.about-sections details{border-top:1px solid var(--divider-color);padding:10px 2px}.about-sections summary{cursor:pointer;font-weight:700}.about-sections p,.about-sections li{line-height:1.55}.backup-action-grid{display:grid;grid-template-columns:minmax(280px,520px) auto;gap:18px;align-items:end}.backup-action-grid label{display:flex;gap:8px;align-items:center}
+      @media(max-width:700px){header{flex-wrap:wrap}header h1{flex:1 1 calc(100% - 60px);min-width:0;order:0}.navigation-menu{order:1;flex-shrink:0}.profile-menu{order:2;max-width:100%}.profile-menu summary{max-width:100%}.target-manager select{min-width:0;max-width:100%}.target-manager .form-grid,.backup-action-grid{grid-template-columns:minmax(0,1fr)}.journal-line{grid-template-columns:minmax(0,1fr);gap:2px}.notification-battery{width:100%}.notification-batteries{display:block}.notification-battery{margin:8px 0;box-sizing:border-box}.journal-toolbar input{max-width:100%}}
     </style>`;
   }
 
@@ -413,6 +415,8 @@ class BatteryManagerPanel extends HTMLElement {
       : this._tab === "weather" ? this._weatherEditor()
       : this._tab === "notifications" ? this._notificationsEditor()
       : this._tab === "journal" ? this._journalEditor()
+      : this._tab === "actions" ? this._actionsEditor()
+      : this._tab === "about" ? this._aboutEditor()
       : this._tab === "batteries" ? this._batteryEditor()
       : this._scheduleEditor();
     this.shadowRoot.innerHTML = `${this._styles()}
@@ -428,9 +432,28 @@ class BatteryManagerPanel extends HTMLElement {
         <button data-tab="schedule" class="${this._tab === "schedule" ? "active" : ""}">${this._t("tabs.schedule")}</button>
         <button data-tab="notifications" class="${this._tab === "notifications" ? "active" : ""}">${this._t("tabs.notifications")}</button>
         <button data-tab="journal" class="${this._tab === "journal" ? "active" : ""}">${this._t("tabs.journal")}</button>
+        <button data-tab="actions" class="${this._tab === "actions" ? "active" : ""}">${this._t("tabs.actions")}</button>
+        <button data-tab="about" class="${this._tab === "about" ? "active" : ""}">${this._t("tabs.about")}</button>
       </div></details></header><main>${body}</main>`;
     this._bind();
     this._bindNotificationsAndJournal();
+  }
+
+  _actionsEditor() {
+    const action=this._config.backup_actions||={entity_id:"",restore_on_exit:false};
+    return `<div class="card"><div class="toolbar"><h2>${this._t("backup_actions.title")}</h2><button id="save" class="primary save-right">${this._t("buttons.save")}</button></div>
+      <p class="muted">${this._t("backup_actions.help")}</p><div class="backup-action-grid">
+      <ha-entity-picker data-entity-path="_global.backup_actions.entity_id" data-label="${esc(this._t("backup_actions.entity"))}" data-domains="switch,input_boolean" value="${esc(action.entity_id||"")}" allow-custom-entity></ha-entity-picker>
+      <label><input data-path="_global.backup_actions.restore_on_exit" type="checkbox" ${action.restore_on_exit?"checked":""}>${this._t("backup_actions.restore")}</label></div>
+      <p class="muted">${this._t("backup_actions.once")}</p></div>`;
+  }
+
+  _aboutEditor() {
+    const sections=["installation","configuration","overview","quick_modes","scheduler","weather","collective","protections","compensation","backup","actions","notifications","journal","diagnostics","maintenance"];
+    return `<div class="card"><div class="about-hero"><h2>Battery Manager v${PANEL_VERSION}</h2><div class="about-links">
+      <a href="https://github.com/RenaudSub/Battery-Manager" target="_blank" rel="noopener">${this._t("about.project")}</a>
+      <a href="https://www.logisub.fr/battery-manager.html" target="_blank" rel="noopener">${this._t("about.website")}</a></div></div><hr>
+      <h2>${this._t("about.guide")}</h2><p>${this._t("about.introduction")}</p><div class="about-sections">${sections.map(id=>`<details><summary>${this._t(`about.sections.${id}.title`)}</summary><p>${this._t(`about.sections.${id}.text`)}</p></details>`).join("")}</div></div>`;
   }
 
 
@@ -476,7 +499,7 @@ class BatteryManagerPanel extends HTMLElement {
     return `<section class="notification-rule"><h3>${t(`rules.${id}.title`)}</h3><p class="muted">${t(`rules.${id}.description`)}</p>${batteries}
       ${id==="daily_summary"?`<label>${t("summary_time")} <input type="time" data-rule-time="${id}" value="${esc(rule.time||"20:00")}"></label>`:""}
       <div class="notification-recipients"><b>${t("recipients")} :</b>${n.targets.map(x=>`<label><input type="checkbox" data-rule-target="${id}" data-target-id="${esc(x.id)}" ${rule.targets.includes(x.id)?"checked":""}>${esc(x.name)}${x.enabled?"":` (${t("disabled")})`}</label>`).join("")}${rule.targets.length?"":`<span class="muted">${t("no_recipients")}</span>`}</div>
-      <details class="notification-advanced"><summary>${t("advanced")}</summary><div class="form-grid"><label>${t("confirm")}<input type="number" min="0" max="86400" data-rule-setting="${id}" data-setting="confirm_s" value="${rule.confirm_s}"></label><label>${t("cooldown")}<input type="number" min="0" max="86400" data-rule-setting="${id}" data-setting="cooldown_s" value="${rule.cooldown_s}"></label></div><p class="muted">${t("test_help")}</p><button data-test-rule="${id}" ${rule.targets.length?"":"disabled"}>${t("test_rule")}</button></details></section>`;
+      <details class="notification-advanced"><summary>${t("advanced")}</summary><div class="form-grid"><label>${t("confirm")}<input type="number" min="0" max="86400" data-rule-setting="${id}" data-setting="confirm_s" value="${rule.confirm_s}"></label><label>${t("rearm_hours")}<input type="number" min="0" max="720" step="0.25" data-rule-setting="${id}" data-setting="rearm_h" value="${rule.rearm_h}"></label></div><p class="muted">${t("rearm_help")}</p><p class="muted">${t("test_help")}</p><button data-test-rule="${id}" ${rule.targets.length?"":"disabled"}>${t("test_rule")}</button></details></section>`;
   }
 
   _journalEditor() {
@@ -579,26 +602,28 @@ class BatteryManagerPanel extends HTMLElement {
       const temp = this._state(b.entities.temperature);
       const decisionKey = b.id || b.name;
       const decision = this._status.decisions?.[decisionKey] || {};
+      const backupBlocked = ["backup","backup_recovery"].includes(decision.action);
       const device = this._marstekDevices.find((item) => item.device_id === b.source_device_id);
       const connectivity = this._batteryConnectivity(b);
       const socNumber = Math.max(0, Math.min(100, Number(soc.state) || 0));
       const socColor = socNumber < 30 ? "#c62828" : socNumber < 50 ? "#ef6c00" : "#43a047";
-      const powerClass = normalizedPower > 10 ? "charging" : normalizedPower < -10 ? "discharging" : "waiting-power";
-      const powerText = !Number.isFinite(normalizedPower) ? "—"
+      const powerClass = backupBlocked ? "backup-power" : normalizedPower > 10 ? "charging" : normalizedPower < -10 ? "discharging" : "waiting-power";
+      const powerText = backupBlocked ? this._t(decision.action === "backup" ? "overview.backup_mode" : "overview.backup_recovery")
+        : !Number.isFinite(normalizedPower) ? "—"
         : normalizedPower > 10 ? `${Math.round(Math.abs(normalizedPower))} W ${this._t("overview.in_charge")}`
         : normalizedPower < -10 ? `${Math.round(Math.abs(normalizedPower))} W ${this._t("overview.in_discharge")}`
         : this._t("control_modes.standby");
       const chargeEstimate = this._chargeEstimate(decisionKey, normalizedPower);
       return `<section class="card battery-card"><div class="battery-head"><div class="battery-title"><ha-icon icon="mdi:battery-medium"></ha-icon>
         <div><h2>${esc(b.name)}</h2><div class="battery-online ${connectivity.className}">${this._t("overview.status")} : ${this._t(`overview.${connectivity.label}`)}</div></div></div>
-        <select class="quick-control" aria-label="${esc(this._t("overview.management"))}" data-quick-mode="${esc(decisionKey)}">${this._controlOptions(b.control_mode || (b.enabled ? "schedule" : "disabled"))}</select></div>
+        <select class="quick-control" aria-label="${esc(this._t("overview.management"))}" data-quick-mode="${esc(decisionKey)}" ${backupBlocked?"disabled":""}>${this._controlOptions(b, backupBlocked?"backup":(b.control_mode || (b.enabled ? "schedule" : "disabled")))}</select></div>
         <div class="battery-summary"><div class="soc-ring" data-more-info="${esc(b.entities.soc)}" style="--soc:${socNumber};--soc-color:${socColor}"><strong>${Number.isFinite(Number(soc.state)) ? `${Math.round(Number(soc.state))}%` : "—"}</strong></div>
-        <div class="battery-power-block"><div class="live-power ${powerClass}" data-more-info="${esc(b.entities.power)}">${esc(powerText)}</div>${chargeEstimate}</div></div>
+        <div class="battery-power-block"><div class="live-power ${powerClass}" data-more-info="${esc(b.entities.power)}">${backupBlocked?`<ha-icon icon="mdi:alert"></ha-icon>${esc(powerText)}`:esc(powerText)}</div>${backupBlocked?"":chargeEstimate}</div></div>
         ${b.adapter === "marstek_entities" ? this._marstekCommandStatus(b) : ""}
         ${b.adapter === "hoymiles_msa2" ? this._msa2CommandStatus(b, decision) : ""}
         <div class="section-divider setpoint-box"><b>${this._t("overview.current_setpoint")}</b><br>
-          ${this._t("overview.current_mode")} : ${esc(this._currentModeLabel(b))}<br>
-          ${this._t("overview.transmitted_command")} : ${this._commandText(decision, b)}
+          ${this._t("overview.current_mode")} : ${esc(this._currentModeLabel(b, decision))}<br>
+          ${this._t("overview.transmitted_command")} : ${backupBlocked?this._t("overview.no_backup_command"):this._commandText(decision, b)}
           ${decision.calculated_command_w !== undefined ? `<br>${this._t("overview.calculated_command")} : ${esc(decision.calculated_command_w)} W · ${this._t("overview.compensation")} : ${decision.compensation_w > 0 ? "+" : ""}${esc(decision.compensation_w)} W` : ""}
           ${decision.command_sent_at ? `<br><span class="muted">${this._t("overview.sent_at")} ${esc(new Date(decision.command_sent_at).toLocaleTimeString())}</span>` : ""}</div>
         ${this._batteryMonitoring(b, normalizedPower, temp, decisionKey)}
@@ -606,8 +631,9 @@ class BatteryManagerPanel extends HTMLElement {
     }).join("")}</div>`;
   }
 
-  _controlOptions(selected) {
+  _controlOptions(battery, selected) {
     const modes = ["schedule", "charge", "self_consumption", "native_self_consumption", "solar_charge", "standby", "disabled"];
+    if (battery.adapter === "marstek_entities" && battery.entities?.backup_function) modes.splice(6,0,"backup");
     return modes.map((mode) => `<option value="${mode}" ${mode===selected?"selected":""}>${this._t(`control_modes.${mode}`)}</option>`).join("");
   }
 
@@ -632,7 +658,9 @@ class BatteryManagerPanel extends HTMLElement {
     return `<span class="grid-trend ${favorable ? "trend-good" : "trend-bad"}">${increasing ? "↑" : "↓"}</span>`;
   }
 
-  _currentModeLabel(battery) {
+  _currentModeLabel(battery, decision={}) {
+    if (decision.action === "backup") return this._t("overview.backup_mode");
+    if (decision.action === "backup_recovery") return this._t("overview.backup_recovery");
     let mode = battery.control_mode || (battery.enabled ? "schedule" : "disabled");
     if (mode === "schedule") {
       const now = new Date();
@@ -867,6 +895,7 @@ class BatteryManagerPanel extends HTMLElement {
           <label>${this._t("fields.invert_power")}<input data-path="power_inverted" type="checkbox" ${b.power_inverted?"checked":""}></label></div>${entityField(this._t("fields.soc"), "entities.soc", e.soc, ["sensor","input_number"])}
         ${entityField(this._t("fields.state"), "entities.state", e.state, ["sensor","select","input_select"])}${entityField(this._t("fields.temperature"), "entities.temperature", e.temperature, ["sensor"])}
         ${entityField(this._t("fields.grid_voltage"), "entities.grid_voltage", e.grid_voltage, ["sensor"])}
+        ${b.adapter === "marstek_entities" ? entityField(this._t("fields.backup_function"), "entities.backup_function", e.backup_function, ["switch","input_boolean"]) : ""}
         ${entityField(this._t("fields.ac_current"), "entities.ac_current", e.ac_current, ["sensor"])}
         ${entityField(this._t("fields.dc_voltage"), "entities.dc_voltage", e.dc_voltage, ["sensor"])}
         ${entityField(this._t("fields.dc_current"), "entities.dc_current", e.dc_current, ["sensor"])}
@@ -1009,7 +1038,7 @@ class BatteryManagerPanel extends HTMLElement {
       try {
         await this._hass.callWS({type:"battery_manager/set_control_mode", battery_id:select.dataset.quickMode, mode:select.value});
         const battery = this._config.batteries.find((item) => String(item.id || item.name) === select.dataset.quickMode);
-        if (battery) { battery.control_mode=select.value; battery.enabled=select.value!=="disabled"; battery.operation_mode=battery.enabled?"schedule":"disabled"; }
+        if (battery && select.value!=="backup") { battery.control_mode=select.value; battery.enabled=select.value!=="disabled"; battery.operation_mode=battery.enabled?"schedule":"disabled"; }
         await this._refreshStatus();
       } catch(err) {
         alert(this._t("errors.control_mode", {details:err?.message || err}));

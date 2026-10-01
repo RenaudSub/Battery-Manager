@@ -28,6 +28,8 @@ def module(name):
 for name in ('homeassistant','homeassistant.components','homeassistant.helpers','homeassistant.util'):
     mod=module(name);mod.__path__=[]
 mqtt=module('homeassistant.components.mqtt');mqtt.is_connected=lambda hass: True
+constants=module('homeassistant.const');constants.STATE_UNKNOWN='unknown';constants.STATE_UNAVAILABLE='unavailable'
+events=module('homeassistant.helpers.event');events.async_track_time_interval=lambda *args,**kwargs: (lambda:None)
 storage=module('homeassistant.helpers.storage')
 class FakeStore:
     def __class_getitem__(cls, _): return cls
@@ -45,8 +47,9 @@ clock.parse_datetime=lambda value: datetime.fromisoformat(value) if value else N
 from custom_components.battery_manager.activity import ActivityJournal, configuration_changes
 from custom_components.battery_manager.notification_rules import CATALOG, normalize_notifications, threshold_for, RULES, in_window
 from custom_components.battery_manager.notifications import NotificationManager
-from custom_components.battery_manager.model import default_battery
+from custom_components.battery_manager.model import Decision, default_battery
 from custom_components.battery_manager.store import BatteryManagerStore
+from custom_components.battery_manager.controller import BatteryController
 
 class FakeServices:
     def __init__(self): self.calls=[];self.fail=False
@@ -54,17 +57,57 @@ class FakeServices:
     async def async_call(self, domain, action, payload, **kwargs):
         if self.fail: raise RuntimeError('test transport failure')
         self.calls.append((domain,action,payload))
+        entity_id=payload.get('entity_id') if isinstance(payload,dict) else None
+        if entity_id and action in ('turn_on','turn_off') and hasattr(self,'hass'):
+            self.hass.put(entity_id,'on' if action=='turn_on' else 'off')
 
 class FakeHass:
     def __init__(self, path):
         self.config=SimpleNamespace(path=lambda *p: str(Path(path).joinpath(*p)))
         self.services=FakeServices()
+        self.services.hass=self
         self.entities={}
         self.states=SimpleNamespace(get=lambda key:self.entities.get(key))
     async def async_add_executor_job(self, fn, *args): return await asyncio.to_thread(fn,*args)
     def put(self,key,value): self.entities[key]=SimpleNamespace(state=str(value),entity_id=key,attributes={},last_reported=NOW)
 
 TARGET={'id':'phone','action':'notify.mobile_app_s23ultra2sub','name':'Mon téléphone','enabled':True,'start':'07:00','end':'22:00'}
+
+class BackupTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.hass=FakeHass(self.tmp.name)
+        self.battery=default_battery();self.battery.update(id='b1',name='BAT1',adapter='marstek_entities')
+        self.battery['entities'].update(backup_function='switch.backup',grid_voltage='sensor.grid_voltage')
+        self.config={'batteries':[self.battery],'backup_actions':{'entity_id':'switch.cumulus','restore_on_exit':True}}
+        self.controller=BatteryController(self.hass,SimpleNamespace(data=self.config));self.controller._backup_loaded=True
+    async def asyncTearDown(self):self.tmp.cleanup()
+    async def test_one_shot_backup_action_and_grid_recovery(self):
+        self.hass.put('switch.cumulus','on');self.hass.put('switch.backup','on');self.hass.put('sensor.grid_voltage',1.6)
+        await self.controller._async_update_backup_state(self.config)
+        self.assertEqual(self.hass.entities['switch.cumulus'].state,'off')
+        self.assertIn('b1',self.controller._backup_blocked_ids)
+        calls=len(self.hass.services.calls)
+        await self.controller._async_update_backup_state(self.config)
+        self.assertEqual(len(self.hass.services.calls),calls)
+        self.hass.put('switch.backup','off');self.hass.put('sensor.grid_voltage',235)
+        with patch('custom_components.battery_manager.controller.monotonic',side_effect=[100,131]):
+            await self.controller._async_update_backup_state(self.config)
+            await self.controller._async_update_backup_state(self.config)
+        self.assertNotIn('b1',self.controller._backup_blocked_ids)
+        self.assertEqual(self.hass.entities['switch.cumulus'].state,'on')
+    async def test_marstek_command_is_suppressed_while_backup_switch_is_on(self):
+        self.hass.put('switch.backup','on')
+        await self.controller._async_apply_marstek(self.battery,Decision('charge',charge_w=500))
+        self.assertEqual(self.hass.services.calls,[])
+    async def test_initially_off_action_is_never_started_on_exit(self):
+        self.hass.put('switch.cumulus','off');self.hass.put('switch.backup','on');self.hass.put('sensor.grid_voltage',1.6)
+        await self.controller._async_update_backup_state(self.config)
+        self.hass.put('switch.backup','off');self.hass.put('sensor.grid_voltage',235)
+        with patch('custom_components.battery_manager.controller.monotonic',side_effect=[100,131]):
+            await self.controller._async_update_backup_state(self.config)
+            await self.controller._async_update_backup_state(self.config)
+        self.assertEqual(self.hass.services.calls,[])
+        self.assertEqual(self.hass.entities['switch.cumulus'].state,'off')
 
 def fixture():
     batteries=[]
@@ -84,6 +127,8 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(threshold_for(RULES['soc_low'],rule,b),15)
         b['limits']['min_soc']=18;self.assertEqual(threshold_for(RULES['soc_low'],rule,b),18)
         rule['batteries']['b1']['threshold']=12;self.assertEqual(threshold_for(RULES['soc_low'],rule,b),12)
+        self.assertEqual(n['rules']['charge_start']['rearm_h'],14)
+        self.assertEqual(n['rules']['discharge_start']['rearm_h'],14)
     def test_target_validation_and_midnight(self):
         for start,end in [('22:00','07:00'),('07:00','07:00'),('25:00','26:00')]:
             with self.assertRaises(ValueError):normalize_notifications({'targets':[{**TARGET,'start':start,'end':end}]},[])
@@ -159,7 +204,7 @@ class NotificationTests(unittest.IsolatedAsyncioTestCase):
         self.hass.put('sensor.grid',750)
     async def asyncTearDown(self):self.tmp.cleanup()
     def enable(self,key,confirm=0):
-        rule=self.config['notifications']['rules'][key];rule['targets']=['phone'];rule['confirm_s']=confirm;rule['cooldown_s']=0
+        rule=self.config['notifications']['rules'][key];rule['targets']=['phone'];rule['confirm_s']=confirm;rule['rearm_h']=0
         return rule
     async def tick(self,hour=None,minutes=0):
         global NOW
@@ -168,6 +213,15 @@ class NotificationTests(unittest.IsolatedAsyncioTestCase):
     async def test_zero_recipients_zero_delivery(self):
         self.hass.put('sensor.b1_soc',5);await self.tick(10)
         self.assertEqual(self.hass.services.calls,[])
+    async def test_charge_start_rearm_blocks_repeated_transition(self):
+        self.enable('charge_start')['rearm_h']=14
+        await self.tick(8,0)
+        self.hass.put('sensor.b1_power',300);await self.tick(8,1)
+        self.hass.put('sensor.b1_power',0);await self.tick(8,5)
+        self.hass.put('sensor.b1_power',350);await self.tick(8,10)
+        self.assertEqual(len(self.hass.services.calls),1)
+        rows=await self.journal.async_read('notifications')
+        self.assertTrue(any('inhibée' in e['kind'] for e in rows['entries']))
     async def test_deferred_then_disappears(self):
         self.enable('soc_low');self.hass.put('sensor.b1_soc',5);await self.tick()
         self.assertFalse(self.hass.services.calls)

@@ -13,6 +13,7 @@ from homeassistant.components import mqtt
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -46,6 +47,7 @@ class BatteryController:
 
     def __init__(self, hass: HomeAssistant, store: Any) -> None:
         self.notifications = None
+        self.journal = None
         self._notification_task = None
         self.hass = hass
         self.store = store
@@ -59,6 +61,14 @@ class BatteryController:
         self._collective_target_w: float | None = None
         self._collective_signature: tuple[tuple[str, str], ...] | None = None
         self._grid_guards: dict[str, dict[str, Any]] = {}
+        self._backup_storage = Store(hass, 1, "battery_manager.backup_state")
+        self._backup_state: dict[str, Any] = {
+            "active_ids": [], "session_ids": [], "session_open": False,
+            "action_initial_state": None, "action_switched_off": False,
+        }
+        self._backup_loaded = False
+        self._backup_recovery_since: dict[str, float | None] = {}
+        self._backup_blocked_ids: set[str] = set()
         self._grid_samples: deque[tuple[float, float]] = deque()
         self._charge_samples: dict[str, deque[tuple[float, float, float | None]]] = {}
         self._charge_estimates: dict[str, dict[str, Any]] = {}
@@ -78,11 +88,161 @@ class BatteryController:
         """Start periodic evaluation."""
         from datetime import timedelta
 
+        if not self._backup_loaded:
+            loaded = await self._backup_storage.async_load()
+            if isinstance(loaded, dict):
+                self._backup_state.update(loaded)
+            self._backup_loaded = True
+
         self._remove_timer = async_track_time_interval(
             self.hass,
             self._async_tick,
             timedelta(seconds=int(self.store.data.get("control_interval_s", 5))),
         )
+
+    def _journal_backup(self, title: str, content: str) -> None:
+        if self.journal:
+            self.journal.add("users", title, content)
+
+    @staticmethod
+    def _entity_on(state: Any) -> bool | None:
+        if state is None or str(state.state).casefold() in ("unknown", "unavailable"):
+            return None
+        return str(state.state).casefold() in ("on", "1", "true", "active", "enabled")
+
+    def _backup_switch(self, battery: dict[str, Any]) -> bool | None:
+        entity_id = battery.get("entities", {}).get("backup_function", "")
+        return self._entity_on(self.hass.states.get(entity_id)) if entity_id else False
+
+    async def _set_entity_power(self, entity_id: str, enabled: bool) -> None:
+        domain = entity_id.partition(".")[0]
+        if not domain:
+            raise ValueError("Entité d'action Backup invalide")
+        await self.hass.services.async_call(
+            domain,
+            "turn_on" if enabled else "turn_off",
+            {"entity_id": entity_id},
+            blocking=True,
+        )
+
+    async def async_enable_backup(self, battery_id: str) -> None:
+        """Enable the configured Marstek Backup switch from the overview."""
+        battery = next(
+            (item for item in self.store.data.get("batteries", [])
+             if str(item.get("id") or item.get("name")) == battery_id),
+            None,
+        )
+        if not battery or battery.get("adapter") != "marstek_entities":
+            raise ValueError("Le mode Backup est réservé aux batteries Marstek")
+        entity_id = battery.get("entities", {}).get("backup_function", "")
+        if not entity_id:
+            raise ValueError("Entité Backup Function non configurée")
+        state = self.hass.states.get(entity_id)
+        if self._entity_on(state) is None:
+            raise ValueError("Entité Backup Function indisponible")
+        if self._backup_switch(battery) is not True:
+            await self._set_entity_power(entity_id, True)
+
+    async def _async_update_backup_state(self, config: dict[str, Any]) -> None:
+        """Track Backup switches, per-battery recovery and one-shot actions."""
+        batteries = {
+            str(item.get("id") or item.get("name")): item
+            for item in config.get("batteries", [])
+            if item.get("adapter") == "marstek_entities"
+            and item.get("entities", {}).get("backup_function")
+        }
+        previous = set(self._backup_state.get("active_ids", [])) & set(batteries)
+        active = set(previous)
+        changed = False
+        for battery_id, battery in batteries.items():
+            value = self._backup_switch(battery)
+            if value is True:
+                active.add(battery_id)
+            elif value is False:
+                active.discard(battery_id)
+
+        entered = active - previous
+        exited = previous - active
+        if entered:
+            changed = True
+            if not self._backup_state.get("session_open"):
+                self._backup_state.update({
+                    "session_open": True,
+                    "session_ids": [],
+                    "action_initial_state": None,
+                    "action_switched_off": False,
+                })
+                action = config.get("backup_actions", {})
+                entity_id = str(action.get("entity_id", ""))
+                state = self.hass.states.get(entity_id) if entity_id else None
+                initial = self._entity_on(state)
+                self._backup_state["action_initial_state"] = initial
+                if initial is True:
+                    try:
+                        await self._set_entity_power(entity_id, False)
+                        self._backup_state["action_switched_off"] = True
+                        self._journal_backup("Action Backup", f"{entity_id} désactivée à l'entrée en mode Backup")
+                    except Exception as err:
+                        _LOGGER.exception("Unable to turn off Backup action entity %s", entity_id)
+                        self._journal_backup("Échec Action Backup", f"Impossible de désactiver {entity_id} : {err}")
+            session_ids = set(self._backup_state.get("session_ids", []))
+            session_ids.update(entered)
+            self._backup_state["session_ids"] = sorted(session_ids)
+            for battery_id in entered:
+                self._backup_recovery_since.pop(battery_id, None)
+                self._journal_backup("Mode Backup", f"{batteries[battery_id].get('name', battery_id)} est passée en mode Backup ; pilotage suspendu")
+
+        for battery_id in exited:
+            changed = True
+            self._backup_recovery_since[battery_id] = None
+            self._journal_backup("Sortie Backup", f"{batteries[battery_id].get('name', battery_id)} attend 30 secondes de Grid valide")
+
+        now_mono = monotonic()
+        for battery_id in list(self._backup_recovery_since):
+            battery = batteries.get(battery_id)
+            if battery is None or battery_id in active:
+                self._backup_recovery_since.pop(battery_id, None)
+                continue
+            voltage = _number(self.hass, battery.get("entities", {}).get("grid_voltage", ""))
+            if voltage is None or not 200.0 <= voltage <= 250.0:
+                self._backup_recovery_since[battery_id] = None
+                continue
+            since = self._backup_recovery_since[battery_id]
+            if since is None:
+                self._backup_recovery_since[battery_id] = now_mono
+            elif now_mono - since >= 30:
+                self._backup_recovery_since.pop(battery_id, None)
+                self._marstek_cache.pop(battery_id, None)
+                self._journal_backup("Sortie Backup", f"{battery.get('name', battery_id)} reprend son mode précédent après 30 secondes de Grid valide")
+
+        self._backup_state["active_ids"] = sorted(active)
+        self._backup_blocked_ids = active | set(self._backup_recovery_since)
+
+        if self._backup_state.get("session_open") and not active and not self._backup_recovery_since:
+            action = config.get("backup_actions", {})
+            entity_id = str(action.get("entity_id", ""))
+            initial = self._backup_state.get("action_initial_state")
+            if action.get("restore_on_exit") and initial is not None and entity_id:
+                current = self._entity_on(self.hass.states.get(entity_id))
+                if current is None:
+                    await self._backup_storage.async_save(self._backup_state)
+                    return
+                if current != initial:
+                    try:
+                        await self._set_entity_power(entity_id, bool(initial))
+                        self._journal_backup("Action Backup", f"{entity_id} rétablie dans son état précédent")
+                    except Exception as err:
+                        _LOGGER.exception("Unable to restore Backup action entity %s", entity_id)
+                        self._journal_backup("Échec Action Backup", f"Impossible de rétablir {entity_id} : {err}")
+                        await self._backup_storage.async_save(self._backup_state)
+                        return
+            self._backup_state = {
+                "active_ids": [], "session_ids": [], "session_open": False,
+                "action_initial_state": None, "action_switched_off": False,
+            }
+            changed = True
+        if changed:
+            await self._backup_storage.async_save(self._backup_state)
 
     async def async_stop(self) -> None:
         """Stop periodic evaluation."""
@@ -298,6 +458,11 @@ class BatteryController:
                 "hoymiles_msa2",
             ):
                 continue
+            if battery_id in self._backup_blocked_ids or self._backup_switch(battery) is True:
+                self._last_decisions[battery_id] = {
+                    "action": "backup", "reason": "backup_active", "backup_active": True
+                }
+                continue
             was_active = bool(
                 previous.get("enabled")
                 and previous.get("operation_mode") == MODE_SCHEDULE
@@ -354,6 +519,10 @@ class BatteryController:
             "effective_profile": self._effective_profile(),
             "weather": self._weather_status,
             "charge_estimates": self._charge_estimates,
+            "backup": {
+                "active_ids": list(self._backup_state.get("active_ids", [])),
+                "recovering_ids": list(self._backup_recovery_since),
+            },
         }
 
     def _grid_average(self, seconds: int) -> float | None:
@@ -453,6 +622,7 @@ class BatteryController:
     async def _async_tick(self, now: datetime) -> None:
         config = self.store.data
         await self.async_refresh_weather()
+        await self._async_update_backup_state(config)
         grid = _number(self.hass, config.get("grid_power_entity", ""))
         grid_available = grid is not None
         if not grid_available:
@@ -476,6 +646,15 @@ class BatteryController:
         for battery in config.get("batteries", []):
             battery_id = str(battery.get("id") or battery.get("name"))
             self._record_temperature(battery_id, battery, local_now)
+            if battery_id in self._backup_blocked_ids:
+                active = battery_id in set(self._backup_state.get("active_ids", []))
+                self._charge_estimates.pop(battery_id, None)
+                self._last_decisions[battery_id] = {
+                    "action": "backup" if active else "backup_recovery",
+                    "reason": "backup_active" if active else "backup_grid_confirmation",
+                    "backup_active": active,
+                }
+                continue
             self._update_charge_estimate(battery_id, battery, local_now)
             if not battery.get("enabled") or battery.get("operation_mode") != MODE_SCHEDULE:
                 self._grid_guards.pop(battery_id, None)
@@ -968,6 +1147,9 @@ class BatteryController:
         decision: Decision,
         collective: bool = False,
     ) -> None:
+        # Last-line safety: Backup owns the inverter exclusively.
+        if self._backup_switch(battery) is True:
+            return
         entities = battery["entities"]
         values = battery["mode_values"]
         work_mode_entity = entities.get("work_mode")
@@ -1229,6 +1411,8 @@ class BatteryController:
         self, battery: dict[str, Any]
     ) -> dict[str, Any] | None:
         """Apply the explicitly selected Marstek fallback once."""
+        if self._backup_switch(battery) is True:
+            return None
         entities = battery["entities"]
         values = battery["mode_values"]
         rs485_entity = entities.get("rs485_control_mode")

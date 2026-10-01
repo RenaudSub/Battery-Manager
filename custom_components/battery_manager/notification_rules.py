@@ -45,7 +45,19 @@ _SPECS = [
     ("connection_recovered", "battery", "", None, None, 0),
     ("daily_summary", "battery", "", None, None, 0),
 ]
-CATALOG = [{"id": key, "scope": scope, "unit": unit, "default": default, "source": source, "confirm_s": confirm} for key, scope, unit, default, source, confirm in _SPECS]
+_REARM_HOURS = {
+    "charge_start": 14, "discharge_start": 14,
+    "full": 12, "soc_high": 12,
+    "command_unconfirmed": 4, "underpower": 4, "mode_unexpected": 4,
+    "temperature_high": 1, "temperature_low": 1,
+    "battery_unavailable": 1, "sensor_unavailable": 1,
+    "grid_unavailable": 1, "connection_lost": 1,
+}
+CATALOG = [{
+    "id": key, "scope": scope, "unit": unit, "default": default,
+    "source": source, "confirm_s": confirm,
+    "rearm_h": _REARM_HOURS.get(key, 0.25),
+} for key, scope, unit, default, source, confirm in _SPECS]
 RULES = {s["id"]: s for s in CATALOG}
 DEFAULT_NOTIFICATIONS = {"targets": [], "rules": {}, "language": "fr"}
 
@@ -84,7 +96,12 @@ def normalize_notifications(raw, batteries):
     raw_rules = raw.get("rules", {})
     for spec in CATALOG:
         incoming = raw_rules.get(spec["id"], {})
-        rule = {"targets": [str(t) for t in incoming.get("targets", []) if str(t) in seen], "batteries": {}, "confirm_s": int(_finite(incoming.get("confirm_s", spec["confirm_s"]), 0, 0, 86400)), "cooldown_s": int(_finite(incoming.get("cooldown_s", 900), 900, 0, 86400))}
+        rule = {
+            "targets": [str(t) for t in incoming.get("targets", []) if str(t) in seen],
+            "batteries": {},
+            "confirm_s": int(_finite(incoming.get("confirm_s", spec["confirm_s"]), 0, 0, 86400)),
+            "rearm_h": _finite(incoming.get("rearm_h", spec["rearm_h"]), spec["rearm_h"], 0, 720),
+        }
         for battery in batteries:
             key = str(battery.get("id") or battery["name"])
             previous = incoming.get("batteries", {}).get(key, {})
