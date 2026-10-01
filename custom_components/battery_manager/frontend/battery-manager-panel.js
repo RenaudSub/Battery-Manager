@@ -452,7 +452,7 @@ class BatteryManagerPanel extends HTMLElement {
     const sections=["installation","configuration","overview","quick_modes","scheduler","weather","collective","protections","compensation","backup","actions","notifications","journal","diagnostics","maintenance"];
     return `<div class="card"><div class="about-hero"><h2>Battery Manager v${PANEL_VERSION}</h2><div class="about-links">
       <a href="https://github.com/RenaudSub/Battery-Manager" target="_blank" rel="noopener">${this._t("about.project")}</a>
-      <a href="https://www.logisub.fr/battery-manager.html" target="_blank" rel="noopener">${this._t("about.website")}</a></div></div><hr>
+      <a href="https://www.logisub.com/battery-manager.html" target="_blank" rel="noopener">${this._t("about.website")}</a></div></div><hr>
       <h2>${this._t("about.guide")}</h2><p>${this._t("about.introduction")}</p><div class="about-sections">${sections.map(id=>`<details><summary>${this._t(`about.sections.${id}.title`)}</summary><p>${this._t(`about.sections.${id}.text`)}</p></details>`).join("")}</div></div>`;
   }
 
