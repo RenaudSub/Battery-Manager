@@ -5,7 +5,13 @@ const ACTIONS = {
   default_mode: { color: "#ffffff" },
   standby: { color: "#78909c" },
 };
-const PANEL_VERSION = "0.5.2";
+const PANEL_VERSION = "0.5.4";
+const ASSET_BASE = "/battery_manager/frontend/assets/";
+const BATTERY_MODELS = {
+  generic: [{id:"generic", label:""}],
+  marstek_entities: [{id:"venus_e_3", label:"Venus E 3.0", image:"marstek-venus-e3.svg"}, {id:"generic", label:""}],
+  hoymiles_msa2: [{id:"ms_a2", label:"MS-A2", image:"hoymiles-ms-a2.jpg"}, {id:"generic", label:""}],
+};
 const SUPPORTED_LANGUAGES = ["fr", "en", "es"];
 
 const emptySlot = () => ({ action: "standby", charge_w: 0, discharge_w: 0, min_soc: null, max_soc: null });
@@ -14,6 +20,7 @@ const defaultBattery = () => ({
   id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`,
   name: "Nouvelle batterie",
   adapter: "generic",
+  model: "generic",
   enabled: false,
   operation_mode: "disabled",
   control_mode: "disabled",
@@ -89,11 +96,21 @@ class BatteryManagerPanel extends HTMLElement {
   }
 
   set hass(value) {
+    const themeChanged = this._hass?.themes?.darkMode !== value?.themes?.darkMode;
     this._hass = value;
     if (!this._loaded) this._load();
     else if (this._languageOverride === "auto" && this._loadedLocale !== this._locale()) {
       this._loadTranslations().then(() => this._render());
     } else if (this._tab === "overview" && !this._overviewControlHasFocus()) this._render();
+    else if (this._tab === "batteries") {
+      if(themeChanged) this._render();
+      else {
+        const meter=this.shadowRoot.querySelector(".grid-settings .section-art");
+        if(meter) meter.innerHTML=this._meterGraphic();
+        const tiers=this.shadowRoot.querySelector(".tier-art");
+        if(tiers && this._config.batteries[this._selected]) tiers.innerHTML=this._tierGraphic(this._config.batteries[this._selected]);
+      }
+    }
   }
 
   set panel(value) { this._panel = value; }
@@ -104,6 +121,7 @@ class BatteryManagerPanel extends HTMLElement {
 
   disconnectedCallback() {
     clearInterval(this._refreshTimer);
+    this._networkResizeObserver?.disconnect();
   }
 
   async _refreshStatus() {
@@ -406,6 +424,62 @@ class BatteryManagerPanel extends HTMLElement {
       .journal-tabs{display:flex;flex-wrap:wrap;gap:7px}.journal-tabs .active{background:var(--primary-color);color:var(--text-primary-color,#fff)}
       .about-hero{text-align:center;padding:28px 12px}.about-hero h2{font-size:32px;margin:0 0 14px}.about-links{display:flex;justify-content:center;gap:18px;flex-wrap:wrap}.about-sections details{border-top:1px solid var(--divider-color);padding:10px 2px}.about-sections summary{cursor:pointer;font-weight:700}.about-sections p,.about-sections li{line-height:1.55}.backup-action-grid{display:grid;grid-template-columns:minmax(280px,520px) auto;gap:18px;align-items:end}.backup-action-grid label{display:flex;gap:8px;align-items:center}
       @media(max-width:700px){header{flex-wrap:wrap}header h1{flex:1 1 calc(100% - 60px);min-width:0;order:0}.navigation-menu{order:1;flex-shrink:0}.profile-menu{order:2;max-width:100%}.profile-menu summary{max-width:100%}.target-manager select{min-width:0;max-width:100%}.target-manager .form-grid,.backup-action-grid{grid-template-columns:minmax(0,1fr)}.journal-line{grid-template-columns:minmax(0,1fr);gap:2px}.notification-battery{width:100%}.notification-batteries{display:block}.notification-battery{margin:8px 0;box-sizing:border-box}.journal-toolbar input{max-width:100%}}
+
+      .about-brand{width:min(800px,100%)}.about-brand img{display:block;width:100%;height:auto;border-radius:12px}.about-version{text-align:right;font-weight:600;margin:6px 4px 14px;color:var(--secondary-text-color)}
+      .configuration-theme{--neo-bg:#e8edf2;--neo-input:#f0f4f7;--neo-text:#253e48;--neo-muted:#526975;--neo-border:#a9c4ca;--neo-light:#ffffff;--neo-shadow:#bdc8d3;--neo-accent:#397e8c;background:var(--neo-bg);color:var(--neo-text);padding:12px 18px;border-radius:24px}
+      .configuration-theme[data-dark="true"]{--neo-bg:#222e36;--neo-input:#273740;--neo-text:#e1eef2;--neo-muted:#b6ccd4;--neo-border:#4c747e;--neo-light:#34454e;--neo-shadow:#141e24;--neo-accent:#74bfce}
+      .configuration-theme fieldset{background:linear-gradient(135deg,var(--neo-input),var(--neo-bg));border:1px solid var(--neo-border);border-radius:22px;padding:22px;margin:16px 0 24px;box-shadow:7px 7px 16px var(--neo-shadow),-5px -5px 14px var(--neo-light);min-width:0}
+      .configuration-theme fieldset fieldset{box-shadow:none;margin:20px 0 0;border-radius:15px;padding:16px}
+      .configuration-theme legend{font-size:19px;font-weight:600;color:var(--neo-text)}
+      .configuration-theme label{color:var(--neo-text);line-height:1.4;min-width:0;align-items:stretch;font-size:13px}
+      .configuration-theme .muted{color:var(--neo-muted)}
+      .configuration-theme .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:18px;align-items:end}
+      .configuration-theme input,.configuration-theme select{width:100%;min-width:0;max-width:100%;color:var(--neo-text);background:var(--neo-input);border:1px solid var(--neo-border);border-radius:13px;padding:11px 12px;font-size:14px;box-shadow:inset 3px 3px 7px var(--neo-shadow),inset -3px -3px 7px var(--neo-light)}
+      .configuration-theme input:focus-visible,.configuration-theme select:focus-visible,.configuration-theme button:focus-visible{outline:3px solid var(--neo-accent);outline-offset:3px}
+      .configuration-theme button{border:1px solid var(--neo-border);border-radius:13px;color:var(--neo-text);background:var(--neo-input);box-shadow:4px 4px 9px var(--neo-shadow),-3px -3px 8px var(--neo-light)}
+      .configuration-theme button.primary{background:var(--neo-accent);color:var(--neo-bg);font-weight:600}
+      .configuration-theme button:active{box-shadow:inset 2px 2px 5px var(--neo-shadow)}
+      .configuration-theme input:disabled,.configuration-theme select:disabled,.configuration-theme button:disabled{opacity:.5;cursor:not-allowed}
+      .configuration-theme ha-entity-picker{min-width:0;width:100%;padding:6px;border:1px solid var(--neo-border);border-radius:15px;background:var(--neo-input);box-shadow:inset 3px 3px 7px var(--neo-shadow),inset -3px -3px 7px var(--neo-light);--primary-text-color:var(--neo-text);--secondary-text-color:var(--neo-muted);--primary-color:var(--neo-accent);--card-background-color:var(--neo-input);--secondary-background-color:var(--neo-input);--input-fill-color:var(--neo-input);--input-ink-color:var(--neo-text);--input-label-ink-color:var(--neo-muted);--mdc-text-field-fill-color:var(--neo-input);--mdc-text-field-ink-color:var(--neo-text);--mdc-theme-surface:var(--neo-input);--mdc-theme-on-surface:var(--neo-text)}
+      .configuration-theme .illustrated-layout{display:grid;grid-template-columns:180px minmax(0,1fr);gap:28px;align-items:center}
+      .configuration-theme .section-art{width:100%;display:flex;justify-content:center;align-items:center;color:var(--neo-text);filter:drop-shadow(5px 8px 6px #173e4a20)}
+      .configuration-theme .section-art svg{width:100%;max-height:245px}.configuration-theme .battery-product{width:100%;height:220px;object-fit:contain;mix-blend-mode:multiply}
+      .configuration-theme[data-dark="true"] .battery-product{mix-blend-mode:normal;background:#e8edf2;border-radius:18px;padding:10px}
+      .configuration-theme .section-content{min-width:0}.configuration-theme .network-picker{margin-bottom:24px}
+      .configuration-theme .identification-grid{grid-template-columns:minmax(110px,.8fr) minmax(150px,1.2fr) minmax(120px,.8fr) minmax(170px,1.2fr);margin-bottom:22px}
+      .configuration-theme .network-controls{grid-template-columns:repeat(5,minmax(0,1fr))}.configuration-theme .general-controls{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .configuration-theme .info-entities-grid{grid-template-columns:repeat(5,minmax(0,1fr));align-items:start}
+      .configuration-theme .number-control{display:flex;align-items:center;padding:4px;border:1px solid var(--neo-border);border-radius:24px;background:var(--neo-input);box-shadow:inset 3px 3px 7px var(--neo-shadow),inset -3px -3px 7px var(--neo-light)}
+      .configuration-theme .number-control input{border:0;box-shadow:none;background:transparent;width:100%;min-width:0;text-align:center;padding:6px 0;appearance:textfield;-moz-appearance:textfield}
+      .configuration-theme .number-control input::-webkit-inner-spin-button{appearance:none}.configuration-theme .number-control button{flex:0 0 32px;width:32px;height:32px;border-radius:50%;padding:0;font-size:22px}
+      .configuration-theme input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:58px;height:31px;padding:3px;border-radius:22px;position:relative;cursor:pointer;flex-shrink:0;margin:5px 0}
+      .configuration-theme input[type="checkbox"]::before{content:"";display:block;width:23px;height:23px;border-radius:50%;background:var(--neo-light);box-shadow:1px 2px 4px var(--neo-shadow);transition:transform .15s}
+      .configuration-theme input[type="checkbox"]:checked{background:var(--neo-accent)}.configuration-theme input[type="checkbox"]:checked::before{transform:translateX(26px)}
+      .configuration-theme .tiers{width:100%;table-layout:fixed;border-collapse:collapse}.configuration-theme .tiers th{text-align:left;color:var(--neo-text);padding:0 10px 12px;font-weight:500}
+      .configuration-theme .tiers td{padding:12px 10px;border-top:1px solid var(--neo-border)}.configuration-theme .tiers td:first-child input{background:var(--tier-color);color:#173b49;font-weight:600}
+      .configuration-theme .tiers input{min-width:0;width:100%}.configuration-theme .tiers input[readonly]{cursor:default}.configuration-theme .tier-save{text-align:right;margin-top:16px}
+      @media(max-width:1250px){.configuration-theme .info-entities-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.configuration-theme .illustrated-layout{grid-template-columns:140px minmax(0,1fr);gap:20px}.configuration-theme .identification-grid,.configuration-theme .general-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.configuration-theme .network-controls{grid-template-columns:repeat(3,minmax(0,1fr))}}
+      @media(max-width:850px){.configuration-theme .info-entities-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.configuration-theme .network-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      @media(max-width:600px){.configuration-theme{padding:4px 10px}.configuration-theme fieldset{padding:16px 12px}.configuration-theme .illustrated-layout{grid-template-columns:minmax(0,1fr);gap:16px}.configuration-theme .section-art{max-width:130px;margin:auto}.configuration-theme .battery-product{height:150px}.configuration-theme .info-entities-grid,.configuration-theme .identification-grid,.configuration-theme .general-controls,.configuration-theme .network-controls,.configuration-theme .form-grid{grid-template-columns:minmax(0,1fr)}.configuration-theme .tiers th,.configuration-theme .tiers td{padding:8px 4px;font-size:12px}.configuration-theme .tiers input{font-size:13px;padding:9px 5px}.configuration-theme legend{font-size:16px}}
+
+      /* Shared label alignment applies to every configuration control. */
+      .configuration-theme label{align-items:stretch;text-align:center}
+      .configuration-theme .general-settings select,.configuration-theme .general-settings input[type="text"]{width:100%;min-width:0}
+      .configuration-theme .entity-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+      .configuration-theme .entity-label{text-align:center;color:var(--neo-text);font-size:13px;line-height:1.4}
+      .configuration-theme input[type="checkbox"]{align-self:center;margin:5px auto}
+      .configuration-theme .entity-with-option>label{margin-top:8px;text-align:center;width:100%;flex-direction:column;align-items:stretch}
+      .configuration-theme .tiers th{text-align:center}
+      .configuration-theme .network-controls{grid-template-columns:repeat(4,minmax(0,1fr)) max-content}
+      .configuration-theme .network-controls>label:last-child{max-width:175px}
+      .configuration-theme .marstek-detection-grid{grid-template-columns:minmax(0,50%) max-content;align-items:end;gap:8px 18px}
+      .configuration-theme .marstek-detection-grid>button{justify-self:start;align-self:end;min-height:42px}
+      .configuration-theme .detection-status{grid-column:1;text-align:right;margin:0;line-height:1.4}
+      .configuration-theme .info-entities-grid .grid-recovery-option{align-self:stretch;justify-content:space-between}
+      .about-brand{margin-left:auto;margin-right:auto}
+      @media(max-width:1250px){.configuration-theme .network-controls{grid-template-columns:repeat(3,minmax(0,1fr))}}
+      @media(max-width:850px){.configuration-theme .network-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      @media(max-width:600px){.configuration-theme .network-controls,.configuration-theme .marstek-detection-grid{grid-template-columns:minmax(0,1fr)}.configuration-theme .network-controls>label:last-child{max-width:none}.configuration-theme .marstek-detection-grid>button{justify-self:stretch}.configuration-theme .detection-status{grid-column:auto}}
     </style>`;
   }
 
@@ -450,9 +524,10 @@ class BatteryManagerPanel extends HTMLElement {
 
   _aboutEditor() {
     const sections=["installation","configuration","overview","quick_modes","scheduler","weather","collective","protections","compensation","backup","actions","notifications","journal","diagnostics","maintenance"];
-    return `<div class="card"><div class="about-hero"><h2>Battery Manager v${PANEL_VERSION}</h2><div class="about-links">
+    return `<div class="card"><div class="about-hero"><div class="about-brand"><img src="${ASSET_BASE}battery-manager-banner.jpg?v=${PANEL_VERSION}" alt="Battery Manager"><div class="about-version">v${PANEL_VERSION}</div></div><div class="about-links">
       <a href="https://github.com/RenaudSub/Battery-Manager" target="_blank" rel="noopener">${this._t("about.project")}</a>
-      <a href="https://www.logisub.com/battery-manager.html" target="_blank" rel="noopener">${this._t("about.website")}</a></div></div><hr>
+      <a href="https://www.logisub.com/battery-manager.html" target="_blank" rel="noopener">${this._t("about.website")}</a>
+      <span class="about-author">Intégration par SUBRINI Renaud</span></div></div><hr>
       <h2>${this._t("about.guide")}</h2><p>${this._t("about.introduction")}</p><div class="about-sections">${sections.map(id=>`<details><summary>${this._t(`about.sections.${id}.title`)}</summary><p>${this._t(`about.sections.${id}.text`)}</p></details>`).join("")}</div></div>`;
   }
 
@@ -838,9 +913,12 @@ class BatteryManagerPanel extends HTMLElement {
     if (!batteries.length) return `<div class="card"><p>${this._t("config.none")}</p><button id="addBattery" class="primary">${this._t("config.add_battery")}</button></div>`;
     const b = batteries[Math.min(this._selected, batteries.length - 1)];
     const e = b.entities, l = b.limits, m = b.mqtt, mv = b.mode_values;
-    const field = (label, path, value, type = "text", attributes = "") => `<label>${label}<input type="${type}" data-path="${path}" value="${esc(value)}" ${attributes}></label>`;
+    const field = (label, path, value, type = "text", attributes = "") => {
+      const input = `<input aria-label="${esc(label)}" type="${type}" data-path="${path}" value="${esc(value)}" ${attributes}>`;
+      return `<label>${label}${type === "number" ? `<span class="number-control"><button type="button" data-step="-1" aria-label="${esc(this._t("controls.decrease",{field:label}))}">−</button>${input}<button type="button" data-step="1" aria-label="${esc(this._t("controls.increase",{field:label}))}">+</button></span>` : input}</label>`;
+    };
     const entityField = (label, path, value, domains = []) =>
-      `<ha-entity-picker data-entity-path="${path}" data-label="${esc(label)}" data-domains="${domains.join(",")}" value="${esc(value)}" allow-custom-entity></ha-entity-picker>`;
+      `<div class="entity-field"><div class="entity-label" id="entity-label-${esc(path)}">${label}</div><ha-entity-picker data-entity-path="${path}" data-label="${esc(label)}" aria-label="${esc(label)}" aria-labelledby="entity-label-${esc(path)}" data-domains="${domains.join(",")}" value="${esc(value)}" allow-custom-entity></ha-entity-picker></div>`;
     const optionField = (label, path, value, entityId, fallback = []) => {
       const live = this._hass?.states?.[entityId]?.attributes?.options;
       const options = [...new Set([...(Array.isArray(live) ? live : fallback), value].filter(Boolean))];
@@ -850,9 +928,9 @@ class BatteryManagerPanel extends HTMLElement {
     };
     const marstekDevice = this._marstekDevices.find((item) => item.device_id === b.source_device_id);
     const marstekBox = b.adapter === "marstek_entities" ? `<fieldset><legend>${this._t("sections.marstek_detection")}</legend>
-      <div class="form-grid"><label>${this._t("fields.detected_battery")}<select id="marstekDeviceSelect"><option value="">${this._t("fields.choose_battery")}</option>
+      <div class="form-grid marstek-detection-grid"><label>${this._t("fields.detected_battery")}<select id="marstekDeviceSelect"><option value="">${this._t("fields.choose_battery")}</option>
       ${this._marstekDevices.map((device) => `<option value="${esc(device.device_id)}" ${device.device_id===b.source_device_id?"selected":""}>${esc(device.name)}${device.model?` — ${esc(device.model)}`:""}</option>`).join("")}</select></label>
-      <div><button id="applyMarstekDevice" class="primary">${this._t("buttons.retrieve_entities")}</button><p class="muted">${marstekDevice ? this._t("config.entities_found", {total:marstekDevice.entities.length, managed:Object.keys(marstekDevice.mapping).length}) : this._t("config.marstek_found", {total:this._marstekDevices.length})}</p></div></div>
+      <button id="applyMarstekDevice" class="primary">${this._t("buttons.retrieve_entities")}</button><p class="muted detection-status">${marstekDevice ? this._t("config.entities_found", {total:marstekDevice.entities.length, managed:Object.keys(marstekDevice.mapping).length}) : this._t("config.marstek_found", {total:this._marstekDevices.length})}</p></div>
       </fieldset>` : "";
     const marstekCommands = b.adapter === "marstek_entities" ? `<fieldset><legend>${this._t("sections.marstek_commands")}</legend><div class="form-grid">
         ${entityField("User Work Mode", "entities.work_mode", e.work_mode, ["select","input_select"])}${entityField("Force Mode", "entities.force_mode", e.force_mode, ["select","input_select"])}
@@ -875,22 +953,31 @@ class BatteryManagerPanel extends HTMLElement {
       <select id="languageSelect" class="language-select" aria-label="${esc(this._t("language.label"))}">${["auto", ...SUPPORTED_LANGUAGES].map((language) => `<option value="${language}" ${this._languageOverride===language?"selected":""}>${this._t(`language.${language}`)}</option>`).join("")}</select>
       <button id="save" class="primary save-right">${this._t("buttons.save")}</button></div>
       <div class="notice">${this._t("config.safety_notice")}</div>
-      <section class="card"><fieldset class="compact-section grid-settings"><legend>${this._t("sections.grid")}</legend><div class="form-grid">
-        ${entityField(this._t("fields.grid_power_entity"), "_global.grid_power_entity", this._config.grid_power_entity, ["sensor"])}
-        ${field(this._t("fields.grid_zero_correction"), "_global.grid_zero_correction_w", this._config.grid_zero_correction_w ?? 0, "number", 'min="-200" max="200" step="1"')}
-        ${field(this._t("fields.deadband"), "_global.deadband_w", this._config.deadband_w, "number")}
-        ${field(this._t("fields.command_hysteresis"), "_global.command_hysteresis_w", this._config.command_hysteresis_w ?? 30, "number")}
-        ${field(this._t("fields.control_interval"), "_global.control_interval_s", this._config.control_interval_s, "number")}
-        <label>${this._t("fields.invert_grid")}<input data-global="grid_power_inverted" type="checkbox" ${this._config.grid_power_inverted?"checked":""}></label>
-      </div></fieldset><fieldset class="compact-section general-settings"><legend>${this._t("sections.general")}</legend><div class="form-grid">
-        ${field(this._t("fields.name"), "name", b.name)}${field(this._t("fields.capacity"), "capacity_kwh", b.capacity_kwh, "number")}
-        ${field(this._t("fields.charge_compensation"), "charge_compensation_w", b.charge_compensation_w ?? 0, "number", 'min="-200" max="200" step="1"')}
-        ${field(this._t("fields.discharge_compensation"), "discharge_compensation_w", b.discharge_compensation_w ?? 0, "number", 'min="-200" max="200" step="1"')}
-        <label>${this._t("fields.battery_type")}<select data-path="adapter"><option value="generic" ${b.adapter==="generic"?"selected":""}>${this._t("adapters.generic")}</option><option value="marstek_entities" ${b.adapter==="marstek_entities"?"selected":""}>Marstek</option><option value="hoymiles_msa2" ${b.adapter==="hoymiles_msa2"?"selected":""}>Hoymiles</option></select></label>
-        ${field(this._t("fields.command_refresh_s"), "command_refresh_s", b.command_refresh_s ?? 60, "number")}
-        ${["marstek_entities","hoymiles_msa2"].includes(b.adapter) ? `<label>${this._t("fields.disabled_return")}<select data-path="disabled_behavior">${this._fallbackOptions(b)}</select></label>` : ""}
-      </div></fieldset>${marstekBox}
-      <fieldset><legend>${this._t("sections.info_entities")}</legend><div class="form-grid">
+      <section class="card configuration-theme" data-dark="${this._hass?.themes?.darkMode ? "true" : "false"}"><fieldset class="grid-settings"><legend>${this._t("sections.grid")}</legend>
+        <div class="illustrated-layout"><div class="section-art">${this._meterGraphic()}</div><div class="section-content">
+          <div class="network-picker">${entityField(this._t("fields.grid_power_entity"), "_global.grid_power_entity", this._config.grid_power_entity, ["sensor"])}</div>
+          <div class="form-grid network-controls">
+          ${field(this._t("fields.grid_zero_correction"), "_global.grid_zero_correction_w", this._config.grid_zero_correction_w ?? 0, "number", 'min="-200" max="200" step="1"')}
+          ${field(this._t("fields.deadband"), "_global.deadband_w", this._config.deadband_w, "number", 'min="0" step="1"')}
+          ${field(this._t("fields.command_hysteresis"), "_global.command_hysteresis_w", this._config.command_hysteresis_w ?? 30, "number", 'min="0" step="1"')}
+          ${field(this._t("fields.control_interval"), "_global.control_interval_s", this._config.control_interval_s, "number", 'min="1" step="1"')}
+          <label>${this._t("fields.invert_grid")}<input data-global="grid_power_inverted" type="checkbox" ${this._config.grid_power_inverted?"checked":""}></label>
+          </div></div></div></fieldset>
+      <fieldset class="general-settings"><legend>${this._t("sections.general")}</legend>
+        <div class="illustrated-layout"><div class="section-art model-art">${this._modelGraphic(b)}</div><div class="section-content">
+        <div class="form-grid identification-grid">
+          <label>${this._t("fields.battery_type")}<select data-path="adapter"><option value="generic" ${b.adapter==="generic"?"selected":""}>${this._t("adapters.generic")}</option><option value="marstek_entities" ${b.adapter==="marstek_entities"?"selected":""}>Marstek</option><option value="hoymiles_msa2" ${b.adapter==="hoymiles_msa2"?"selected":""}>Hoymiles</option></select></label>
+          ${field(this._t("fields.name"), "name", b.name)}
+          <label>${this._t("fields.model")}<select data-path="model">${(BATTERY_MODELS[b.adapter] || BATTERY_MODELS.generic).map(model=>`<option value="${model.id}" ${(b.model || "generic")===model.id?"selected":""}>${esc(model.label || this._t("adapters.generic"))}</option>`).join("")}</select></label>
+          ${["marstek_entities","hoymiles_msa2"].includes(b.adapter) ? `<label>${this._t("fields.disabled_return")}<select data-path="disabled_behavior">${this._fallbackOptions(b)}</select></label>` : ""}
+        </div><div class="form-grid general-controls">
+          ${field(this._t("fields.capacity"), "capacity_kwh", b.capacity_kwh, "number", 'min="0" step="0.01"')}
+          ${field(this._t("fields.charge_compensation"), "charge_compensation_w", b.charge_compensation_w ?? 0, "number", 'min="-200" max="200" step="1"')}
+          ${field(this._t("fields.discharge_compensation"), "discharge_compensation_w", b.discharge_compensation_w ?? 0, "number", 'min="-200" max="200" step="1"')}
+          ${field(this._t("fields.command_refresh_s"), "command_refresh_s", b.command_refresh_s ?? 60, "number", 'min="0" step="1"')}
+        </div>${b.model && b.model!=="generic" ? "" : `<p class="muted model-help">${this._t("config.generic_model_help")}</p>`}
+        </div></div>${marstekBox}</fieldset>
+      <fieldset><legend>${this._t("sections.info_entities")}</legend><div class="form-grid info-entities-grid">
         <div class="entity-with-option">${entityField(this._t("fields.power"), "entities.power", e.power, ["sensor"])}
           <label>${this._t("fields.invert_power")}<input data-path="power_inverted" type="checkbox" ${b.power_inverted?"checked":""}></label></div>${entityField(this._t("fields.soc"), "entities.soc", e.soc, ["sensor","input_number"])}
         ${entityField(this._t("fields.state"), "entities.state", e.state, ["sensor","select","input_select"])}${entityField(this._t("fields.temperature"), "entities.temperature", e.temperature, ["sensor"])}
@@ -907,8 +994,8 @@ class BatteryManagerPanel extends HTMLElement {
         ${entityField(this._t("fields.cycle_count_calc"), "entities.cycle_count_calc", e.cycle_count_calc, ["sensor"])}
         ${entityField(this._t("fields.max_cell_voltage"), "entities.max_cell_voltage", e.max_cell_voltage, ["sensor"])}
         ${entityField(this._t("fields.min_cell_voltage"), "entities.min_cell_voltage", e.min_cell_voltage, ["sensor"])}
-        <label>${this._t("fields.grid_loss_return_default")}<input data-path="grid_loss_return_default" type="checkbox" ${b.grid_loss_return_default?"checked":""}></label>
-        <label>${this._t("fields.grid_return_resume")}<input data-path="grid_return_resume" type="checkbox" ${b.grid_return_resume?"checked":""} ${b.grid_loss_return_default?"":"disabled"}></label>
+        <label class="grid-recovery-option">${this._t("fields.grid_loss_return_default")}<input data-path="grid_loss_return_default" type="checkbox" ${b.grid_loss_return_default?"checked":""}></label>
+        <label class="grid-recovery-option">${this._t("fields.grid_return_resume")}<input data-path="grid_return_resume" type="checkbox" ${b.grid_return_resume?"checked":""} ${b.grid_loss_return_default?"":"disabled"}></label>
       </div></fieldset>
       <fieldset class="compact-section"><legend>${this._t("sections.protection")}</legend><div class="form-grid">
         ${field(this._t("fields.min_soc"), "limits.min_soc", l.min_soc, "number")}${field(this._t("fields.discharge_resume"), "limits.min_soc_resume", l.min_soc_resume, "number")}
@@ -919,10 +1006,64 @@ class BatteryManagerPanel extends HTMLElement {
       ${marstekCommands}${hoymilesCommands}</section>`;
   }
 
+  _alignNetworkPicker() {
+    if(this._networkResizeObserver) this._networkResizeObserver.disconnect();
+    const content=this.shadowRoot.querySelector(".grid-settings .section-content");
+    const picker=content?.querySelector(".network-picker");
+    const label=content?.querySelector(".network-controls>label:last-child");
+    if(!picker || !label) return;
+    const align=()=>{
+      const contentBox=content.getBoundingClientRect(), labelBox=label.getBoundingClientRect();
+      // On narrow layouts the controls wrap; keep the picker at full width.
+      if(contentBox.width<=0) return;
+      const columns=getComputedStyle(content.querySelector(".network-controls")).gridTemplateColumns.split(" ").length;
+      const width=columns===5 ? Math.max(0,labelBox.right-contentBox.left) : contentBox.width;
+      picker.style.width=`${width}px`;
+    };
+    this._networkResizeObserver=new ResizeObserver(align);
+    this._networkResizeObserver.observe(content);
+    requestAnimationFrame(align);
+  }
+
+  _modelGraphic(b) {
+    const model = (BATTERY_MODELS[b.adapter] || BATTERY_MODELS.generic).find(m=>m.id===b.model);
+    if (model?.image) return `<img class="battery-product" src="${ASSET_BASE}${model.image}?v=${PANEL_VERSION}" alt="${esc(this._adapter(b.adapter))} ${esc(model.label)}">`;
+    return `<svg viewBox="0 0 200 240" role="img" aria-label="${esc(this._t("adapters.generic"))}"><defs><linearGradient id="questionGold" x2="0.4" y2="1"><stop stop-color="#fff3a3"/><stop offset=".45" stop-color="#ffc928"/><stop offset="1" stop-color="#c88d08"/></linearGradient></defs><text x="100" y="190" text-anchor="middle" font-family="Arial,sans-serif" font-size="220" font-weight="bold" fill="url(#questionGold)" stroke="#c49420" stroke-width="2">?</text></svg>`;
+  }
+
+  _meterGraphic() {
+    const raw = Number(this._state(this._config.grid_power_entity).state);
+    const watts = Number.isFinite(raw) ? Math.round(this._config.grid_power_inverted ? -raw : raw) : "—";
+    return `<svg viewBox="0 0 220 240" role="img" aria-label="${esc(this._t("overview.network_power"))}"><defs><linearGradient id="meterGlass" x2="1" y2="1"><stop stop-color="#e7f6f8"/><stop offset=".5" stop-color="#a9ced5"/><stop offset="1" stop-color="#5e98a5"/></linearGradient><linearGradient id="meterScreen" x2="0" y2="1"><stop stop-color="#d5eff1"/><stop offset="1" stop-color="#94bbc6"/></linearGradient></defs>
+      <rect x="24" y="12" width="146" height="212" rx="23" fill="url(#meterGlass)" stroke="#77a6b0" stroke-width="3"/>
+      <rect x="39" y="30" width="116" height="51" rx="7" fill="url(#meterScreen)" stroke="#548794" stroke-width="3"/>
+      <text x="97" y="58" fill="#285b69" text-anchor="middle" font-family="monospace" font-size="${String(watts).length>5?18:23}">${esc(watts)}</text><text x="97" y="74" fill="#285b69" text-anchor="middle" font-size="10">W</text>
+      <circle cx="96" cy="138" r="41" fill="#d4ebed" stroke="#699eaa" stroke-width="6"/>
+      ${Array.from({length:9},(_,i)=>{const a=(i*22.5-180)*Math.PI/180;return `<path d="M ${96+31*Math.cos(a)} ${138+31*Math.sin(a)} L ${96+24*Math.cos(a)} ${138+24*Math.sin(a)}" stroke="#548794" stroke-width="3"/>`;}).join("")}
+      <path d="M 88 145 L 120 115 L 102 148 Z" fill="#397483"/><circle cx="96" cy="143" r="7" fill="#548794"/>
+      <rect x="43" y="196" width="22" height="9" rx="4" fill="#548794"/><rect x="79" y="196" width="36" height="9" rx="4" fill="#548794"/>
+      <rect x="141" y="143" width="65" height="76" rx="14" fill="url(#meterGlass)" stroke="#77a6b0" stroke-width="3"/><path d="M 178 155 L 156 186 H 174 L 164 208 L 191 177 H 175 Z" fill="#548794" stroke="#d4ebed" stroke-width="2"/>
+    </svg>`;
+  }
+
+  _tierGraphic(b) {
+    const colors=["#80afe4","#80c9d0","#54a8b7","#347888","#315c73","#7690a3","#537885","#325567"];
+    const soc=Number(this._state(b.entities.soc).state), current=Number.isFinite(soc)?Math.max(0,Math.min(100,soc)):null;
+    // Equal display bands keep small SOC ranges legible; the labels carry exact thresholds.
+    const tiers=b.charge_tiers || [], h=224/Math.max(1,tiers.length);
+    return `<svg class="tier-battery" viewBox="0 0 265 325" role="img" aria-label="${esc(this._t("sections.charge_tiers"))}"><defs><linearGradient id="batteryGlass" x2="1" y2="1"><stop stop-color="#edfafd" stop-opacity=".9"/><stop offset="1" stop-color="#84b9c5" stop-opacity=".45"/></linearGradient><clipPath id="batteryClip"><rect x="29" y="46" width="130" height="224" rx="12"/></clipPath></defs>
+      <path d="M 76 29 V 12 Q 76 5 84 5 H 111 Q 119 5 119 12 V 29 H 145 Q 170 29 170 53 V 269 Q 170 286 151 286 H 37 Q 18 286 18 269 V 53 Q 18 29 42 29 Z" fill="url(#batteryGlass)" stroke="#83a9b5" stroke-width="2.5"/>
+      <g clip-path="url(#batteryClip)">${tiers.map((t,i)=>`<rect x="29" y="${270-(i+1)*h}" width="130" height="${h}" fill="${colors[i%colors.length]}" opacity="${current!==null && current>=t.from_soc && current<t.to_soc?1:.7}"/>`).join("")}</g>
+      <rect x="36" y="48" width="22" height="214" rx="10" fill="white" opacity=".24"/>
+      ${tiers.map((t,i)=>`<path d="M 179 ${270-i*h} H 187 V ${270-(i+1)*h} H 179" fill="none" stroke="${colors[i%colors.length]}" stroke-width="4"/><text x="199" y="${270-(i+.5)*h+4}" fill="currentColor" font-size="12">${esc(t.from_soc)}–${esc(t.to_soc)}%</text>`).join("")}
+      <text x="94" y="312" text-anchor="middle" fill="currentColor" font-size="16" font-weight="600">SOC ${current===null ? "—" : `${current}%`}</text>
+    </svg>`;
+  }
+
   _tierEditor(b) {
-    return `<fieldset class="compact-section"><legend>${this._t("sections.charge_tiers")}</legend><table class="tiers"><thead><tr><th>${this._t("tiers.from")}</th><th>${this._t("tiers.to")}</th><th>${this._t("tiers.maximum")}<br><span class="muted">${this._t("tiers.empty")}</span></th></tr></thead><tbody>
-      ${b.charge_tiers.map((t,i)=>`<tr><td><input type="number" data-tier="${i}.from_soc" value="${t.from_soc}" ${i>0?"readonly":""}></td><td><input type="number" data-tier="${i}.to_soc" value="${t.to_soc}"></td><td><input type="number" data-tier="${i}.max_charge_w" value="${t.max_charge_w ?? ""}"></td></tr>`).join("")}
-      </tbody></table></fieldset>`;
+    return `<fieldset class="charge-tiers"><legend>${this._t("sections.charge_tiers")}</legend><div class="illustrated-layout"><div class="section-art tier-art">${this._tierGraphic(b)}</div><div class="section-content"><table class="tiers"><thead><tr><th>${this._t("tiers.from")}</th><th>${this._t("tiers.to")}</th><th>${this._t("tiers.maximum")}<br><span class="muted">${this._t("tiers.empty")}</span></th></tr></thead><tbody>
+      ${b.charge_tiers.map((t,i)=>`<tr style="--tier-color:${["#80afe4","#80c9d0","#54a8b7","#347888"][i%4]}"><td><input aria-label="${esc(this._t("tiers.from"))} ${i+1}" type="number" min="0" max="100" step="0.1" data-tier="${i}.from_soc" value="${t.from_soc}" ${i>0?"readonly":""}></td><td><input aria-label="${esc(this._t("tiers.to"))} ${i+1}" type="number" min="${t.from_soc}" max="100" step="0.1" data-tier="${i}.to_soc" value="${t.to_soc}"></td><td><input aria-label="${esc(this._t("tiers.maximum"))} ${i+1}" type="number" min="0" data-tier="${i}.max_charge_w" value="${t.max_charge_w ?? ""}" placeholder="${esc(this._t("tiers.auto"))}"></td></tr>`).join("")}
+      </tbody></table><div class="tier-save"><button data-save-config class="primary">${this._t("buttons.save")}</button></div></div></div></fieldset>`;
   }
 
   _scheduleEditor() {
@@ -1026,12 +1167,28 @@ class BatteryManagerPanel extends HTMLElement {
     this.shadowRoot.querySelectorAll("[data-path]").forEach((input) => input.onchange = () => {
       const b=input.dataset.path.startsWith("_global.") ? this._config : this._config.batteries[this._selected];
       let value=input.type==="checkbox" ? input.checked : input.value;
-      if(input.type==="number") value=Number(value);
+      if(input.type==="number") {
+        if(input.value==="" || !input.checkValidity()) { input.reportValidity(); return; }
+        value=Number(value);
+      }
       this._setPath(b,input.dataset.path.replace("_global.",""),value);
-      if(["adapter", "grid_loss_return_default"].includes(input.dataset.path)) this._render();
+      if(input.dataset.path === "adapter") b.model="generic";
+      if(["adapter", "model", "grid_loss_return_default"].includes(input.dataset.path)) this._render();
     });
+    this._alignNetworkPicker();
+    this.shadowRoot.querySelectorAll("[data-step]").forEach(button=>button.onclick=()=>{
+      const input=button.parentElement.querySelector("input");
+      if(!input || input.disabled || input.readOnly) return;
+      if(Number(button.dataset.step)>0) input.stepUp(); else input.stepDown();
+      input.dispatchEvent(new Event("change",{bubbles:true}));
+    });
+    this.shadowRoot.querySelectorAll("[data-save-config]").forEach(button=>button.onclick=()=>this._save());
     this.shadowRoot.querySelectorAll("[data-global]").forEach((input) => input.onchange = () => {
       this._config[input.dataset.global]=input.type==="checkbox"?input.checked:input.value;
+      if(input.dataset.global==="grid_power_inverted") {
+        const meter=this.shadowRoot.querySelector(".grid-settings .section-art");
+        if(meter) meter.innerHTML=this._meterGraphic();
+      }
     });
     this.shadowRoot.querySelectorAll("[data-quick-mode]").forEach((select) => select.onchange = async () => {
       select.disabled = true;
@@ -1047,7 +1204,7 @@ class BatteryManagerPanel extends HTMLElement {
     });
     this.shadowRoot.querySelectorAll("ha-entity-picker[data-entity-path]").forEach((picker) => {
       picker.hass = this._hass;
-      picker.label = picker.dataset.label;
+      picker.label = picker.closest(".entity-field") ? "" : picker.dataset.label; // Configuration uses a centered external label.
       picker.value = picker.getAttribute("value") || "";
       picker.allowCustomEntity = true;
       picker.includeDomains = picker.dataset.domains ? picker.dataset.domains.split(",") : undefined;
@@ -1060,13 +1217,19 @@ class BatteryManagerPanel extends HTMLElement {
     this.shadowRoot.querySelectorAll("[data-tier]").forEach((input) => input.onchange = () => {
       const [index,key]=input.dataset.tier.split(".");
       const tiers=this._config.batteries[this._selected].charge_tiers, tierIndex=Number(index);
+      if(key!=="max_charge_w" && input.value==="") {this._render();return;}
       let value=input.value===""?null:Number(input.value);
+      if(key==="from_soc") value=Math.max(0,Math.min(tiers[tierIndex].to_soc,value));
+      if(key==="max_charge_w" && value!==null) value=Math.max(0,value);
       if(key==="to_soc" && value!==null) value=Math.max(Number(tiers[tierIndex].from_soc||0),Math.min(100,value));
       tiers[tierIndex][key]=value;
-      if(key==="to_soc" && tiers[tierIndex+1]) {
-        tiers[tierIndex+1].from_soc=value;
-        this._render();
+      if(key==="to_soc") {
+        for(let j=tierIndex+1;j<tiers.length;j++) {
+          tiers[j].from_soc=tiers[j-1].to_soc;
+          tiers[j].to_soc=Math.max(tiers[j].from_soc,tiers[j].to_soc);
+        }
       }
+      this._render();
     });
     const del=this.shadowRoot.querySelector("#deleteBattery");
     if(del) del.onclick=async()=>{if(confirm(this._t("confirm.delete"))){this._config.batteries.splice(this._selected,1);this._selected=Math.max(0,this._selected-1);await this._save();}};

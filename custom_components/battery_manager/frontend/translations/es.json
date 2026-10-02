@@ -62,11 +62,20 @@
       "unavailable": "No disponible"
     },
     "condition_values": {
-      "sunny": "Soleado", "partlycloudy": "Parcialmente nublado", "cloudy": "Nublado",
-      "fog": "Niebla", "windy": "Ventoso", "windy-variant": "Ventoso y nublado",
-      "rainy": "Lluvioso", "pouring": "Lluvia intensa", "lightning": "Tormenta",
-      "lightning-rainy": "Tormenta con lluvia", "hail": "Granizo", "snowy": "Nevado",
-      "snowy-rainy": "Nieve y lluvia", "clear-night": "Noche despejada"
+      "sunny": "Soleado",
+      "partlycloudy": "Parcialmente nublado",
+      "cloudy": "Nublado",
+      "fog": "Niebla",
+      "windy": "Ventoso",
+      "windy-variant": "Ventoso y nublado",
+      "rainy": "Lluvioso",
+      "pouring": "Lluvia intensa",
+      "lightning": "Tormenta",
+      "lightning-rainy": "Tormenta con lluvia",
+      "hail": "Granizo",
+      "snowy": "Nevado",
+      "snowy-rainy": "Nieve y lluvia",
+      "clear-night": "Noche despejada"
     },
     "calculated_profile": "Perfil calculado",
     "reason": "Motivo",
@@ -167,12 +176,13 @@
     "copy_suffix": "copia",
     "safety_notice": "Seleccione el modo principal desde el menú Gestión de la vista general. Desactivado aplica una vez el retorno configurado y luego deja de enviar comandos.",
     "entities_found": "{total} entidades vinculadas · {managed} entidades de gestión reconocidas",
-    "marstek_found": "{total} batería(s) Marstek detectada(s)"
+    "marstek_found": "{total} batería(s) Marstek detectada(s)",
+    "generic_model_help": "Modelo no validado: configure las entidades manualmente."
   },
   "sections": {
     "grid": "Medición de red y controlador colectivo",
-    "general": "General",
-    "marstek_detection": "Detección Marstek Venus Modbus",
+    "general": "Identificación del tipo de batería",
+    "marstek_detection": "Configuración automática mediante Marstek Venus Modbus",
     "info_entities": "Entidades de información",
     "protection": "Protección y potencias",
     "charge_tiers": "Niveles de carga según el SOC",
@@ -188,7 +198,7 @@
     "deadband": "Zona muerta (W)",
     "command_hysteresis": "Histéresis (W)",
     "control_interval": "Intervalo (s)",
-    "command_refresh_s": "Retrans. (s)",
+    "command_refresh_s": "Retransmisión de comandos (s)",
     "invert_grid": "Invertir el signo de red",
     "name": "Nombre",
     "capacity": "Capacidad (kWh)",
@@ -226,8 +236,8 @@
     "charge_resume": "Reanudar carga (%)",
     "max_charge_w": "Carga máxima (W)",
     "max_discharge_w": "Descarga máxima (W)",
-    "charge_compensation": "Comp. carga (W)",
-    "discharge_compensation": "Comp. descarga (W)",
+    "charge_compensation": "Compensación de carga (W)",
+    "discharge_compensation": "Compensación de descarga (W)",
     "charge_setpoint": "Consigna de carga",
     "discharge_setpoint": "Consigna de descarga",
     "max_charge": "Carga máxima",
@@ -239,7 +249,8 @@
     "native_self_consumption_value": "Valor de autoconsumo nativo de User Work Mode",
     "ai_optimization_value": "Valor de Optimización IA de User Work Mode",
     "ems_topic": "Tema del modo EMS",
-    "power_topic": "Tema de consigna"
+    "power_topic": "Tema de consigna",
+    "model": "Modelo"
   },
   "fallback": {
     "standby": "Standby",
@@ -253,7 +264,8 @@
     "from": "Desde",
     "to": "Hasta",
     "maximum": "Máximo W",
-    "empty": "vacío = límite de la batería"
+    "empty": "vacío = límite de la batería",
+    "auto": "Auto"
   },
   "schedule": {
     "export": "Exportar planificación",
@@ -314,8 +326,8 @@
     "weather_entity_missing": "Entidad meteorológica no configurada",
     "outside_analysis_hours": "Fuera del horario de análisis",
     "not_analyzed": "Aún no analizado",
-    "manual": "Selección manual"
-    ,"backup_active": "Modo Backup activo — ninguna orden enviada",
+    "manual": "Selección manual",
+    "backup_active": "Modo Backup activo — ninguna orden enviada",
     "backup_grid_confirmation": "Salida de Backup — confirmación de red durante 30 segundos"
   },
   "notifications": {
@@ -513,30 +525,78 @@
     }
   },
   "backup_actions": {
-    "title": "Acciones en modo Backup", "entity": "Entidad que se desactivará",
+    "title": "Acciones en modo Backup",
+    "entity": "Entidad que se desactivará",
     "restore": "Restablecer al salir del modo Backup",
     "help": "Cuando la primera batería entra en Backup, Battery Manager memoriza el estado de esta entidad y la apaga una sola vez si estaba activa.",
     "once": "El estado no se impone durante Backup. La restauración opcional se realiza cuando todas las baterías salen y la red permanece válida durante 30 segundos."
   },
   "about": {
-    "project": "Proyecto GitHub", "website": "Sitio oficial", "guide": "Manual de uso",
+    "project": "Proyecto GitHub",
+    "website": "Sitio oficial",
+    "guide": "Manual de uso",
     "introduction": "Battery Manager centraliza la supervisión, planificación y control local de varias baterías en Home Assistant. Las protecciones se aplican antes de cada orden.",
     "sections": {
-      "installation":{"title":"Instalación y actualización","text":"Instale el repositorio con HACS o copie custom_components/battery_manager, reinicie Home Assistant Core y añada la integración. Reinicie y actualice el navegador tras cada versión."},
-      "configuration":{"title":"Configuración inicial","text":"Configure primero la entidad de red y después cada batería. Use la detección Venus Modbus para Marstek o introduzca los temas MQTT de la MS-A2. Compruebe los signos de potencia."},
-      "overview":{"title":"Vista general","text":"Reúne SOC, potencia, conexión, órdenes reales, medidas AC/DC, rendimiento, temperaturas, energía y ciclos. Un clic abre el historial de Home Assistant."},
-      "quick_modes":{"title":"Control rápido","text":"Permite Planificador, Carga, autoconsumo colectivo o nativo, Carga solar, Espera, Backup Marstek o Desactivado. Durante Backup no se envía ninguna orden."},
-      "scheduler":{"title":"Planificador","text":"Cree periodos de 15 minutos durante siete días para cada perfil meteorológico. Defina acción, potencias y límites SOC. La planificación se puede importar o exportar."},
-      "weather":{"title":"Perfiles meteorológicos","text":"El modo automático analiza la previsión horaria y la nubosidad. El diagnóstico muestra valores, fuente, perfil calculado y motivo."},
-      "collective":{"title":"Regulación colectiva","text":"El autoconsumo colectivo reparte la corrección de red. La carga solar colectiva solo absorbe excedentes y nunca descarga."},
-      "protections":{"title":"Protecciones y niveles SOC","text":"Los SOC mínimo y máximo detienen descarga y carga. Los umbrales de retorno añaden histéresis y los niveles reducen progresivamente la potencia."},
-      "compensation":{"title":"Compensación y estimación","text":"Las compensaciones corrigen cada batería. El cero de red corrige el sesgo colectivo. La hora estimada usa potencia media, capacidad, rendimiento AC/DC y niveles SOC."},
-      "backup":{"title":"Red y modo Backup","text":"Configure Tensión Grid y Backup Function. Battery Manager detiene todas las órdenes durante Backup y reanuda tras 30 segundos entre 200 y 250 V."},
-      "actions":{"title":"Acciones Backup","text":"El panel Acciones apaga una entidad una sola vez, memoriza su estado y puede restaurarlo después de Backup."},
-      "notifications":{"title":"Notificaciones","text":"Añada destinos mobile_app, horarios, reglas, baterías y umbrales. La confirmación filtra eventos breves y el rearme evita repeticiones."},
-      "journal":{"title":"Registros","text":"Órdenes, planificador, decisiones meteorológicas, notificaciones y acciones se conservan 30 días hasta 50 MB."},
-      "diagnostics":{"title":"Diagnóstico","text":"Muestra la disponibilidad y los roles de las entidades. Una entidad desconocida o no disponible no provoca órdenes repetidas a ciegas."},
-      "maintenance":{"title":"Copia y solución de problemas","text":"Guarde Home Assistant y exporte la planificación antes de cambios importantes. Pruebe las entidades en Espera y consulte Registros ante cualquier anomalía."}
+      "installation": {
+        "title": "Instalación y actualización",
+        "text": "Instale el repositorio con HACS o copie custom_components/battery_manager, reinicie Home Assistant Core y añada la integración. Reinicie y actualice el navegador tras cada versión."
+      },
+      "configuration": {
+        "title": "Configuración inicial",
+        "text": "Configure primero la entidad de red y después cada batería. Use la detección Venus Modbus para Marstek o introduzca los temas MQTT de la MS-A2. Compruebe los signos de potencia."
+      },
+      "overview": {
+        "title": "Vista general",
+        "text": "Reúne SOC, potencia, conexión, órdenes reales, medidas AC/DC, rendimiento, temperaturas, energía y ciclos. Un clic abre el historial de Home Assistant."
+      },
+      "quick_modes": {
+        "title": "Control rápido",
+        "text": "Permite Planificador, Carga, autoconsumo colectivo o nativo, Carga solar, Espera, Backup Marstek o Desactivado. Durante Backup no se envía ninguna orden."
+      },
+      "scheduler": {
+        "title": "Planificador",
+        "text": "Cree periodos de 15 minutos durante siete días para cada perfil meteorológico. Defina acción, potencias y límites SOC. La planificación se puede importar o exportar."
+      },
+      "weather": {
+        "title": "Perfiles meteorológicos",
+        "text": "El modo automático analiza la previsión horaria y la nubosidad. El diagnóstico muestra valores, fuente, perfil calculado y motivo."
+      },
+      "collective": {
+        "title": "Regulación colectiva",
+        "text": "El autoconsumo colectivo reparte la corrección de red. La carga solar colectiva solo absorbe excedentes y nunca descarga."
+      },
+      "protections": {
+        "title": "Protecciones y niveles SOC",
+        "text": "Los SOC mínimo y máximo detienen descarga y carga. Los umbrales de retorno añaden histéresis y los niveles reducen progresivamente la potencia."
+      },
+      "compensation": {
+        "title": "Compensación y estimación",
+        "text": "Las compensaciones corrigen cada batería. El cero de red corrige el sesgo colectivo. La hora estimada usa potencia media, capacidad, rendimiento AC/DC y niveles SOC."
+      },
+      "backup": {
+        "title": "Red y modo Backup",
+        "text": "Configure Tensión Grid y Backup Function. Battery Manager detiene todas las órdenes durante Backup y reanuda tras 30 segundos entre 200 y 250 V."
+      },
+      "actions": {
+        "title": "Acciones Backup",
+        "text": "El panel Acciones apaga una entidad una sola vez, memoriza su estado y puede restaurarlo después de Backup."
+      },
+      "notifications": {
+        "title": "Notificaciones",
+        "text": "Añada destinos mobile_app, horarios, reglas, baterías y umbrales. La confirmación filtra eventos breves y el rearme evita repeticiones."
+      },
+      "journal": {
+        "title": "Registros",
+        "text": "Órdenes, planificador, decisiones meteorológicas, notificaciones y acciones se conservan 30 días hasta 50 MB."
+      },
+      "diagnostics": {
+        "title": "Diagnóstico",
+        "text": "Muestra la disponibilidad y los roles de las entidades. Una entidad desconocida o no disponible no provoca órdenes repetidas a ciegas."
+      },
+      "maintenance": {
+        "title": "Copia y solución de problemas",
+        "text": "Guarde Home Assistant y exporte la planificación antes de cambios importantes. Pruebe las entidades en Espera y consulte Registros ante cualquier anomalía."
+      }
     }
   },
   "journal": {
@@ -558,5 +618,9 @@
       "notifications": "Notificaciones",
       "users": "Acciones de usuarios"
     }
+  },
+  "controls": {
+    "decrease": "Disminuir: {field}",
+    "increase": "Aumentar: {field}"
   }
 }

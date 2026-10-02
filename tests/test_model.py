@@ -268,3 +268,20 @@ def test_native_self_consumption_is_marstek_only() -> None:
     native = decide(battery, slot, soc=50, grid_power_w=500)
     assert native.action == "native_self_consumption"
     assert native.reason == "native_mode"
+
+
+def test_model_migration_and_brand_validation_preserve_settings() -> None:
+    battery = default_battery()
+    battery.update(adapter="marstek_entities", model="venus_e_3", capacity_kwh=5.12)
+    battery["entities"]["soc"] = "sensor.bat1_soc"
+    normalized = normalize_battery(battery)
+    assert normalized["model"] == "venus_e_3"
+    assert normalized["capacity_kwh"] == 5.12
+    assert normalized["entities"]["soc"] == "sensor.bat1_soc"
+    assert normalized["charge_tiers"] == battery["charge_tiers"]
+    battery.pop("model")
+    assert normalize_battery(battery)["model"] == "generic"
+    battery.update(adapter="hoymiles_msa2", model="ms_a2")
+    assert normalize_battery(battery)["model"] == "ms_a2"
+    battery["model"] = "venus_e_3"
+    assert normalize_battery(battery)["model"] == "generic"

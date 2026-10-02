@@ -62,11 +62,20 @@
       "unavailable": "Unavailable"
     },
     "condition_values": {
-      "sunny": "Sunny", "partlycloudy": "Partly cloudy", "cloudy": "Cloudy",
-      "fog": "Fog", "windy": "Windy", "windy-variant": "Windy and cloudy",
-      "rainy": "Rainy", "pouring": "Pouring", "lightning": "Lightning",
-      "lightning-rainy": "Lightning and rain", "hail": "Hail", "snowy": "Snowy",
-      "snowy-rainy": "Snow and rain", "clear-night": "Clear night"
+      "sunny": "Sunny",
+      "partlycloudy": "Partly cloudy",
+      "cloudy": "Cloudy",
+      "fog": "Fog",
+      "windy": "Windy",
+      "windy-variant": "Windy and cloudy",
+      "rainy": "Rainy",
+      "pouring": "Pouring",
+      "lightning": "Lightning",
+      "lightning-rainy": "Lightning and rain",
+      "hail": "Hail",
+      "snowy": "Snowy",
+      "snowy-rainy": "Snow and rain",
+      "clear-night": "Clear night"
     },
     "calculated_profile": "Calculated profile",
     "reason": "Reason",
@@ -167,12 +176,13 @@
     "copy_suffix": "copy",
     "safety_notice": "Select the main mode directly from the Control menu on the overview. Disabled applies the configured fallback once, then stops sending commands.",
     "entities_found": "{total} linked entities · {managed} recognised management entities",
-    "marstek_found": "{total} Marstek battery/batteries detected"
+    "marstek_found": "{total} Marstek battery/batteries detected",
+    "generic_model_help": "Unvalidated model: configure entities manually."
   },
   "sections": {
     "grid": "Grid measurement and collective controller",
-    "general": "General",
-    "marstek_detection": "Marstek Venus Modbus detection",
+    "general": "Battery type identification",
+    "marstek_detection": "Auto-configuration via Marstek Venus Modbus",
     "info_entities": "Information entities",
     "protection": "Protection and power limits",
     "charge_tiers": "SOC-based charge tiers",
@@ -188,7 +198,7 @@
     "deadband": "Deadband (W)",
     "command_hysteresis": "Hysteresis (W)",
     "control_interval": "Interval (s)",
-    "command_refresh_s": "Refresh (s)",
+    "command_refresh_s": "Command retransmission (s)",
     "invert_grid": "Invert grid sign",
     "name": "Name",
     "capacity": "Capacity (kWh)",
@@ -226,8 +236,8 @@
     "charge_resume": "Resume charge (%)",
     "max_charge_w": "Maximum charge (W)",
     "max_discharge_w": "Maximum discharge (W)",
-    "charge_compensation": "Charge comp. (W)",
-    "discharge_compensation": "Discharge comp. (W)",
+    "charge_compensation": "Charge compensation (W)",
+    "discharge_compensation": "Discharge compensation (W)",
     "charge_setpoint": "Charge setpoint",
     "discharge_setpoint": "Discharge setpoint",
     "max_charge": "Maximum charge",
@@ -239,7 +249,8 @@
     "native_self_consumption_value": "Native self-consumption User Work Mode value",
     "ai_optimization_value": "AI Optimization User Work Mode value",
     "ems_topic": "EMS mode topic",
-    "power_topic": "Power setpoint topic"
+    "power_topic": "Power setpoint topic",
+    "model": "Model"
   },
   "fallback": {
     "standby": "Standby",
@@ -253,7 +264,8 @@
     "from": "From",
     "to": "To",
     "maximum": "Maximum W",
-    "empty": "empty = battery limit"
+    "empty": "empty = battery limit",
+    "auto": "Auto"
   },
   "schedule": {
     "export": "Export schedule",
@@ -314,8 +326,8 @@
     "weather_entity_missing": "Weather entity not configured",
     "outside_analysis_hours": "Outside analysis hours",
     "not_analyzed": "Not analyzed yet",
-    "manual": "Manual selection"
-    ,"backup_active": "Backup mode active — no command sent",
+    "manual": "Manual selection",
+    "backup_active": "Backup mode active — no command sent",
     "backup_grid_confirmation": "Leaving Backup — confirming Grid for 30 seconds"
   },
   "notifications": {
@@ -513,30 +525,78 @@
     }
   },
   "backup_actions": {
-    "title": "Backup mode actions", "entity": "Entity to turn off",
+    "title": "Backup mode actions",
+    "entity": "Entity to turn off",
     "restore": "Restore after leaving Backup mode",
     "help": "When the first battery enters Backup, Battery Manager stores this entity's state and turns it off once if it was on.",
     "once": "The state is not enforced during Backup. Optional restoration occurs after all batteries leave Backup and the Grid has been valid for 30 seconds."
   },
   "about": {
-    "project": "GitHub project", "website": "Official website", "guide": "User guide",
+    "project": "GitHub project",
+    "website": "Official website",
+    "guide": "User guide",
     "introduction": "Battery Manager centralizes monitoring, scheduling and local control of multiple batteries in Home Assistant. Configured protections are applied before every command.",
     "sections": {
-      "installation":{"title":"Installation and updates","text":"Install the repository through HACS or copy custom_components/battery_manager, restart Home Assistant Core and add the integration. Restart Core and refresh the browser after every update."},
-      "configuration":{"title":"Initial configuration","text":"Configure the grid power entity first, then each battery. Use Venus Modbus discovery for Marstek or enter the MS-A2 MQTT topics. Verify all power signs before enabling control."},
-      "overview":{"title":"Overview","text":"The overview combines SOC, power, connectivity, real commands, AC/DC measurements, efficiency, temperatures, energy and cycles. Clicking a value opens its Home Assistant history."},
-      "quick_modes":{"title":"Quick control","text":"Select Schedule, Charge, collective or native self-consumption, Solar charge, Standby, Marstek Backup or Disabled. No battery command is sent while Backup is active."},
-      "scheduler":{"title":"Scheduler","text":"Create 15-minute periods across seven days and every weather profile. Set the action, powers and SOC limits, then save. Planning can be imported or exported."},
-      "weather":{"title":"Weather profiles","text":"Automatic mode analyzes the hourly forecast and cloud cover. The diagnostic shows the received values, source, calculated profile and decision reason."},
-      "collective":{"title":"Collective regulation","text":"Collective self-consumption shares grid correction between available batteries. Collective solar charging only absorbs exported surplus and never discharges."},
-      "protections":{"title":"SOC protections and tiers","text":"Minimum and maximum SOC stop discharge and charge. Resume thresholds provide hysteresis. Charge tiers progressively reduce power and take priority over scheduling."},
-      "compensation":{"title":"Compensation and estimate","text":"Per-battery charge and discharge compensation correct measured AC offsets. Grid zero corrects a remaining collective bias. Charge ETA uses rolling power, capacity, AC/DC efficiency and SOC tiers."},
-      "backup":{"title":"Grid and Backup mode","text":"Configure Grid voltage and Backup Function for Marstek. Battery Manager stops every command while Backup is on and resumes only after 30 seconds between 200 and 250 V."},
-      "actions":{"title":"Backup actions","text":"The Actions panel can turn one entity off once when Backup starts, remember its previous state and optionally restore it after Backup."},
-      "notifications":{"title":"Notifications","text":"Add mobile_app targets, schedules, rules, batteries and thresholds. Confirmation filters short events; rearm prevents repeated delivery for the configured number of hours."},
-      "journal":{"title":"Logs","text":"Commands, scheduler changes, weather decisions, notifications and user actions are retained for 30 days, up to 50 MB in total."},
-      "diagnostics":{"title":"Diagnostics","text":"Entity diagnostics show availability and recognized roles. Unknown or unavailable entities never cause blind repeated commands."},
-      "maintenance":{"title":"Backup and troubleshooting","text":"Back up Home Assistant and export planning before major updates. Test changed entities in Standby first. Disable control and inspect Logs if behavior is unexpected."}
+      "installation": {
+        "title": "Installation and updates",
+        "text": "Install the repository through HACS or copy custom_components/battery_manager, restart Home Assistant Core and add the integration. Restart Core and refresh the browser after every update."
+      },
+      "configuration": {
+        "title": "Initial configuration",
+        "text": "Configure the grid power entity first, then each battery. Use Venus Modbus discovery for Marstek or enter the MS-A2 MQTT topics. Verify all power signs before enabling control."
+      },
+      "overview": {
+        "title": "Overview",
+        "text": "The overview combines SOC, power, connectivity, real commands, AC/DC measurements, efficiency, temperatures, energy and cycles. Clicking a value opens its Home Assistant history."
+      },
+      "quick_modes": {
+        "title": "Quick control",
+        "text": "Select Schedule, Charge, collective or native self-consumption, Solar charge, Standby, Marstek Backup or Disabled. No battery command is sent while Backup is active."
+      },
+      "scheduler": {
+        "title": "Scheduler",
+        "text": "Create 15-minute periods across seven days and every weather profile. Set the action, powers and SOC limits, then save. Planning can be imported or exported."
+      },
+      "weather": {
+        "title": "Weather profiles",
+        "text": "Automatic mode analyzes the hourly forecast and cloud cover. The diagnostic shows the received values, source, calculated profile and decision reason."
+      },
+      "collective": {
+        "title": "Collective regulation",
+        "text": "Collective self-consumption shares grid correction between available batteries. Collective solar charging only absorbs exported surplus and never discharges."
+      },
+      "protections": {
+        "title": "SOC protections and tiers",
+        "text": "Minimum and maximum SOC stop discharge and charge. Resume thresholds provide hysteresis. Charge tiers progressively reduce power and take priority over scheduling."
+      },
+      "compensation": {
+        "title": "Compensation and estimate",
+        "text": "Per-battery charge and discharge compensation correct measured AC offsets. Grid zero corrects a remaining collective bias. Charge ETA uses rolling power, capacity, AC/DC efficiency and SOC tiers."
+      },
+      "backup": {
+        "title": "Grid and Backup mode",
+        "text": "Configure Grid voltage and Backup Function for Marstek. Battery Manager stops every command while Backup is on and resumes only after 30 seconds between 200 and 250 V."
+      },
+      "actions": {
+        "title": "Backup actions",
+        "text": "The Actions panel can turn one entity off once when Backup starts, remember its previous state and optionally restore it after Backup."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "text": "Add mobile_app targets, schedules, rules, batteries and thresholds. Confirmation filters short events; rearm prevents repeated delivery for the configured number of hours."
+      },
+      "journal": {
+        "title": "Logs",
+        "text": "Commands, scheduler changes, weather decisions, notifications and user actions are retained for 30 days, up to 50 MB in total."
+      },
+      "diagnostics": {
+        "title": "Diagnostics",
+        "text": "Entity diagnostics show availability and recognized roles. Unknown or unavailable entities never cause blind repeated commands."
+      },
+      "maintenance": {
+        "title": "Backup and troubleshooting",
+        "text": "Back up Home Assistant and export planning before major updates. Test changed entities in Standby first. Disable control and inspect Logs if behavior is unexpected."
+      }
     }
   },
   "journal": {
@@ -558,5 +618,9 @@
       "notifications": "Notifications",
       "users": "User actions"
     }
+  },
+  "controls": {
+    "decrease": "Decrease: {field}",
+    "increase": "Increase: {field}"
   }
 }

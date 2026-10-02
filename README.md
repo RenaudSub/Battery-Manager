@@ -128,6 +128,25 @@ La puissance appliquée est la plus faible parmi :
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
 
+## Version 0.5.4
+
+- centrage des libellés au-dessus des champs et sélecteurs dans toutes les sections de configuration, des interrupteurs sous leurs textes et des en-têtes des colonnes de paliers ;
+- largeur du sélecteur de puissance réseau alignée sur la fin du libellé d'inversion du signe ;
+- bouton de récupération des entités rapproché du sélecteur de batterie détectée et aligné sur celui-ci ; bilan sur la ligne suivante, aligné à droite sous le sélecteur ;
+- interrupteurs de perte et de retour du Grid alignés à la même hauteur ; libellé des paliers « Charge maximum en Watt » ;
+- sections renommées « Identification du type de batterie » et « Auto-configuration via Marstek Venus Modbus » ;
+- libellés complets pour les compensations de charge/décharge et la retransmission des commandes ;
+- bannière À propos centrée, numéro de version conservé sous l'image à droite.
+
+## Version 0.5.3
+
+- refonte visuelle de la configuration : couleurs bleu pétrole, contrôles arrondis et reliefs doux, avec adaptation aux écrans mobiles et au thème sombre ;
+- illustrations du compteur réseau et des paliers de charge, actualisation des paliers après modification des seuils ;
+- champ **Modèle** : Marstek Venus E 3.0, Hoymiles MS-A2 et Générique pour chaque marque ; image associée au modèle sélectionné ;
+- conservation des réglages existants ; les batteries sans modèle renseigné restent en modèle Générique ; sélectionner un modèle ne modifie pas les paramètres de pilotage ;
+- harmonisation de la détection Marstek Modbus, des commandes et des entités d'information (cinq colonnes sur grand écran) ;
+- nouvelle bannière dans À propos, version affichée dessous à droite et lien corrigé vers https://www.logisub.com/battery-manager.html.
+
 ## Version 0.5.2
 
 - ajout de la sécurité **Backup Marstek** : arrêt complet des commandes et verrouillage de la gestion rapide lorsque `Backup Function` est actif ;

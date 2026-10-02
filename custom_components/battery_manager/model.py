@@ -142,6 +142,7 @@ def default_battery(name: str = "Nouvelle batterie") -> dict[str, Any]:
         "id": "",
         "name": name,
         "adapter": "generic",
+        "model": "generic",
         "enabled": False,
         "operation_mode": "disabled",
         "control_mode": "disabled",
@@ -216,6 +217,7 @@ def normalize_battery(raw: dict[str, Any]) -> dict[str, Any]:
         "id",
         "name",
         "adapter",
+        "model",
         "enabled",
         "operation_mode",
         "control_mode",
@@ -231,6 +233,13 @@ def normalize_battery(raw: dict[str, Any]) -> dict[str, Any]:
     ):
         if key in raw:
             result[key] = raw[key]
+    allowed_models = {
+        "generic": {"generic"},
+        "marstek_entities": {"generic", "venus_e_3"},
+        "hoymiles_msa2": {"generic", "ms_a2"},
+    }
+    if result["model"] not in allowed_models.get(result["adapter"], {"generic"}):
+        result["model"] = "generic"
     for section in ("entities", "mqtt", "mode_values", "limits"):
         if isinstance(raw.get(section), dict):
             result[section].update(raw[section])
