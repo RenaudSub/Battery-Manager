@@ -158,6 +158,54 @@ class RuleTests(unittest.TestCase):
         self.assertTrue(any('15' in s and '20' in s for s in changes))
         self.assertTrue(any('planification' in s for s in changes))
         self.assertLess(len(changes),5)
+    def test_mobile_navigation_and_command_panels_contract(self):
+        panel=(SOURCE/'frontend'/'battery-manager-panel.js').read_text()
+        self.assertIn('.profile-menu{order:1',panel)
+        self.assertIn('.navigation-menu{order:2;flex-shrink:0;margin-left:auto}',panel)
+        self.assertIn('.navigation-menu .actions-menu-content{right:0;left:auto',panel)
+        self.assertIn('battery_manager_overview_sections',panel)
+        self.assertIn('this._openCommandSections = new Set(overviewSections.commands);',panel)
+        self.assertIn('this._openSetpointSections = new Set(overviewSections.setpoints);',panel)
+        self.assertEqual(panel.count('<details class="command-status" data-command-device='),2)
+        self.assertIn('<details class="section-divider setpoint-box" data-setpoint-device=',panel)
+        self.assertNotIn('overview.sent_at',panel)
+
+class WeatherTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.hass=FakeHass(self.tmp.name)
+        self.controller=BatteryController(self.hass,SimpleNamespace(data={}))
+        self.weather={
+            'rain_threshold_mm':0.5,'sunny_cloud_max':40,'cloud_hysteresis':10,
+            'condition_map':{'sunny':'sunny','cloudy':'cloudy','rainy':'rainy','pouring':'rainy','lightning-rainy':'rainy','hail':'rainy','snowy-rainy':'rainy'},
+        }
+    async def asyncTearDown(self):self.tmp.cleanup()
+    async def test_light_rain_uses_cloud_cover(self):
+        self.weather['sunny_cloud_max']=20
+        selected,reason=self.controller._classify_weather('rainy',30,0.1,self.weather)
+        self.assertEqual(selected,'cloudy')
+        self.assertEqual(reason,'precipitation_below_threshold')
+    async def test_rain_at_threshold_selects_rainy(self):
+        selected,reason=self.controller._classify_weather('rainy',10,0.5,self.weather)
+        self.assertEqual(selected,'rainy')
+        self.assertEqual(reason,'precipitation_threshold')
+    async def test_precipitation_amount_has_priority_even_if_condition_is_cloudy(self):
+        selected,reason=self.controller._classify_weather('cloudy',10,0.7,self.weather)
+        self.assertEqual(selected,'rainy')
+        self.assertEqual(reason,'precipitation_threshold')
+    async def test_severe_condition_has_priority(self):
+        selected,reason=self.controller._classify_weather('pouring',10,0.1,self.weather)
+        self.assertEqual(selected,'rainy')
+        self.assertEqual(reason,'severe_precipitation')
+    async def test_missing_precipitation_uses_condition(self):
+        selected,reason=self.controller._classify_weather('rainy',10,None,self.weather)
+        self.assertEqual(selected,'rainy')
+        self.assertEqual(reason,'precipitation_unavailable')
+    async def test_rain_threshold_is_persisted_and_normalized(self):
+        store=BatteryManagerStore(self.hass);await store.async_load({})
+        self.assertEqual(store.data['weather']['rain_threshold_mm'],0.5)
+        config=deepcopy(store.data);config['weather']['rain_threshold_mm']=0.8
+        await store.async_save(config)
+        self.assertEqual(store.data['weather']['rain_threshold_mm'],0.8)
 
 class JournalTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):

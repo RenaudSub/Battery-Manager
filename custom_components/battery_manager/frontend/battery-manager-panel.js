@@ -5,7 +5,7 @@ const ACTIONS = {
   default_mode: { color: "#ffffff" },
   standby: { color: "#78909c" },
 };
-const PANEL_VERSION = "0.5.4";
+const PANEL_VERSION = "0.5.5";
 const ASSET_BASE = "/battery_manager/frontend/assets/";
 const BATTERY_MODELS = {
   generic: [{id:"generic", label:""}],
@@ -77,6 +77,9 @@ class BatteryManagerPanel extends HTMLElement {
     this._status = {};
     this._marstekDevices = [];
     this._openDiagnostics = new Set();
+    const overviewSections = this._storedOverviewSections();
+    this._openCommandSections = new Set(overviewSections.commands);
+    this._openSetpointSections = new Set(overviewSections.setpoints);
     this._languageOverride = this._storedLanguage();
     this._translations = {};
     this._fallbackTranslations = {};
@@ -172,6 +175,25 @@ class BatteryManagerPanel extends HTMLElement {
   _storedLanguage() {
     try { return localStorage.getItem("battery_manager_language") || "auto"; }
     catch (_) { return "auto"; }
+  }
+
+  _storedOverviewSections() {
+    try {
+      const value = JSON.parse(localStorage.getItem("battery_manager_overview_sections") || "{}");
+      return {
+        commands: Array.isArray(value.commands) ? value.commands.map(String) : [],
+        setpoints: Array.isArray(value.setpoints) ? value.setpoints.map(String) : [],
+      };
+    } catch (_) { return {commands:[],setpoints:[]}; }
+  }
+
+  _storeOverviewSections() {
+    try {
+      localStorage.setItem("battery_manager_overview_sections", JSON.stringify({
+        commands:[...this._openCommandSections],
+        setpoints:[...this._openSetpointSections],
+      }));
+    } catch (_) { /* Browser storage unavailable. */ }
   }
 
   _locale() {
@@ -271,6 +293,12 @@ class BatteryManagerPanel extends HTMLElement {
       .charging { color:#2e7d32; } .discharging { color:#c62828; } .waiting-power { color:var(--primary-text-color); }
       .section-divider { border-top:1px solid var(--divider-color); margin-top:12px; padding-top:10px; }
       .setpoint-box { font-size:13px; line-height:1.45; }
+      .setpoint-box > summary { cursor:pointer; font-weight:700; }
+      .setpoint-box[open] > summary { margin-bottom:5px; }
+      .setpoint-body { display:grid; gap:2px; }
+      .setpoint-transmitted { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+      .setpoint-transmitted > span { min-width:0; }
+      .setpoint-transmitted time { margin-left:auto; white-space:nowrap; color:var(--secondary-text-color); }
       .monitor-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px 12px; }
       .monitor-item { display:flex; align-items:center; gap:7px; min-width:0; }
       .monitor-item ha-icon { color:var(--primary-color); width:20px; flex:0 0 20px; }
@@ -307,7 +335,8 @@ class BatteryManagerPanel extends HTMLElement {
       .hoymiles-monitoring .inverter-state { border-top:0; margin-top:0; padding-top:0; }
       .grid-power-label { color:var(--secondary-text-color); font-size:12px; }
       .command-status { margin-top:12px; padding-top:10px; border-top:1px solid var(--divider-color); }
-      .command-status h3 { font-size:14px; margin:0 0 8px; }
+      .command-status > summary { cursor:pointer; font-size:14px; font-weight:700; }
+      .command-status[open] > summary { margin-bottom:8px; }
       .command-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:5px 8px; border-radius:8px; }
       .command-row:nth-child(even) { background:var(--secondary-background-color); }
       .command-row span { color:var(--secondary-text-color); font-size:13px; }
@@ -423,7 +452,7 @@ class BatteryManagerPanel extends HTMLElement {
       .journal-line:nth-child(even){background:var(--secondary-background-color)}
       .journal-tabs{display:flex;flex-wrap:wrap;gap:7px}.journal-tabs .active{background:var(--primary-color);color:var(--text-primary-color,#fff)}
       .about-hero{text-align:center;padding:28px 12px}.about-hero h2{font-size:32px;margin:0 0 14px}.about-links{display:flex;justify-content:center;gap:18px;flex-wrap:wrap}.about-sections details{border-top:1px solid var(--divider-color);padding:10px 2px}.about-sections summary{cursor:pointer;font-weight:700}.about-sections p,.about-sections li{line-height:1.55}.backup-action-grid{display:grid;grid-template-columns:minmax(280px,520px) auto;gap:18px;align-items:end}.backup-action-grid label{display:flex;gap:8px;align-items:center}
-      @media(max-width:700px){header{flex-wrap:wrap}header h1{flex:1 1 calc(100% - 60px);min-width:0;order:0}.navigation-menu{order:1;flex-shrink:0}.profile-menu{order:2;max-width:100%}.profile-menu summary{max-width:100%}.target-manager select{min-width:0;max-width:100%}.target-manager .form-grid,.backup-action-grid{grid-template-columns:minmax(0,1fr)}.journal-line{grid-template-columns:minmax(0,1fr);gap:2px}.notification-battery{width:100%}.notification-batteries{display:block}.notification-battery{margin:8px 0;box-sizing:border-box}.journal-toolbar input{max-width:100%}}
+      @media(max-width:700px){header{flex-wrap:wrap}header h1{flex:1 1 calc(100% - 60px);min-width:0;order:0}.profile-menu{order:1;max-width:calc(100% - 54px)}.profile-menu summary{max-width:100%}.profile-menu .profile-menu-content{left:0;right:auto;max-width:calc(100vw - 24px)}.navigation-menu{order:2;flex-shrink:0;margin-left:auto}.navigation-menu .actions-menu-content{right:0;left:auto;max-width:calc(100vw - 24px)}.target-manager select{min-width:0;max-width:100%}.target-manager .form-grid,.backup-action-grid{grid-template-columns:minmax(0,1fr)}.journal-line{grid-template-columns:minmax(0,1fr);gap:2px}.notification-battery{width:100%}.notification-batteries{display:block}.notification-battery{margin:8px 0;box-sizing:border-box}.journal-toolbar input{max-width:100%}}
 
       .about-brand{width:min(800px,100%)}.about-brand img{display:block;width:100%;height:auto;border-radius:12px}.about-version{text-align:right;font-weight:600;margin:6px 4px 14px;color:var(--secondary-text-color)}
       .configuration-theme{--neo-bg:#e8edf2;--neo-input:#f0f4f7;--neo-text:#253e48;--neo-muted:#526975;--neo-border:#a9c4ca;--neo-light:#ffffff;--neo-shadow:#bdc8d3;--neo-accent:#397e8c;background:var(--neo-bg);color:var(--neo-text);padding:12px 18px;border-radius:24px}
@@ -676,6 +705,7 @@ class BatteryManagerPanel extends HTMLElement {
       const soc = this._state(b.entities.soc);
       const temp = this._state(b.entities.temperature);
       const decisionKey = b.id || b.name;
+      const sectionKey = String(decisionKey);
       const decision = this._status.decisions?.[decisionKey] || {};
       const backupBlocked = ["backup","backup_recovery"].includes(decision.action);
       const device = this._marstekDevices.find((item) => item.device_id === b.source_device_id);
@@ -696,11 +726,11 @@ class BatteryManagerPanel extends HTMLElement {
         <div class="battery-power-block"><div class="live-power ${powerClass}" data-more-info="${esc(b.entities.power)}">${backupBlocked?`<ha-icon icon="mdi:alert"></ha-icon>${esc(powerText)}`:esc(powerText)}</div>${backupBlocked?"":chargeEstimate}</div></div>
         ${b.adapter === "marstek_entities" ? this._marstekCommandStatus(b) : ""}
         ${b.adapter === "hoymiles_msa2" ? this._msa2CommandStatus(b, decision) : ""}
-        <div class="section-divider setpoint-box"><b>${this._t("overview.current_setpoint")}</b><br>
-          ${this._t("overview.current_mode")} : ${esc(this._currentModeLabel(b, decision))}<br>
-          ${this._t("overview.transmitted_command")} : ${backupBlocked?this._t("overview.no_backup_command"):this._commandText(decision, b)}
-          ${decision.calculated_command_w !== undefined ? `<br>${this._t("overview.calculated_command")} : ${esc(decision.calculated_command_w)} W · ${this._t("overview.compensation")} : ${decision.compensation_w > 0 ? "+" : ""}${esc(decision.compensation_w)} W` : ""}
-          ${decision.command_sent_at ? `<br><span class="muted">${this._t("overview.sent_at")} ${esc(new Date(decision.command_sent_at).toLocaleTimeString())}</span>` : ""}</div>
+        <details class="section-divider setpoint-box" data-setpoint-device="${esc(sectionKey)}" ${this._openSetpointSections.has(sectionKey)?"open":""}><summary>${this._t("overview.current_setpoint")}</summary><div class="setpoint-body">
+          <div>${this._t("overview.current_mode")} : ${esc(this._currentModeLabel(b, decision))}</div>
+          <div class="setpoint-transmitted"><span>${this._t("overview.transmitted_command")} : ${backupBlocked?this._t("overview.no_backup_command"):this._commandText(decision, b)}</span>${decision.command_sent_at?`<time>${esc(this._formatCommandTime(decision.command_sent_at))}</time>`:""}</div>
+          ${decision.calculated_command_w !== undefined ? `<div>${this._t("overview.calculated_command")} : ${esc(decision.calculated_command_w)} W · ${this._t("overview.compensation")} : ${decision.compensation_w > 0 ? "+" : ""}${esc(decision.compensation_w)} W</div>` : ""}
+        </div></details>
         ${this._batteryMonitoring(b, normalizedPower, temp, decisionKey)}
         ${device ? this._entityDiagnostic(device) : ""}</section>`;
     }).join("")}</div>`;
@@ -721,6 +751,15 @@ class BatteryManagerPanel extends HTMLElement {
     const target = Number(estimate.target_soc);
     const targetLabel = Number.isFinite(target) ? String(Number(target.toFixed(1))) : "100";
     return `<div class="charge-estimate">${esc(this._t("overview.charge_eta", {target:targetLabel, time}))}</div>`;
+  }
+
+  _formatCommandTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const parts = Object.fromEntries(new Intl.DateTimeFormat(this._locale(), {
+      hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false,
+    }).formatToParts(date).map(part=>[part.type,part.value]));
+    return `(${parts.hour}h${parts.minute}:${parts.second})`;
   }
 
   _gridTrend(currentValue, averageValue) {
@@ -831,22 +870,24 @@ class BatteryManagerPanel extends HTMLElement {
 
   _msa2CommandStatus(battery, decision) {
     const state = this._state(battery.entities?.state);
-    return `<div class="command-status"><h3>${this._t("overview.msa2_live_commands")}</h3>
+    const key = String(battery.id || battery.name);
+    return `<details class="command-status" data-command-device="${esc(key)}" ${this._openCommandSections.has(key)?"open":""}><summary>${this._t("overview.msa2_live_commands")}</summary><div class="command-body">
       <div class="command-row" data-more-info="${esc(battery.entities?.state)}"><span>${this._t("fields.state")}</span><strong>${esc(state.state)}</strong></div>
       <div class="command-row"><span>${this._t("fields.ems_topic")}</span><strong class="mqtt-topic">${esc(battery.mqtt?.mode_topic || "—")}</strong></div>
       <div class="command-row"><span>${this._t("fields.power_topic")}</span><strong class="mqtt-topic">${esc(battery.mqtt?.power_topic || "—")}</strong></div>
       <div class="command-row"><span>${this._t("overview.last_mqtt_mode")}</span><strong>${decision.command_transport === "mqtt" ? esc(decision.command_mqtt_mode || "mqtt_ctrl") : "—"}</strong></div>
       <div class="command-row"><span>${this._t("overview.last_mqtt_power")}</span><strong>${decision.command_transport === "mqtt" && decision.command_power_w !== undefined ? `${esc(decision.command_power_w)} W` : "—"}</strong></div>
-    </div>`;
+    </div></details>`;
   }
 
   _marstekCommandStatus(battery) {
     const entities = battery.entities || {};
+    const key = String(battery.id || battery.name);
     const row = (label, entityId) => {
       const value = this._state(entityId);
       return `<div class="command-row" data-more-info="${esc(entityId)}"><span>${this._t(label)}</span><strong>${esc(value.state)} ${esc(value.unit)}</strong></div>`;
     };
-    return `<div class="command-status"><h3>${this._t("overview.marstek_live_commands")}</h3>
+    return `<details class="command-status" data-command-device="${esc(key)}" ${this._openCommandSections.has(key)?"open":""}><summary>${this._t("overview.marstek_live_commands")}</summary><div class="command-body">
       ${row("fields.force_mode", entities.force_mode)}
       ${row("fields.rs485_control_mode", entities.rs485_control_mode)}
       ${row("fields.charge_setpoint", entities.charge_power)}
@@ -854,7 +895,7 @@ class BatteryManagerPanel extends HTMLElement {
       ${row("fields.max_charge", entities.max_charge_power)}
       ${row("fields.max_discharge", entities.max_discharge_power)}
       ${row("fields.user_work_mode", entities.work_mode)}
-    </div>`;
+    </div></details>`;
   }
 
   _entityDiagnostic(device) {
@@ -892,6 +933,7 @@ class BatteryManagerPanel extends HTMLElement {
         <label>${this._t("schedule.end")}<input data-path="_global.weather.analysis_end" type="time" value="${esc(w.analysis_end||"22:00")}"></label>
         <label>${this._t("weather.sunny_max")}<input data-path="_global.weather.sunny_cloud_max" type="number" min="0" max="100" value="${esc(w.sunny_cloud_max??40)}"></label>
         <label>${this._t("weather.hysteresis")}<input data-path="_global.weather.cloud_hysteresis" type="number" min="0" max="30" value="${esc(w.cloud_hysteresis??10)}"></label>
+        <label>${this._t("weather.rain_threshold")}<input data-path="_global.weather.rain_threshold_mm" type="number" min="0" max="50" step="0.1" value="${esc(w.rain_threshold_mm??0.5)}"></label>
       </div></fieldset>
       <fieldset class="weather-conditions"><legend>${this._t("weather.conditions")}</legend><div class="form-grid">${conditions.map(c=>`<label>${esc(c)}<select data-path="_global.weather.condition_map.${c}">${profileOptions(w.condition_map?.[c])}</select></label>`).join("")}</div></fieldset>
       <fieldset class="weather-diagnostic"><legend>${this._t("weather.diagnostic")}</legend>
@@ -902,6 +944,8 @@ class BatteryManagerPanel extends HTMLElement {
           <div class="weather-diagnostic-item">${this._t("weather.cloud")} : <b>${d.cloud_coverage==null?"—":`${esc(d.cloud_coverage)} %`}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.cloud_source")} : <b>${esc(d.cloud_source?this._t(`weather.cloud_sources.${d.cloud_source}`):"—")}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.cloud_raw")} : <b>${d.cloud_entity_state==null?"—":esc(d.cloud_entity_state)}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.precipitation")} : <b>${d.precipitation_mm==null?"—":`${esc(d.precipitation_mm)} mm/h`}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.rain_threshold")} : <b>${d.rain_threshold_mm==null?"—":`${esc(d.rain_threshold_mm)} mm/h`}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.calculated_profile")} : <b>${esc(profileName(d.selected_profile))}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.reason")} : <b>${esc(d.reason?this._reason(d.reason):"—")}</b></div>
         </div>
@@ -1145,6 +1189,20 @@ class BatteryManagerPanel extends HTMLElement {
       details.addEventListener("toggle", () => {
         if (details.open) this._openDiagnostics.add(details.dataset.deviceId);
         else this._openDiagnostics.delete(details.dataset.deviceId);
+      });
+    });
+    this.shadowRoot.querySelectorAll("details.command-status[data-command-device]").forEach((details) => {
+      details.addEventListener("toggle", () => {
+        if (details.open) this._openCommandSections.add(details.dataset.commandDevice);
+        else this._openCommandSections.delete(details.dataset.commandDevice);
+        this._storeOverviewSections();
+      });
+    });
+    this.shadowRoot.querySelectorAll("details.setpoint-box[data-setpoint-device]").forEach((details) => {
+      details.addEventListener("toggle", () => {
+        if (details.open) this._openSetpointSections.add(details.dataset.setpointDevice);
+        else this._openSetpointSections.delete(details.dataset.setpointDevice);
+        this._storeOverviewSections();
       });
     });
     this.shadowRoot.querySelectorAll("[data-more-info]").forEach((element) => {

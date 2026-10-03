@@ -54,6 +54,7 @@ DEFAULT_CONFIG = {
         "analysis_end": "22:00",
         "sunny_cloud_max": 40,
         "cloud_hysteresis": 10,
+        "rain_threshold_mm": 0.5,
         "daylight_only": True,
         "condition_map": {
             "sunny": "sunny", "partlycloudy": "cloudy", "cloudy": "cloudy",

@@ -78,6 +78,11 @@ class BatteryManagerStore:
             weather[key] = value if len(value) == 5 and value[2] == ":" else fallback
         weather["sunny_cloud_max"] = max(0, min(100, int(weather.get("sunny_cloud_max", 40))))
         weather["cloud_hysteresis"] = max(0, min(30, int(weather.get("cloud_hysteresis", 10))))
+        try:
+            rain_threshold = float(weather.get("rain_threshold_mm", 0.5))
+        except (TypeError, ValueError):
+            rain_threshold = 0.5
+        weather["rain_threshold_mm"] = max(0.0, min(50.0, rain_threshold))
         weather["daylight_only"] = bool(weather.get("daylight_only", True))
         default_map = deepcopy(DEFAULT_CONFIG["weather"]["condition_map"])
         if isinstance(weather.get("condition_map"), dict):

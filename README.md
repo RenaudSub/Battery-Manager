@@ -23,31 +23,31 @@ et le pilotage de plusieurs batteries de marques différentes.
 
 ### Vue d’ensemble
 
-[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg?v=0.5.1)](https://logisub.com/assets/bm-vue-ensemble.jpg)
+[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg?v=0.5.5)](https://logisub.com/assets/bm-vue-ensemble.jpg)
 
 ### Planificateur
 
-[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg?v=0.5.1)](https://logisub.com/assets/bm-planificateur.jpg)
+[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg?v=0.5.5)](https://logisub.com/assets/bm-planificateur.jpg)
 
 ### Configuration générale
 
-[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg?v=0.5.1)](https://logisub.com/assets/bm-configuration-generale.jpg)
+[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg?v=0.5.5)](https://logisub.com/assets/bm-configuration-generale.jpg)
 
 ### Protections et paliers de charge
 
-[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg?v=0.5.1)](https://logisub.com/assets/bm-configuration-paliers.jpg)
+[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg?v=0.5.5)](https://logisub.com/assets/bm-configuration-paliers.jpg)
 
 ### Gestion des profils météo
 
-[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.1)](https://logisub.com/assets/bm-confimeteo.jpg)
+[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.5)](https://logisub.com/assets/bm-confimeteo.jpg)
 
 ### Gestion des notifications
 
-[![Gestion des notifications](https://logisub.com/assets/bm-notifications.jpg?v=0.5.1)](https://logisub.com/assets/bm-confimeteo.jpg)
+[![Gestion des notifications](https://logisub.com/assets/bm-notifications.jpg?v=0.5.5)](https://logisub.com/assets/bm-confimeteo.jpg)
 
 ### Gestion des journaux
 
-[![Gestion des journaux](https://logisub.com/assets/bm-journaux.jpg?v=0.5.1)](https://logisub.com/assets/bm-journaux.jpg)
+[![Gestion des journaux](https://logisub.com/assets/bm-journaux.jpg?v=0.5.5)](https://logisub.com/assets/bm-journaux.jpg)
 
 ## Avertissement bêta
 
@@ -127,6 +127,18 @@ La puissance appliquée est la plus faible parmi :
 
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
+
+## Version 0.5.5
+
+- ajout d'un seuil de précipitations configurable, fixé à `0,5 mm/h` par défaut ;
+- une mention `rainy` située sous ce seuil n'impose plus le profil Pluvieux : la couverture nuageuse choisit alors le profil ;
+- les phénomènes importants (`pouring`, `lightning-rainy`, grêle ou neige mêlée de pluie) conservent la priorité Pluvieux ;
+- ajout des précipitations prévues, du seuil appliqué et de la raison détaillée dans le diagnostic météo ;
+- conservation de la condition météo comme solution de secours lorsque la quantité de précipitations est absente.
+- correction du menu de navigation sur téléphone : profil à gauche, roue dentée à droite et menu entièrement visible ;
+- sections des commandes réelles Marstek et MQTT MS-A2 repliées par défaut ; leur état reste conservé pendant les actualisations automatiques de la vue d'ensemble.
+- section « Consigne en cours » également repliable, avec l'heure de transmission placée à droite de la consigne pour économiser une ligne ;
+- mémorisation locale et indépendante, pour chaque batterie, de l'ouverture des commandes réelles et de la consigne en cours : chaque navigateur et chaque appareil conserve ainsi sa propre disposition.
 
 ## Version 0.5.4
 

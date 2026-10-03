@@ -80,6 +80,8 @@ class BatteryController:
             "cloud_coverage": None,
             "cloud_source": None,
             "cloud_entity_state": None,
+            "precipitation_mm": None,
+            "rain_threshold_mm": 0.5,
             "reason": "not_analyzed",
         }
         self._weather_last_refresh: datetime | None = None
@@ -297,6 +299,11 @@ class BatteryController:
                 self._weather_status.update({"reason": "forecast_unavailable", "available": False})
                 return
             condition = str(item.get("condition") or "").lower()
+            precipitation = item.get("precipitation")
+            try:
+                precipitation = float(precipitation) if precipitation is not None else None
+            except (TypeError, ValueError):
+                precipitation = None
             forecast_cloud = item.get("cloud_coverage", item.get("cloudiness"))
             try:
                 forecast_cloud = float(forecast_cloud) if forecast_cloud is not None else None
@@ -316,7 +323,7 @@ class BatteryController:
             if not (str(weather.get("analysis_start", "06:00")) <= clock < str(weather.get("analysis_end", "22:00"))):
                 selected, reason = None, "outside_analysis_hours"
             else:
-                selected, reason = self._classify_weather(condition, cloud, weather)
+                selected, reason = self._classify_weather(condition, cloud, precipitation, weather)
             if selected:
                 if selected != self._weather_status.get("selected_profile"):
                     self._collective_target_w = None
@@ -331,6 +338,8 @@ class BatteryController:
                 "cloud_source": cloud_source,
                 "cloud_entity": cloud_entity,
                 "cloud_entity_state": cloud_state.state if cloud_state is not None else None,
+                "precipitation_mm": precipitation,
+                "rain_threshold_mm": float(weather.get("rain_threshold_mm", 0.5)),
                 "forecast_time": item.get("datetime"),
                 "analyzed_at": now.isoformat(),
                 "reason": reason,
@@ -353,13 +362,29 @@ class BatteryController:
                 continue
         return min(candidates, key=lambda value: value[0])[1] if candidates else None
 
-    def _classify_weather(self, condition: str, cloud: float | None, weather: dict[str, Any]) -> tuple[str | None, str]:
+    def _classify_weather(
+        self,
+        condition: str,
+        cloud: float | None,
+        precipitation: float | None,
+        weather: dict[str, Any],
+    ) -> tuple[str | None, str]:
         rainy = {"rainy", "pouring", "lightning-rainy", "hail", "snowy", "snowy-rainy"}
+        severe_precipitation = {"pouring", "lightning-rainy", "hail", "snowy-rainy"}
         cloudy = {"cloudy", "fog", "windy", "windy-variant", "lightning"}
         mapping = weather.get("condition_map", {})
         mapped = mapping.get(condition)
+        rain_threshold = float(weather.get("rain_threshold_mm", 0.5))
+        below_rain_threshold = False
+        if condition in severe_precipitation:
+            return (None if mapped == "ignore" else mapped or "rainy"), "severe_precipitation"
+        if precipitation is not None and precipitation > 0 and precipitation >= rain_threshold:
+            rain_profile = mapping.get("rainy", "rainy")
+            return (None if rain_profile == "ignore" else rain_profile), "precipitation_threshold"
         if condition in rainy:
-            return (None if mapped == "ignore" else mapped or "rainy"), "precipitation_priority"
+            if precipitation is None:
+                return (None if mapped == "ignore" else mapped or "rainy"), "precipitation_unavailable"
+            below_rain_threshold = True
         if mapped == "ignore":
             return None, "clear_night_ignored"
         threshold = float(weather.get("sunny_cloud_max", 40))
@@ -368,7 +393,10 @@ class BatteryController:
         if cloud is not None:
             limit = threshold + hysteresis if previous == "sunny" else threshold - hysteresis
             sunny_profile=mapping.get("sunny", "sunny"); cloudy_profile=mapping.get("cloudy", "cloudy")
-            return (sunny_profile, "cloud_threshold") if cloud <= limit else (cloudy_profile, "cloud_threshold")
+            reason = "precipitation_below_threshold" if below_rain_threshold else "cloud_threshold"
+            return (sunny_profile, reason) if cloud <= limit else (cloudy_profile, reason)
+        if below_rain_threshold:
+            return (None if mapped == "ignore" else mapped or "rainy"), "precipitation_below_threshold_no_cloud"
         if mapped:
             return mapped, "condition"
         if condition == "sunny": return "sunny", "condition"
