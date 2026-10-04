@@ -1,53 +1,117 @@
 # Gestionnaire de batteries pour Home Assistant
 
-intégration locale destinée à centraliser la surveillance, la programmation 
-et le pilotage de plusieurs batteries de marques différentes.
+**Battery Manager v0.5.5** est une intégration locale destinée à centraliser la
+surveillance, la programmation et le pilotage collectif de plusieurs batteries
+de marques différentes dans Home Assistant.
+
+> Battery Manager est une **intégration personnalisée**, installable avec HACS
+> ou manuellement dans `custom_components`.
 
 🌐 [Site officiel de Battery Manager](https://logisub.com/battery-manager.html)
 
-## Fonctionnalités présentes
+## Fonctionnalités présentes — v0.5.5
 
-- panneau `Gestion batteries` dans la barre latérale ;
-- ajout de plusieurs batteries ;
-- adaptateurs `Marstek par entités`, `Hoymiles MS-A2 MQTT` et surveillance seule ;
-- programme journalier de 96 créneaux de 15 minutes ;
-- actions Charge, Décharge, Autoconsommation et Standby ;
-- puissance de charge et de décharge par créneau ;
-- SOC minimal et maximal avec seuils de reprise ;
-- limites matérielles de puissance par batterie ;
-- jusqu'à huit paliers de charge selon le SOC (quatre proposés par défaut) ;
-- zone morte configurable pour l'autoconsommation ;
-- arrêt du calcul si le capteur réseau ou le SOC est indisponible ;
-- maintien du contrôle MQTT de la MS-A2 par publication périodique.
+### Surveillance et vue d’ensemble
+
+- Panneau **Gestion batteries** dans la barre latérale de Home Assistant et suivi de plusieurs batteries depuis une seule interface.
+- Prise en charge des **Marstek par entités Home Assistant**, des **Hoymiles MS-A2 par MQTT** et des batteries génériques en surveillance seule.
+- Cercle de SOC, état de connexion, puissance instantanée et sens du flux pour chaque batterie.
+- Affichage distinct du mode actif, de la consigne calculée et des commandes réellement transmises.
+- Puissance réseau instantanée, moyennes glissantes sur une et quinze minutes et flèche de tendance.
+- Mesures AC/DC, rendement de conversion, températures minimale et maximale du jour, état de l’onduleur et compteurs d’énergie selon les entités disponibles.
+- Énergie réellement stockée, énergie chargée et déchargée dans la journée, cycles et tensions minimale/maximale des cellules pour les Marstek compatibles.
+- Estimation de l’heure d’atteinte du SOC maximal, actualisée chaque minute à partir d’une moyenne glissante et des paliers de charge.
+- Ouverture de l’historique Home Assistant au clic sur les mesures et commandes associées à une entité.
+- Sections **Commandes réelles** et **Consigne en cours** repliables ; leur ouverture est mémorisée par batterie, navigateur et appareil.
+
+### Pilotage collectif et modes rapides
+
+- Autoconsommation collective calculée depuis le capteur global de puissance réseau, avec répartition des consignes entre les batteries pilotées.
+- Charge solaire collective pour absorber uniquement le surplus, sans provoquer de décharge.
+- Menu rapide **Gestion** par batterie : Planificateur, Charge, Autoconsommation collective, Autoconsommation native Marstek, Charge solaire, En attente, Désactivé et Backup Marstek lorsque configuré.
+- Les modes rapides remplacent temporairement la programmation sans modifier les créneaux et restent enregistrés après un redémarrage.
+- Réglages du signe des puissances, correction du zéro réseau, zone morte, hystérésis, compensations de charge/décharge et retransmission des commandes.
+- Maintien du contrôle MQTT de la MS-A2 par publication périodique des consignes.
+
+### Planificateur hebdomadaire et profils
+
+- Programmation sur **sept jours**, avec **96 créneaux de 15 minutes par jour**, affichée côte à côte pour les batteries.
+- Actions Charge, Décharge, Autoconsommation collective, Charge solaire collective, Standby, Retour au mode par défaut et Autoconsommation native Marstek.
+- Puissances maximales de charge/décharge et seuils SOC configurables dans la programmation.
+- Sélection de plages par glisser-déposer, d’une journée, d’une heure sur toute la semaine ou de la semaine complète.
+- Trois profils fournis : **Ensoleillé, Nuageux et Pluvieux**, avec création de profils personnalisés.
+- Sélection globale du profil en mode manuel ou automatique et migration de l’ancien planning journalier vers les profils météo.
+- Export et import JSON des paramètres de planification.
+
+### Gestion météo
+
+- Analyse des prévisions horaires d’une entité météo Home Assistant, avec décalage de prévision, intervalle d’actualisation et hystérésis configurables.
+- Capteur de couverture nuageuse prioritaire lorsqu’il est configuré, seuils d’interprétation et sélection automatique du profil météo.
+- Seuil de précipitations configurable, fixé à **0,5 mm/h par défaut** : une condition `rainy` sous ce seuil laisse la couverture nuageuse déterminer le profil.
+- Priorité au profil Pluvieux pour les phénomènes importants : pluie forte, orage avec pluie, grêle ou neige mêlée de pluie.
+- Repli sur la condition météo lorsque la quantité de précipitations n’est pas fournie.
+- Diagnostic détaillé : prévision analysée, couverture et source, précipitations prévues, seuil appliqué et raison du profil retenu.
+- Actualisation manuelle du diagnostic, y compris lorsqu’un profil manuel est sélectionné.
+
+### Configuration, protections et Backup
+
+- Détection automatique des batteries **Marstek Venus Modbus**, récupération de leurs entités et diagnostic des entités disponibles, indisponibles, inconnues ou désactivées.
+- Choix du modèle avec illustration : **Marstek Venus E 3.0**, **Hoymiles MS-A2** ou Générique ; ce choix ne modifie pas les paramètres de pilotage.
+- Limites matérielles de puissance, SOC minimal/maximal et seuils de reprise par batterie.
+- Jusqu’à **huit paliers de charge selon le SOC**, avec quatre paliers proposés par défaut et illustration des limites configurées.
+- Suspension du calcul lorsque les mesures indispensables de puissance réseau ou de SOC sont indisponibles.
+- Protection de perte du Grid : retour au mode configuré après 60 secondes de tension numérique hors de 200 à 250 V ; reprise optionnelle de la Programmation au retour du Grid dans un délai maximal de quatre heures.
+- Sécurité **Backup Marstek** : arrêt des commandes et verrouillage de la gestion rapide lorsque `Backup Function` est actif.
+- Reprise du mode précédent après désactivation du Backup et maintien d’une tension Grid entre 200 et 250 V pendant 30 secondes.
+- Panneau **Actions** pour désactiver une entité à l’entrée en Backup et restaurer facultativement son état initial au retour du Grid ; cet état est conservé pendant les redémarrages de Home Assistant.
+
+### Notifications
+
+- Panneau **Notifications** avec création, modification, test et suppression des destinations `notify.mobile_app_*`.
+- Catalogue de **37 notifications**, avec choix des batteries, seuils et destinataires ; aucun envoi tant qu’aucun destinataire n’est sélectionné.
+- Un créneau quotidien par destination, **07:00–22:00 par défaut**, sans passage à minuit.
+- Seuils liés à la Configuration lorsque disponibles, avec personnalisation et possibilité de rétablir le lien.
+- Confirmation, délai minimal entre alertes et durée de réarmement configurable, mémorisée par batterie et destination.
+- Réarmement de **14 heures par défaut** pour les notifications de début de charge et de décharge.
+- Envoi d’une alerte persistante à l’ouverture du créneau uniquement si sa condition est encore présente ; journalisation unique des notifications inhibées pendant un même épisode.
+
+### Journaux, interface et documentation
+
+- Panneau **Journaux** : Consignes, Planificateur, Gestion météo, Notifications et Actions utilisateurs.
+- Historique persistant avec date, heure, type et contenu, recherche et pagination.
+- Rétention limitée à **30 jours et 50 Mo au total**, avec suppression automatique des entrées les plus anciennes.
+- Interface en **français, anglais et espagnol**, adaptée aux ordinateurs, tablettes, téléphones et au thème sombre.
+- Navigation par roue dentée et panneau **À propos** avec documentation intégrée : installation, configuration, modes, planification, météo, protections, Backup, notifications, journaux et dépannage.
+
 ## Captures d’écran
 
 ### Vue d’ensemble
 
-[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg?v=0.5.5)](https://logisub.com/assets/bm-vue-ensemble.jpg)
+[![Vue d’ensemble de Battery Manager](https://logisub.com/assets/bm-vue-ensemble.jpg?v=0.5.5)](https://logisub.com/assets/bm-vue-ensemble.jpg?v=0.5.5)
 
 ### Planificateur
 
-[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg?v=0.5.5)](https://logisub.com/assets/bm-planificateur.jpg)
+[![Planificateur de Battery Manager](https://logisub.com/assets/bm-planificateur.jpg?v=0.5.5)](https://logisub.com/assets/bm-planificateur.jpg?v=0.5.5)
 
 ### Configuration générale
 
-[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg?v=0.5.5)](https://logisub.com/assets/bm-configuration-generale.jpg)
+[![Configuration générale de Battery Manager](https://logisub.com/assets/bm-configuration-generale.jpg?v=0.5.5)](https://logisub.com/assets/bm-configuration-generale.jpg?v=0.5.5)
 
 ### Protections et paliers de charge
 
-[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg?v=0.5.5)](https://logisub.com/assets/bm-configuration-paliers.jpg)
+[![Protections et paliers de charge](https://logisub.com/assets/bm-configuration-paliers.jpg?v=0.5.5)](https://logisub.com/assets/bm-configuration-paliers.jpg?v=0.5.5)
 
 ### Gestion des profils météo
 
-[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.5)](https://logisub.com/assets/bm-confimeteo.jpg)
+[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.5)](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.5)
 
 ### Gestion des notifications
 
-[![Gestion des notifications](https://logisub.com/assets/bm-notifications.jpg?v=0.5.5)](https://logisub.com/assets/bm-confimeteo.jpg)
+[![Gestion des notifications](https://logisub.com/assets/bm-notifications.jpg?v=0.5.5)](https://logisub.com/assets/bm-notifications.jpg?v=0.5.5)
 
 ### Gestion des journaux
 
-[![Gestion des journaux](https://logisub.com/assets/bm-journaux.jpg?v=0.5.5)](https://logisub.com/assets/bm-journaux.jpg)
+[![Gestion des journaux](https://logisub.com/assets/bm-journaux.jpg?v=0.5.5)](https://logisub.com/assets/bm-journaux.jpg?v=0.5.5)
 
 ## Avertissement bêta
 
@@ -58,13 +122,32 @@ les limites et les réactions du matériel avant d'autoriser les commandes.
 Cette intégration n'est pas un dispositif de sécurité électrique et ne remplace
 pas les protections du BMS, les disjoncteurs ou les limites du constructeur.
 
+## Documentation
+
+- [Installation, mise à jour et dépannage](docs/INSTALLATION.md)
+- [Configuration détaillée et choix des entités](docs/CONFIGURATION.md)
+- [Guide Hoymiles MS-A2 et sujets MQTT](docs/HOYMILES_MQTT.md)
+- [Signaler un problème](https://github.com/RenaudSub/Battery-Manager/issues)
+
+Une documentation intégrée est également accessible depuis le panneau **À propos**.
+
+## Installation avec HACS
+
+1. Ouvrir **HACS → menu → Dépôts personnalisés**.
+2. Ajouter `https://github.com/RenaudSub/Battery-Manager` dans la catégorie **Intégration**.
+3. Ouvrir **Battery Manager**, puis choisir **Télécharger**.
+4. Redémarrer Home Assistant.
+5. Ouvrir **Paramètres → Appareils et services → Ajouter une intégration**.
+6. Rechercher **Battery Manager** ou **Gestionnaire de batteries** et choisir le capteur global de puissance réseau.
+7. Ouvrir le panneau **Gestion batteries** dans la barre latérale.
+
 ## Installation manuelle
 
 1. Copier `custom_components/battery_manager` dans le dossier
    `/config/custom_components/` de Home Assistant.
 2. Redémarrer Home Assistant.
 3. Ouvrir **Paramètres → Appareils et services → Ajouter une intégration**.
-4. Rechercher **Gestionnaire collectif de batteries**.
+4. Rechercher **Battery Manager** ou **Gestionnaire de batteries**.
 5. Sélectionner le capteur global de puissance réseau.
 6. Ouvrir le nouveau panneau **Gestion batteries** dans la barre latérale.
 
@@ -72,8 +155,8 @@ pas les protections du BMS, les disjoncteurs ou les limites du constructeur.
 
 Par défaut :
 
-- valeur positive : importation depuis EDF ;
-- valeur négative : injection vers EDF.
+- valeur positive : importation depuis le réseau ;
+- valeur négative : injection vers le réseau.
 
 L'option d'inversion permet d'utiliser un capteur ayant la convention opposée.
 
@@ -626,27 +709,72 @@ reprise. Le même principe est appliqué à la décharge au SOC minimal.
 - Le bouton de suppression d'une batterie est maintenant visible dans la barre
   supérieure de la page Configuration.
 
-## Limites connues de la version 0.4.3
+## Limites connues — v0.5.5
 
-- la qualité du profil automatique dépend directement de la précision de la
-  source météo Home Assistant choisie ;
-- les profils météo personnalisés sont sélectionnables manuellement, mais leur
-  association automatique avancée sera enrichie après les essais réels ;
-- pas encore de charge complète périodique pour équilibrage du BMS ;
-- pas encore de limite thermique active ;
-- interface et moteur à tester sur une installation réelle avant publication HACS.
+- La qualité du profil automatique dépend de la précision et des données fournies par la source météo Home Assistant choisie.
+- Les profils personnalisés sont sélectionnables manuellement ; l’association automatique avancée de ces profils reste à enrichir.
+- La charge complète périodique pour l’équilibrage du BMS et la limitation thermique active ne sont pas encore disponibles.
+- Les mesures AC/DC, le rendement, les compteurs d’énergie, les cycles et les tensions de cellules dépendent des entités exposées par chaque batterie.
+- Les fonctions natives Marstek et le Backup nécessitent les entités de commande correspondantes.
+- Le firmware ou le BMS peut imposer ses propres limites : la consigne envoyée peut différer de la puissance réellement acceptée par la batterie.
+- L’intégration reste en bêta : vérifier le comportement réel du matériel avant d’autoriser le pilotage.
 
-## Structure
+## Structure du dépôt — v0.5.5
 
 ```text
-custom_components/battery_manager/
-├── __init__.py
-├── config_flow.py
-├── const.py
-├── controller.py
-├── manifest.json
-├── model.py
-├── store.py
-├── websocket.py
-└── frontend/battery-manager-panel.js
+Battery-Manager/
+├── .gitattributes
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   └── bug_report.yml
+│   └── workflows/
+│       └── validate.yml
+├── .gitignore
+├── LICENSE
+├── README.md
+├── SECURITY.md
+├── custom_components/
+│   └── battery_manager/
+│       ├── __init__.py
+│       ├── activity.py
+│       ├── brand/
+│       │   └── icon.png
+│       ├── config_flow.py
+│       ├── const.py
+│       ├── controller.py
+│       ├── discovery.py
+│       ├── frontend/
+│       │   ├── assets/
+│       │   │   ├── battery-manager-banner.jpg
+│       │   │   ├── hoymiles-ms-a2.jpg
+│       │   │   └── marstek-venus-e3.svg
+│       │   ├── battery-manager-panel.js
+│       │   └── translations/
+│       │       ├── en.json
+│       │       ├── es.json
+│       │       └── fr.json
+│       ├── manifest.json
+│       ├── model.py
+│       ├── notification_rules.py
+│       ├── notifications.py
+│       ├── store.py
+│       ├── strings.json
+│       ├── translations/
+│       │   ├── en.json
+│       │   ├── es.json
+│       │   └── fr.json
+│       └── websocket.py
+├── docs/
+│   ├── CONFIGURATION.md
+│   ├── HOYMILES_MQTT.md
+│   └── INSTALLATION.md
+├── hacs.json
+└── tests/
+    ├── run_checks.py
+    └── test_model.py
 ```
+
+Le dossier à installer dans Home Assistant est `custom_components/battery_manager/`.
+Il doit être copié en entier, avec les sous-dossiers `brand`, `frontend/assets`,
+`frontend/translations` et `translations`. Les dossiers `docs`, `tests` et `.github`
+restent propres au dépôt et ne sont pas nécessaires à l’installation manuelle.
