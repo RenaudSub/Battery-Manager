@@ -8,6 +8,7 @@ PANEL_TITLE = "Battery Manager"
 PANEL_ICON = "mdi:battery-charging"
 
 SOLAR_CORRECTABLE_CONDITIONS = (
+    "sunny",
     "partlycloudy",
     "cloudy",
     "fog",
@@ -62,7 +63,7 @@ DEFAULT_CONFIG = {
         "solar_threshold_wm2": 100,
         "solar_validation_minutes": 5,
         "solar_hold_minutes": 20,
-        "solar_eligible_conditions": ["partlycloudy", "cloudy"],
+        "solar_eligible_conditions": ["sunny","partlycloudy", "cloudy"],
         "forecast_offset_h": 1,
         "refresh_minutes": 15,
         "analysis_start": "06:00",
