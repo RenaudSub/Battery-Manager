@@ -1,6 +1,6 @@
 # Gestionnaire de batteries pour Home Assistant
 
-**Battery Manager v0.5.5** est une intégration locale destinée à centraliser la
+**Battery Manager v0.6.0** est une intégration locale destinée à centraliser la
 surveillance, la programmation et le pilotage collectif de plusieurs batteries
 de marques différentes dans Home Assistant.
 
@@ -9,7 +9,7 @@ de marques différentes dans Home Assistant.
 
 🌐 [Site officiel de Battery Manager](https://logisub.com/battery-manager.html)
 
-## Fonctionnalités présentes — v0.5.5
+## Fonctionnalités présentes v0.6.0
 
 ### Surveillance et vue d’ensemble
 
@@ -50,8 +50,15 @@ de marques différentes dans Home Assistant.
 - Seuil de précipitations configurable, fixé à **0,5 mm/h par défaut** : une condition `rainy` sous ce seuil laisse la couverture nuageuse déterminer le profil.
 - Priorité au profil Pluvieux pour les phénomènes importants : pluie forte, orage avec pluie, grêle ou neige mêlée de pluie.
 - Repli sur la condition météo lorsque la quantité de précipitations n’est pas fournie.
-- Diagnostic détaillé : prévision analysée, couverture et source, précipitations prévues, seuil appliqué et raison du profil retenu.
+- Nouveau **Seuil solaire utile** utilisant une entité de rayonnement en `W/m²` ou une entité d’éclairement en lux avec facteur de conversion configurable.
+- Correction possible du profil `Nuageux` vers `Ensoleillé` lorsque le seuil solaire est dépassé de manière continue.
+- Choix des conditions météo pouvant être corrigées ; `Partiellement nuageux` et `Nuageux` sont sélectionnées par défaut.
+- Délai de validation configurable de 1 à 30 minutes et maintien de la correction de 5 à 45 minutes afin d’éviter les changements de profil au passage d’un nuage.
+- Les précipitations, orages, chutes de grêle, chutes de neige et conditions exceptionnelles restent toujours prioritaires sur la correction solaire.
+- Diagnostic détaillé : prévision analysée, couverture et source, précipitations prévues, seuil appliqué, rayonnement converti, valeur brute, état de la correction, profil initial et raison du profil retenu.
+- Traduction des conditions météo en français, anglais et espagnol dans les associations, tout en conservant les identifiants techniques Home Assistant.
 - Actualisation manuelle du diagnostic, y compris lorsqu’un profil manuel est sélectionné.
+
 
 ### Configuration, protections et Backup
 
@@ -103,7 +110,7 @@ de marques différentes dans Home Assistant.
 
 ### Gestion des profils météo
 
-[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.5)](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.5)
+[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.6)](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.5)
 
 ### Gestion des notifications
 
@@ -210,6 +217,18 @@ La puissance appliquée est la plus faible parmi :
 
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
+
+
+## Version 0.6.0
+
+- nouvelle section météo **Seuil solaire utile** utilisant une entité de rayonnement en `W/m²` ou une entité d'éclairement en lux avec facteur de conversion configurable ;
+- correction locale du profil `Nuageux` vers `Ensoleillé` après dépassement continu du seuil configuré ;
+- délai de validation de 1 à 30 minutes et durée de maintien de 5 à 45 minutes afin d'absorber le passage d'un nuage sans changement immédiat de profil ;
+- choix multiple des conditions météo pouvant être corrigées, limité aux conditions sans phénomène dangereux ; `Partiellement nuageux` et `Nuageux` sont sélectionnées par défaut ;
+- priorité conservée aux précipitations, aux orages, à la grêle, à la neige et aux conditions exceptionnelles ;
+- diagnostic enrichi avec le rayonnement converti, la valeur brute, l'état de la correction, le profil météo initial et la couverture effective ;
+- traduction des mentions météo dans les associations françaises, anglaises et espagnoles, tout en conservant les identifiants techniques Home Assistant ;
+- infobulles du planificateur complétées avec les puissances de charge/décharge et les limites SOC réellement enregistrées dans chaque créneau.
 
 ## Version 0.5.5
 

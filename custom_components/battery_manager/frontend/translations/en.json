@@ -50,6 +50,16 @@
     "sunny_max": "Maximum Sunny cloud cover (%)",
     "hysteresis": "Cloud hysteresis (%)",
     "rain_threshold": "Rainy threshold (mm/h)",
+    "solar_title": "Useful solar threshold",
+    "solar_enabled": "Enable irradiance correction",
+    "solar_entity": "Irradiance or illuminance entity",
+    "solar_factor": "Lux per W/m² conversion",
+    "solar_threshold": "Minimum irradiance",
+    "solar_validation": "Validation delay",
+    "solar_hold": "Hold duration",
+    "solar_conditions": "Correctable conditions",
+    "solar_none": "No condition",
+    "solar_help": "The correction can only turn selected conditions into the Sunny profile. Precipitation and severe conditions always keep priority.",
     "diagnostic": "Live diagnostic",
     "available": "Forecast available",
     "forecast_time": "Forecast time",
@@ -58,6 +68,11 @@
     "cloud_source": "Cloud cover source",
     "cloud_raw": "Raw sensor value",
     "precipitation": "Forecast precipitation",
+    "solar_measured": "Measured irradiance",
+    "solar_raw": "Raw solar sensor value",
+    "solar_correction": "Irradiance correction",
+    "effective_cloud": "Effective cloud cover",
+    "base_profile": "Initial weather profile",
     "cloud_sources": {
       "configured_sensor": "Configured sensor",
       "hourly_forecast": "Hourly forecast",
@@ -77,7 +92,20 @@
       "hail": "Hail",
       "snowy": "Snowy",
       "snowy-rainy": "Snow and rain",
-      "clear-night": "Clear night"
+      "clear-night": "Clear night",
+      "exceptional": "Exceptional conditions"
+    },
+    "solar_states": {
+      "disabled": "Disabled",
+      "forecast_unavailable": "Forecast unavailable",
+      "sensor_unavailable": "Sensor unavailable",
+      "precipitation_priority": "Blocked by precipitation",
+      "outside_analysis_hours": "Outside analysis hours",
+      "condition_not_selected": "Condition not selected",
+      "validating": "Validation in progress",
+      "active": "Active",
+      "holding": "Temporary hold",
+      "inactive": "Inactive"
     },
     "calculated_profile": "Calculated profile",
     "reason": "Reason",
@@ -279,6 +307,8 @@
     "max_discharge": "Maximum discharge in W",
     "min_soc": "Slot minimum SOC (%)",
     "max_soc": "Slot maximum SOC (%)",
+    "tooltip_charge": "Charge",
+    "tooltip_discharge": "Discharge",
     "daily": "daily schedule",
     "help": "The time range is applied to the battery selected above. Collective solar charging uses export surplus only and never discharges. A Marstek also offers native self-consumption."
   },
@@ -334,7 +364,8 @@
     "not_analyzed": "Not analyzed yet",
     "manual": "Manual selection",
     "backup_active": "Backup mode active — no command sent",
-    "backup_grid_confirmation": "Leaving Backup — confirming Grid for 30 seconds"
+    "backup_grid_confirmation": "Leaving Backup — confirming Grid for 30 seconds",
+    "solar_irradiance_override": "Local irradiance above threshold"
   },
   "notifications": {
     "targets": "Notification targets",

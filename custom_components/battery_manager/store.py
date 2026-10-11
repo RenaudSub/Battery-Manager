@@ -8,7 +8,12 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
-from .const import DEFAULT_CONFIG, STORAGE_KEY, STORAGE_VERSION
+from .const import (
+    DEFAULT_CONFIG,
+    SOLAR_CORRECTABLE_CONDITIONS,
+    STORAGE_KEY,
+    STORAGE_VERSION,
+)
 from .model import normalize_battery
 from .notification_rules import normalize_notifications
 
@@ -71,6 +76,41 @@ class BatteryManagerStore:
             weather.update(self.data["weather"])
         weather["entity_id"] = str(weather.get("entity_id", "")).strip()
         weather["cloud_cover_entity"] = str(weather.get("cloud_cover_entity", "")).strip()
+        weather["solar_irradiance_enabled"] = bool(
+            weather.get("solar_irradiance_enabled", False)
+        )
+        weather["solar_irradiance_entity"] = str(
+            weather.get("solar_irradiance_entity", "")
+        ).strip()
+        try:
+            lux_per_wm2 = float(weather.get("solar_lux_per_wm2", 126.7))
+        except (TypeError, ValueError):
+            lux_per_wm2 = 126.7
+        weather["solar_lux_per_wm2"] = max(1.0, min(1000.0, lux_per_wm2))
+        try:
+            solar_threshold = int(float(weather.get("solar_threshold_wm2", 100)))
+        except (TypeError, ValueError):
+            solar_threshold = 100
+        try:
+            solar_validation = int(float(weather.get("solar_validation_minutes", 5)))
+        except (TypeError, ValueError):
+            solar_validation = 5
+        try:
+            solar_hold = int(float(weather.get("solar_hold_minutes", 20)))
+        except (TypeError, ValueError):
+            solar_hold = 20
+        weather["solar_threshold_wm2"] = max(100, min(400, solar_threshold))
+        weather["solar_validation_minutes"] = max(1, min(30, solar_validation))
+        weather["solar_hold_minutes"] = max(5, min(45, solar_hold))
+        eligible = weather.get("solar_eligible_conditions", ["partlycloudy", "cloudy"])
+        if not isinstance(eligible, list):
+            eligible = ["partlycloudy", "cloudy"]
+        allowed = set(SOLAR_CORRECTABLE_CONDITIONS)
+        weather["solar_eligible_conditions"] = [
+            condition
+            for condition in dict.fromkeys(str(item) for item in eligible)
+            if condition in allowed
+        ]
         weather["forecast_offset_h"] = max(0, min(24, int(weather.get("forecast_offset_h", 1))))
         weather["refresh_minutes"] = max(5, min(120, int(weather.get("refresh_minutes", 15))))
         for key, fallback in (("analysis_start", "06:00"), ("analysis_end", "22:00")):

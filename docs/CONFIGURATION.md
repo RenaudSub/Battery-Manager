@@ -86,6 +86,29 @@ puis appliquez la plage.
 - **Autoconsommation native Marstek** : rend temporairement la régulation à la
   logique interne Marstek.
 
+Survolez un créneau pour afficher son jour, son horaire, son action, les
+puissances utilisées et ses limites SOC.
+
+## Sélection météo et seuil solaire utile
+
+Le profil automatique analyse la prévision horaire, la couverture nuageuse et
+les précipitations. La section **Seuil solaire utile** permet au rayonnement
+réel mesuré sur place de corriger temporairement une prévision nuageuse.
+
+- utilisez directement une entité en `W/m²` lorsqu'elle est disponible ;
+- pour une entité en lux, renseignez le nombre de lux correspondant à `1 W/m²` ;
+- choisissez le seuil minimal de rayonnement entre 100 et 400 `W/m²` ;
+- le délai de validation impose un dépassement continu avant la correction ;
+- la durée de maintien évite de quitter immédiatement le profil Ensoleillé au
+  passage d'un nuage ;
+- cochez uniquement les conditions que le rayonnement a le droit de corriger.
+
+Par défaut, seules **Partiellement nuageux** et **Nuageux** sont corrigibles.
+Les précipitations significatives, orages, grêle, neige et conditions
+exceptionnelles gardent toujours la priorité. Une valeur faible ou
+indisponible ne force jamais le profil Nuageux : elle rend simplement la main
+à l'interprétation de la prévision.
+
 ## Perte du Grid
 
 Pour une Marstek, associez l'entité `ac_voltage` à **Tension Grid**. Si **Retour

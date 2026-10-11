@@ -50,6 +50,16 @@
     "sunny_max": "Cobertura máxima Soleado (%)",
     "hysteresis": "Histéresis de nubes (%)",
     "rain_threshold": "Umbral Lluvioso (mm/h)",
+    "solar_title": "Umbral solar útil",
+    "solar_enabled": "Activar corrección por irradiancia",
+    "solar_entity": "Entidad de irradiancia o iluminancia",
+    "solar_factor": "Conversión de lux por W/m²",
+    "solar_threshold": "Irradiancia mínima",
+    "solar_validation": "Retraso de validación",
+    "solar_hold": "Duración de mantenimiento",
+    "solar_conditions": "Condiciones corregibles",
+    "solar_none": "Ninguna condición",
+    "solar_help": "La corrección solo puede convertir las condiciones seleccionadas al perfil Soleado. Las precipitaciones y los fenómenos importantes mantienen la prioridad.",
     "diagnostic": "Diagnóstico en directo",
     "available": "Previsión disponible",
     "forecast_time": "Hora analizada",
@@ -58,6 +68,11 @@
     "cloud_source": "Fuente de nubosidad",
     "cloud_raw": "Valor bruto del sensor",
     "precipitation": "Precipitación prevista",
+    "solar_measured": "Irradiancia medida",
+    "solar_raw": "Valor bruto del sensor solar",
+    "solar_correction": "Corrección por irradiancia",
+    "effective_cloud": "Nubosidad efectiva",
+    "base_profile": "Perfil meteorológico inicial",
     "cloud_sources": {
       "configured_sensor": "Sensor configurado",
       "hourly_forecast": "Previsión horaria",
@@ -77,7 +92,20 @@
       "hail": "Granizo",
       "snowy": "Nevado",
       "snowy-rainy": "Nieve y lluvia",
-      "clear-night": "Noche despejada"
+      "clear-night": "Noche despejada",
+      "exceptional": "Condiciones excepcionales"
+    },
+    "solar_states": {
+      "disabled": "Desactivada",
+      "forecast_unavailable": "Previsión no disponible",
+      "sensor_unavailable": "Sensor no disponible",
+      "precipitation_priority": "Bloqueada por precipitación",
+      "outside_analysis_hours": "Fuera del horario de análisis",
+      "condition_not_selected": "Condición no seleccionada",
+      "validating": "Validación en curso",
+      "active": "Activa",
+      "holding": "Mantenimiento temporal",
+      "inactive": "Inactiva"
     },
     "calculated_profile": "Perfil calculado",
     "reason": "Motivo",
@@ -279,6 +307,8 @@
     "max_discharge": "Descarga máxima en W",
     "min_soc": "SOC mínimo del intervalo (%)",
     "max_soc": "SOC máximo del intervalo (%)",
+    "tooltip_charge": "Carga",
+    "tooltip_discharge": "Descarga",
     "daily": "programación diaria",
     "help": "La franja se aplica a la batería seleccionada arriba. La carga solar colectiva solo utiliza el excedente inyectado y nunca descarga. Una Marstek también ofrece autoconsumo nativo."
   },
@@ -334,7 +364,8 @@
     "not_analyzed": "Aún no analizado",
     "manual": "Selección manual",
     "backup_active": "Modo Backup activo — ninguna orden enviada",
-    "backup_grid_confirmation": "Salida de Backup — confirmación de red durante 30 segundos"
+    "backup_grid_confirmation": "Salida de Backup — confirmación de red durante 30 segundos",
+    "solar_irradiance_override": "Irradiancia local por encima del umbral"
   },
   "notifications": {
     "targets": "Destinos de notificaciones",

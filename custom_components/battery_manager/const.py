@@ -7,6 +7,14 @@ PANEL_URL = "battery-manager"
 PANEL_TITLE = "Battery Manager"
 PANEL_ICON = "mdi:battery-charging"
 
+SOLAR_CORRECTABLE_CONDITIONS = (
+    "partlycloudy",
+    "cloudy",
+    "fog",
+    "windy",
+    "windy-variant",
+)
+
 MODE_DISABLED = "disabled"
 MODE_SCHEDULE = "schedule"
 MODE_BACKUP = "backup"
@@ -48,6 +56,13 @@ DEFAULT_CONFIG = {
     "weather": {
         "entity_id": "",
         "cloud_cover_entity": "",
+        "solar_irradiance_enabled": False,
+        "solar_irradiance_entity": "",
+        "solar_lux_per_wm2": 126.7,
+        "solar_threshold_wm2": 100,
+        "solar_validation_minutes": 5,
+        "solar_hold_minutes": 20,
+        "solar_eligible_conditions": ["partlycloudy", "cloudy"],
         "forecast_offset_h": 1,
         "refresh_minutes": 15,
         "analysis_start": "06:00",
@@ -62,6 +77,7 @@ DEFAULT_CONFIG = {
             "rainy": "rainy", "pouring": "rainy", "lightning": "rainy",
             "lightning-rainy": "rainy", "hail": "rainy", "snowy": "rainy",
             "snowy-rainy": "rainy", "clear-night": "ignore",
+            "exceptional": "rainy",
         },
     },
     "batteries": [],

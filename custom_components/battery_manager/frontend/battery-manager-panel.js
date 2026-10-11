@@ -5,7 +5,7 @@ const ACTIONS = {
   default_mode: { color: "#ffffff" },
   standby: { color: "#78909c" },
 };
-const PANEL_VERSION = "0.5.5";
+const PANEL_VERSION = "0.6.0";
 const ASSET_BASE = "/battery_manager/frontend/assets/";
 const BATTERY_MODELS = {
   generic: [{id:"generic", label:""}],
@@ -394,7 +394,21 @@ class BatteryManagerPanel extends HTMLElement {
       .weather-source,.weather-conditions { grid-column:1 / -1; }
       .weather-analysis { grid-column:1; grid-row:2; }
       .weather-diagnostic { grid-column:2; grid-row:2; }
-      .weather-conditions { grid-row:3; }
+      .weather-solar { grid-column:1 / -1; grid-row:3; }
+      .weather-conditions { grid-row:4; }
+      .weather-solar-top { display:grid; grid-template-columns:max-content minmax(250px,1fr) max-content; gap:10px 18px; align-items:end; }
+      .weather-solar-toggle { display:flex; flex-direction:row; align-items:center; gap:8px; padding-bottom:10px; }
+      .weather-solar-factor { align-items:flex-start; text-align:left; }
+      .weather-solar-factor input { width:90px; padding:8px; }
+      .weather-slider-grid { display:grid; grid-template-columns:repeat(3,minmax(180px,1fr)); gap:12px 20px; margin-top:14px; }
+      .weather-slider-grid label { display:grid; grid-template-columns:1fr auto; gap:6px 10px; align-items:center; text-align:left; }
+      .weather-slider-grid input { grid-column:1 / -1; width:100%; }
+      .weather-slider-grid output { font-weight:700; white-space:nowrap; }
+      .solar-condition-picker { position:relative; margin-top:14px; max-width:520px; }
+      .solar-condition-picker > summary { cursor:pointer; list-style:none; display:flex; justify-content:space-between; gap:12px; padding:9px 12px; border:1px solid var(--divider-color); border-radius:9px; background:var(--secondary-background-color); }
+      .solar-condition-picker > summary::-webkit-details-marker { display:none; }
+      .solar-condition-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 14px; padding:12px; border:1px solid var(--divider-color); border-top:0; border-radius:0 0 9px 9px; }
+      .solar-condition-options label { display:flex; flex-direction:row; align-items:center; gap:7px; }
       .weather-top-actions { display:flex; justify-content:flex-end; gap:8px; margin:0 0 14px auto; }
       .weather-top-actions button { padding:7px 11px; }
       .weather-diagnostic { line-height:1.45; }
@@ -431,8 +445,8 @@ class BatteryManagerPanel extends HTMLElement {
       .general-settings select[data-path="adapter"] { min-width:150px; width:150px; }
       .general-settings select[data-path="disabled_behavior"] { min-width:220px; width:220px; }
       @media(max-width:1100px){ main{padding:12px}.grid{gap:9px}.battery-card{padding:12px}.battery-head h2{font-size:15px}.quick-control{width:130px}.battery-summary{grid-template-columns:82px 1fr;gap:8px}.soc-ring{width:78px;height:78px}.soc-ring::before{width:58px;height:58px}.soc-ring strong{font-size:17px}.live-power{font-size:18px}.capacity-line{gap:5px;font-size:12px}.bms-details{gap:7px 8px}.bms-detail{grid-template-columns:18px minmax(0,1fr);gap:4px}.bms-detail strong{grid-column:2;text-align:left}.command-row{padding-left:5px;padding-right:5px}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content)} }
-      @media(max-width:820px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.weather-conditions .form-grid{grid-template-columns:repeat(4,minmax(110px,1fr))}.schedule-toolbar{overflow-x:auto}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content)} }
-      @media(max-width:700px){ header{gap:8px;padding:10px 12px}header h1{font-size:17px}.profile-menu summary{min-width:0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}main{padding:10px}.grid{grid-template-columns:1fr}.weather-grid{display:block}.weather-grid fieldset{margin-bottom:10px}.weather-source-pickers{grid-template-columns:1fr}.weather-conditions .form-grid{grid-template-columns:repeat(2,minmax(115px,1fr))}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content);gap:9px 12px}.weather-diagnostic-grid{grid-template-columns:1fr}.grid-power-card{grid-template-columns:1fr 1.1fr 1fr;padding-left:8px;padding-right:8px}.grid-power-block strong{font-size:15px}.grid-power-now strong{font-size:21px}.grid-power-block:not(.grid-power-now) .muted{display:none}.config-toolbar{align-items:end}.config-toolbar .save-right{margin-left:0}.grid-settings ha-entity-picker{min-width:260px;width:100%} }
+      @media(max-width:820px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.weather-conditions .form-grid{grid-template-columns:repeat(4,minmax(110px,1fr))}.schedule-toolbar{overflow-x:auto}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content)}.weather-solar-top{grid-template-columns:max-content minmax(220px,1fr)}.weather-solar-factor{grid-column:2}.weather-slider-grid{grid-template-columns:1fr} }
+      @media(max-width:700px){ header{gap:8px;padding:10px 12px}header h1{font-size:17px}.profile-menu summary{min-width:0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}main{padding:10px}.grid{grid-template-columns:1fr}.weather-grid{display:block}.weather-grid fieldset{margin-bottom:10px}.weather-source-pickers{grid-template-columns:1fr}.weather-conditions .form-grid{grid-template-columns:repeat(2,minmax(115px,1fr))}.weather-analysis .form-grid{grid-template-columns:repeat(2,max-content);gap:9px 12px}.weather-diagnostic-grid{grid-template-columns:1fr}.weather-solar-top{grid-template-columns:1fr}.weather-solar-factor{grid-column:auto}.solar-condition-options{grid-template-columns:1fr}.grid-power-card{grid-template-columns:1fr 1.1fr 1fr;padding-left:8px;padding-right:8px}.grid-power-block strong{font-size:15px}.grid-power-now strong{font-size:21px}.grid-power-block:not(.grid-power-now) .muted{display:none}.config-toolbar{align-items:end}.config-toolbar .save-right{margin-left:0}.grid-settings ha-entity-picker{min-width:260px;width:100%} }
       .notification-targets,.notification-batteries,.notification-recipients {display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:12px 0}
       .notification-targets label,.notification-recipients label{display:flex;flex-direction:row;gap:6px;align-items:center;flex-wrap:wrap}
       .notification-battery{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px;border:1px solid var(--divider-color);border-radius:7px}
@@ -919,7 +933,10 @@ class BatteryManagerPanel extends HTMLElement {
   _weatherEditor() {
     const w=this._config.weather||{}, d=this._status.weather||{};
     const profileName=(id)=>(this._config.schedule_profiles||[]).find(p=>p.id===id)?.name||id||"—";
-    const conditions=["sunny","partlycloudy","cloudy","fog","windy","windy-variant","rainy","pouring","lightning","lightning-rainy","hail","snowy","snowy-rainy","clear-night"];
+    const conditions=["sunny","partlycloudy","cloudy","fog","windy","windy-variant","rainy","pouring","lightning","lightning-rainy","hail","snowy","snowy-rainy","clear-night","exceptional"];
+    const solarConditions=["partlycloudy","cloudy","fog","windy","windy-variant"];
+    const solarSelected=new Set(w.solar_eligible_conditions||["partlycloudy","cloudy"]);
+    const solarSummary=solarConditions.filter(c=>solarSelected.has(c)).map(c=>this._translatedValue("weather.condition_values",c)).join(", ")||this._t("weather.solar_none");
     const profileOptions=(selected)=>`<option value="ignore" ${selected==="ignore"?"selected":""}>${this._t("weather.ignore")}</option>${(this._config.schedule_profiles||[]).map(p=>`<option value="${esc(p.id)}" ${selected===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}`;
     return `<div class="card"><h2>${this._t("weather.title")}</h2><div class="weather-top-actions"><button id="refreshWeather">${this._t("weather.refresh_now")}</button><button id="save" class="primary">${this._t("buttons.save")}</button></div><div class="weather-grid">
       <fieldset class="weather-source"><legend>${this._t("weather.source")}</legend><div class="weather-source-pickers">
@@ -935,7 +952,6 @@ class BatteryManagerPanel extends HTMLElement {
         <label>${this._t("weather.hysteresis")}<input data-path="_global.weather.cloud_hysteresis" type="number" min="0" max="30" value="${esc(w.cloud_hysteresis??10)}"></label>
         <label>${this._t("weather.rain_threshold")}<input data-path="_global.weather.rain_threshold_mm" type="number" min="0" max="50" step="0.1" value="${esc(w.rain_threshold_mm??0.5)}"></label>
       </div></fieldset>
-      <fieldset class="weather-conditions"><legend>${this._t("weather.conditions")}</legend><div class="form-grid">${conditions.map(c=>`<label>${esc(c)}<select data-path="_global.weather.condition_map.${c}">${profileOptions(w.condition_map?.[c])}</select></label>`).join("")}</div></fieldset>
       <fieldset class="weather-diagnostic"><legend>${this._t("weather.diagnostic")}</legend>
         <div class="weather-diagnostic-grid">
           <div class="weather-diagnostic-item">${this._t("weather.available")} : <b>${d.available?this._t("weather.yes"):this._t("weather.no")}</b></div>
@@ -946,10 +962,33 @@ class BatteryManagerPanel extends HTMLElement {
           <div class="weather-diagnostic-item">${this._t("weather.cloud_raw")} : <b>${d.cloud_entity_state==null?"—":esc(d.cloud_entity_state)}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.precipitation")} : <b>${d.precipitation_mm==null?"—":`${esc(d.precipitation_mm)} mm/h`}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.rain_threshold")} : <b>${d.rain_threshold_mm==null?"—":`${esc(d.rain_threshold_mm)} mm/h`}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.solar_measured")} : <b>${d.solar_irradiance_wm2==null?"—":`${esc(d.solar_irradiance_wm2)} W/m²`}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.solar_raw")} : <b>${d.solar_sensor_raw==null?"—":`${esc(d.solar_sensor_raw)} ${esc(d.solar_sensor_unit||"")}`}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.solar_correction")} : <b>${esc(d.solar_state?this._translatedValue("weather.solar_states",d.solar_state):"—")}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.effective_cloud")} : <b>${d.solar_effective_cloud_coverage==null?"—":`${esc(d.solar_effective_cloud_coverage)} %`}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.base_profile")} : <b>${esc(profileName(d.base_profile))}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.calculated_profile")} : <b>${esc(profileName(d.selected_profile))}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.reason")} : <b>${esc(d.reason?this._reason(d.reason):"—")}</b></div>
         </div>
-      </fieldset></div></div>`;
+      </fieldset>
+      <fieldset class="weather-solar"><legend>${this._t("weather.solar_title")}</legend>
+        <div class="weather-solar-top">
+          <label class="weather-solar-toggle"><input data-path="_global.weather.solar_irradiance_enabled" type="checkbox" ${w.solar_irradiance_enabled?"checked":""}>${this._t("weather.solar_enabled")}</label>
+          <ha-entity-picker data-entity-path="_global.weather.solar_irradiance_entity" data-label="${esc(this._t("weather.solar_entity"))}" data-domains="sensor,input_number" value="${esc(w.solar_irradiance_entity||"")}" allow-custom-entity></ha-entity-picker>
+          <label class="weather-solar-factor">${this._t("weather.solar_factor")}<input data-path="_global.weather.solar_lux_per_wm2" type="number" min="1" max="1000" step="0.1" value="${esc(w.solar_lux_per_wm2??126.7)}"></label>
+        </div>
+        <div class="weather-slider-grid">
+          <label>${this._t("weather.solar_threshold")}<output data-solar-output="threshold">${esc(w.solar_threshold_wm2??100)} W/m²</output><input data-path="_global.weather.solar_threshold_wm2" data-solar-range="threshold" type="range" min="100" max="400" step="10" value="${esc(w.solar_threshold_wm2??100)}"></label>
+          <label>${this._t("weather.solar_validation")}<output data-solar-output="validation">${esc(w.solar_validation_minutes??5)} min</output><input data-path="_global.weather.solar_validation_minutes" data-solar-range="validation" type="range" min="1" max="30" step="1" value="${esc(w.solar_validation_minutes??5)}"></label>
+          <label>${this._t("weather.solar_hold")}<output data-solar-output="hold">${esc(w.solar_hold_minutes??20)} min</output><input data-path="_global.weather.solar_hold_minutes" data-solar-range="hold" type="range" min="5" max="45" step="5" value="${esc(w.solar_hold_minutes??20)}"></label>
+        </div>
+        <details class="solar-condition-picker"><summary><span>${this._t("weather.solar_conditions")}</span><strong data-solar-summary>${esc(solarSummary)}</strong></summary><div class="solar-condition-options">
+          ${solarConditions.map(c=>`<label><input type="checkbox" data-solar-condition="${esc(c)}" ${solarSelected.has(c)?"checked":""}>${esc(this._translatedValue("weather.condition_values",c))}</label>`).join("")}
+        </div></details>
+        <p class="muted">${this._t("weather.solar_help")}</p>
+      </fieldset>
+      <fieldset class="weather-conditions"><legend>${this._t("weather.conditions")}</legend><div class="form-grid">${conditions.map(c=>`<label>${esc(this._translatedValue("weather.condition_values",c))}<select data-path="_global.weather.condition_map.${c}">${profileOptions(w.condition_map?.[c])}</select></label>`).join("")}</div></fieldset>
+      </div></div>`;
   }
 
   _batteryEditor() {
@@ -1132,7 +1171,7 @@ class BatteryManagerPanel extends HTMLElement {
       <div class="legend">${Object.entries(ACTIONS).map(([key,value])=>`<span style="--c:${value.color}">${this._action(key)}</span>`).join("")}</div>
       <div class="weekly-wrap">${this._config.batteries.map((battery,batteryIndex)=>{const week=ensure(battery);return `<section class="card weekly-card ${batteryIndex===this._selected?"selected":""}"><div class="schedule-title"><h2>${esc(battery.name)}</h2><span class="muted">${esc(this._adapter(battery.adapter))}</span></div><div class="week-grid">
         <button class="day-head" data-whole-week="${batteryIndex}">↘</button>${days.map((d,day)=>`<button class="day-head" data-day-head="${day}" data-battery-index="${batteryIndex}">${d}</button>`).join("")}
-        ${Array.from({length:96},(_,slot)=>`<span class="time-label" data-time-axis="${slot}" data-battery-index="${batteryIndex}">${slot%4===0?String(slot/4).padStart(2,"0")+":00":""}</span>${days.map((_,day)=>{const s=week[day][slot];return `<button class="week-slot ${slot%4===0?"hour":""}" data-battery-index="${batteryIndex}" data-day="${day}" data-slot="${slot}" title="${days[day]} ${String(Math.floor(slot/4)).padStart(2,"0")}:${String(slot%4*15).padStart(2,"0")} — ${this._action(s.action)}" style="background:${ACTIONS[s.action]?.color||"#78909c"}"></button>`}).join("")}`).join("")}
+        ${Array.from({length:96},(_,slot)=>`<span class="time-label" data-time-axis="${slot}" data-battery-index="${batteryIndex}">${slot%4===0?String(slot/4).padStart(2,"0")+":00":""}</span>${days.map((_,day)=>{const s=week[day][slot],time=`${String(Math.floor(slot/4)).padStart(2,"0")}:${String(slot%4*15).padStart(2,"0")}`;return `<button class="week-slot ${slot%4===0?"hour":""}" data-battery-index="${batteryIndex}" data-day="${day}" data-slot="${slot}" title="${esc(this._scheduleTooltip(days[day],time,s))}" style="background:${ACTIONS[s.action]?.color||"#78909c"}"></button>`}).join("")}`).join("")}
       </div></section>`}).join("")}</div>
       <p class="muted schedule-help">${this._t("schedule.help")}</p>
       <dialog id="rangeDialog"><h3>${this._t("buttons.apply_range")}</h3><div class="form-grid">
@@ -1140,6 +1179,18 @@ class BatteryManagerPanel extends HTMLElement {
         <label>${this._t("schedule.max_charge")}<input id="modalCharge" type="number" value="${rangeCharge}"></label><label>${this._t("schedule.max_discharge")}<input id="modalDischarge" type="number" value="${rangeDischarge}"></label>
         <label>${this._t("schedule.min_soc")}<input id="modalMinSoc" type="number" min="0" max="100" value="${rangeMinSoc}"></label><label>${this._t("schedule.max_soc")}<input id="modalMaxSoc" type="number" min="0" max="100" value="${rangeMaxSoc}"></label>
       </div><div class="actions"><button id="cancelRangeDialog">${this._t("buttons.cancel")}</button><button id="applyRangeDialog" class="primary">${this._t("buttons.apply_range")}</button></div></dialog>`;
+  }
+
+  _scheduleTooltip(day, time, slot={}) {
+    const action=slot.action||"standby", parts=[`${day} ${time} — ${this._action(action)}`];
+    const number=(value)=>Number.isFinite(Number(value))?Number(value).toLocaleString(this._locale(),{maximumFractionDigits:1}):"—";
+    if(action==="charge"||action==="solar_charge") parts.push(`${this._t("schedule.tooltip_charge")} ${number(slot.charge_w)} W`);
+    else if(action==="discharge") parts.push(`${this._t("schedule.tooltip_discharge")} ${number(slot.discharge_w)} W`);
+    else if(action==="self_consumption") parts.push(`${this._t("schedule.tooltip_charge")} ${number(slot.charge_w)} W / ${this._t("schedule.tooltip_discharge")} ${number(slot.discharge_w)} W`);
+    if(["charge","discharge","self_consumption","solar_charge"].includes(action) && Number.isFinite(Number(slot.min_soc)) && Number.isFinite(Number(slot.max_soc))) {
+      parts.push(`SOC ${number(slot.min_soc)}–${number(slot.max_soc)} %`);
+    }
+    return parts.join(" — ");
   }
 
   _powerDefaults(battery) {
@@ -1225,13 +1276,23 @@ class BatteryManagerPanel extends HTMLElement {
     this.shadowRoot.querySelectorAll("[data-path]").forEach((input) => input.onchange = () => {
       const b=input.dataset.path.startsWith("_global.") ? this._config : this._config.batteries[this._selected];
       let value=input.type==="checkbox" ? input.checked : input.value;
-      if(input.type==="number") {
+      if(input.type==="number" || input.type==="range") {
         if(input.value==="" || !input.checkValidity()) { input.reportValidity(); return; }
         value=Number(value);
       }
       this._setPath(b,input.dataset.path.replace("_global.",""),value);
       if(input.dataset.path === "adapter") b.model="generic";
       if(["adapter", "model", "grid_loss_return_default"].includes(input.dataset.path)) this._render();
+    });
+    this.shadowRoot.querySelectorAll("[data-solar-range]").forEach((input) => input.oninput = () => {
+      const output=this.shadowRoot.querySelector(`[data-solar-output="${input.dataset.solarRange}"]`);
+      if(output) output.textContent=`${input.value} ${input.dataset.solarRange==="threshold"?"W/m²":"min"}`;
+    });
+    this.shadowRoot.querySelectorAll("[data-solar-condition]").forEach((input) => input.onchange = () => {
+      const selected=[...this.shadowRoot.querySelectorAll("[data-solar-condition]:checked")].map(item=>item.dataset.solarCondition);
+      this._config.weather.solar_eligible_conditions=selected;
+      const summary=this.shadowRoot.querySelector("[data-solar-summary]");
+      if(summary) summary.textContent=selected.map(value=>this._translatedValue("weather.condition_values",value)).join(", ")||this._t("weather.solar_none");
     });
     this._alignNetworkPicker();
     this.shadowRoot.querySelectorAll("[data-step]").forEach(button=>button.onclick=()=>{

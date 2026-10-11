@@ -23,6 +23,7 @@ from .const import (
     ACTION_SOLAR_CHARGE,
     ACTION_STANDBY,
     MODE_SCHEDULE,
+    SOLAR_CORRECTABLE_CONDITIONS,
 )
 from .model import Decision, charge_tier_limit, decide, estimate_charge_minutes, slot_index
 
@@ -76,6 +77,8 @@ class BatteryController:
         self._temperature_daily: dict[str, dict[str, Any]] = {}
         self._weather_status: dict[str, Any] = {
             "selected_profile": "sunny",
+            "base_profile": "sunny",
+            "base_reason": "not_analyzed",
             "condition": None,
             "cloud_coverage": None,
             "cloud_source": None,
@@ -83,8 +86,16 @@ class BatteryController:
             "precipitation_mm": None,
             "rain_threshold_mm": 0.5,
             "reason": "not_analyzed",
+            "solar_override_active": False,
+            "solar_irradiance_wm2": None,
+            "solar_sensor_raw": None,
+            "solar_sensor_unit": None,
+            "solar_effective_cloud_coverage": None,
         }
         self._weather_last_refresh: datetime | None = None
+        self._solar_above_since: float | None = None
+        self._solar_below_since: float | None = None
+        self._solar_override_active = False
 
     async def async_start(self) -> None:
         """Start periodic evaluation."""
@@ -266,6 +277,9 @@ class BatteryController:
         self._marstek_cache.clear()
         self._mqtt_cache.clear()
         self._weather_last_refresh = None
+        self._solar_above_since = None
+        self._solar_below_since = None
+        self._solar_override_active = False
         # Saving the configuration is the explicit manual way to clear a
         # latched grid-loss suspension (for example after four hours).
         self._grid_guards.clear()
@@ -280,10 +294,12 @@ class BatteryController:
         entity_id = str(weather.get("entity_id", ""))
         if not entity_id:
             self._weather_status.update({"reason": "weather_entity_missing", "available": False})
+            self._update_solar_override(weather)
             return
         now = dt_util.now()
         refresh = max(5, int(weather.get("refresh_minutes", 15)))
         if not force and self._weather_last_refresh and (now - self._weather_last_refresh).total_seconds() < refresh * 60:
+            self._update_solar_override(weather)
             return
         self._weather_last_refresh = now
         try:
@@ -297,6 +313,7 @@ class BatteryController:
             item = self._nearest_forecast(forecasts, target_time)
             if not item:
                 self._weather_status.update({"reason": "forecast_unavailable", "available": False})
+                self._update_solar_override(weather)
                 return
             condition = str(item.get("condition") or "").lower()
             precipitation = item.get("precipitation")
@@ -324,13 +341,7 @@ class BatteryController:
                 selected, reason = None, "outside_analysis_hours"
             else:
                 selected, reason = self._classify_weather(condition, cloud, precipitation, weather)
-            if selected:
-                if selected != self._weather_status.get("selected_profile"):
-                    self._collective_target_w = None
-                    self._collective_signature = None
-                    self._marstek_cache.clear()
-                    self._mqtt_cache.clear()
-                self._weather_status["selected_profile"] = selected
+            base_profile = selected or self._weather_status.get("base_profile", "sunny")
             self._weather_status.update({
                 "available": True,
                 "condition": condition,
@@ -342,11 +353,15 @@ class BatteryController:
                 "rain_threshold_mm": float(weather.get("rain_threshold_mm", 0.5)),
                 "forecast_time": item.get("datetime"),
                 "analyzed_at": now.isoformat(),
+                "base_profile": base_profile,
+                "base_reason": reason,
                 "reason": reason,
             })
+            self._update_solar_override(weather)
         except Exception as err:
             _LOGGER.exception("Unable to retrieve hourly weather forecast")
             self._weather_status.update({"available": False, "reason": "forecast_error", "error": str(err)})
+            self._update_solar_override(weather)
 
     @staticmethod
     def _nearest_forecast(forecasts: list[Any], target: datetime) -> dict[str, Any] | None:
@@ -362,6 +377,133 @@ class BatteryController:
                 continue
         return min(candidates, key=lambda value: value[0])[1] if candidates else None
 
+    def _set_weather_profile(self, profile: str | None) -> None:
+        """Select a weather profile and invalidate collective command caches."""
+        if not profile:
+            return
+        if profile != self._weather_status.get("selected_profile"):
+            self._collective_target_w = None
+            self._collective_signature = None
+            self._marstek_cache.clear()
+            self._mqtt_cache.clear()
+        self._weather_status["selected_profile"] = profile
+
+    def _solar_sensor_value(
+        self, weather: dict[str, Any]
+    ) -> tuple[float | None, float | None, str | None]:
+        """Return local irradiance in W/m² plus the original sensor value."""
+        entity_id = str(weather.get("solar_irradiance_entity", "")).strip()
+        state = self.hass.states.get(entity_id) if entity_id else None
+        raw = _number(self.hass, entity_id)
+        if raw is None:
+            return None, None, None
+        unit = str((state.attributes or {}).get("unit_of_measurement", "")).strip()
+        normalized_unit = unit.casefold().replace("²", "2").replace("^", "")
+        irradiance = raw
+        if normalized_unit in {"lx", "lux"}:
+            factor = max(1.0, float(weather.get("solar_lux_per_wm2", 126.7)))
+            irradiance = raw / factor
+        return max(0.0, irradiance), raw, unit or None
+
+    def _update_solar_override(self, weather: dict[str, Any]) -> None:
+        """Apply a delayed, local irradiance correction to the forecast profile."""
+        status = self._weather_status
+        base_profile = str(status.get("base_profile") or status.get("selected_profile") or "sunny")
+        base_reason = str(status.get("base_reason") or status.get("reason") or "not_analyzed")
+        irradiance, raw, unit = self._solar_sensor_value(weather)
+        threshold = float(weather.get("solar_threshold_wm2", 100))
+        validation_seconds = int(weather.get("solar_validation_minutes", 5)) * 60
+        hold_seconds = int(weather.get("solar_hold_minutes", 20)) * 60
+        eligible = {
+            str(item)
+            for item in weather.get("solar_eligible_conditions", [])
+            if str(item) in SOLAR_CORRECTABLE_CONDITIONS
+        }
+        condition = str(status.get("condition") or "")
+        precipitation = status.get("precipitation_mm")
+        rain_threshold = float(weather.get("rain_threshold_mm", 0.5))
+        severe = {"pouring", "lightning", "lightning-rainy", "hail", "snowy", "snowy-rainy", "exceptional"}
+        precipitation_blocks = condition in severe or (
+            precipitation is not None and float(precipitation) >= rain_threshold
+        )
+        configured = bool(weather.get("solar_irradiance_enabled")) and bool(
+            str(weather.get("solar_irradiance_entity", "")).strip()
+        )
+        allowed = (
+            configured
+            and bool(status.get("available"))
+            and irradiance is not None
+            and condition in eligible
+            and not precipitation_blocks
+            and base_reason != "outside_analysis_hours"
+        )
+        now_mono = monotonic()
+
+        status.update({
+            "solar_sensor_entity": str(weather.get("solar_irradiance_entity", "")).strip(),
+            "solar_sensor_raw": raw,
+            "solar_sensor_unit": unit,
+            "solar_irradiance_wm2": round(irradiance, 1) if irradiance is not None else None,
+            "solar_threshold_wm2": threshold,
+            "solar_validation_minutes": validation_seconds // 60,
+            "solar_hold_minutes": hold_seconds // 60,
+            "solar_condition_eligible": condition in eligible,
+        })
+
+        if not allowed:
+            self._solar_above_since = None
+            self._solar_below_since = None
+            self._solar_override_active = False
+            if not configured:
+                solar_state = "disabled"
+            elif not status.get("available"):
+                solar_state = "forecast_unavailable"
+            elif irradiance is None:
+                solar_state = "sensor_unavailable"
+            elif precipitation_blocks:
+                solar_state = "precipitation_priority"
+            elif base_reason == "outside_analysis_hours":
+                solar_state = "outside_analysis_hours"
+            else:
+                solar_state = "condition_not_selected"
+        elif irradiance >= threshold:
+            self._solar_below_since = None
+            if self._solar_above_since is None:
+                self._solar_above_since = now_mono
+            if now_mono - self._solar_above_since >= validation_seconds:
+                self._solar_override_active = True
+            solar_state = "active" if self._solar_override_active else "validating"
+        else:
+            self._solar_above_since = None
+            if self._solar_override_active:
+                if self._solar_below_since is None:
+                    self._solar_below_since = now_mono
+                if now_mono - self._solar_below_since >= hold_seconds:
+                    self._solar_override_active = False
+                    self._solar_below_since = None
+                solar_state = "holding" if self._solar_override_active else "inactive"
+            else:
+                self._solar_below_since = None
+                solar_state = "inactive"
+
+        if self._solar_override_active:
+            effective_profile = str(weather.get("condition_map", {}).get("sunny", "sunny"))
+            if effective_profile == "ignore":
+                effective_profile = base_profile
+            effective_reason = "solar_irradiance_override"
+            effective_cloud = 0.0
+        else:
+            effective_profile = base_profile
+            effective_reason = base_reason
+            effective_cloud = status.get("cloud_coverage")
+        self._set_weather_profile(effective_profile)
+        status.update({
+            "reason": effective_reason,
+            "solar_state": solar_state,
+            "solar_override_active": self._solar_override_active,
+            "solar_effective_cloud_coverage": effective_cloud,
+        })
+
     def _classify_weather(
         self,
         condition: str,
@@ -370,7 +512,10 @@ class BatteryController:
         weather: dict[str, Any],
     ) -> tuple[str | None, str]:
         rainy = {"rainy", "pouring", "lightning-rainy", "hail", "snowy", "snowy-rainy"}
-        severe_precipitation = {"pouring", "lightning-rainy", "hail", "snowy-rainy"}
+        severe_precipitation = {
+            "pouring", "lightning", "lightning-rainy", "hail",
+            "snowy", "snowy-rainy", "exceptional",
+        }
         cloudy = {"cloudy", "fog", "windy", "windy-variant", "lightning"}
         mapping = weather.get("condition_map", {})
         mapped = mapping.get(condition)
@@ -389,7 +534,7 @@ class BatteryController:
             return None, "clear_night_ignored"
         threshold = float(weather.get("sunny_cloud_max", 40))
         hysteresis = float(weather.get("cloud_hysteresis", 10)) / 2
-        previous = self._weather_status.get("selected_profile", "sunny")
+        previous = self._weather_status.get("base_profile", "sunny")
         if cloud is not None:
             limit = threshold + hysteresis if previous == "sunny" else threshold - hysteresis
             sunny_profile=mapping.get("sunny", "sunny"); cloudy_profile=mapping.get("cloudy", "cloudy")
