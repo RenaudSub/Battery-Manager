@@ -110,7 +110,7 @@ de marques différentes dans Home Assistant.
 
 ### Gestion des profils météo
 
-[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.6)](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.5)
+[![Gestion des profils météo](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.61)](https://logisub.com/assets/bm-confimeteo.jpg?v=0.5.61)
 
 ### Gestion des notifications
 
