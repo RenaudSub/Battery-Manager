@@ -934,8 +934,8 @@ class BatteryManagerPanel extends HTMLElement {
     const w=this._config.weather||{}, d=this._status.weather||{};
     const profileName=(id)=>(this._config.schedule_profiles||[]).find(p=>p.id===id)?.name||id||"—";
     const conditions=["sunny","partlycloudy","cloudy","fog","windy","windy-variant","rainy","pouring","lightning","lightning-rainy","hail","snowy","snowy-rainy","clear-night","exceptional"];
-    const solarConditions=["partlycloudy","cloudy","fog","windy","windy-variant"];
-    const solarSelected=new Set(w.solar_eligible_conditions||["partlycloudy","cloudy"]);
+    const solarConditions=["sunny","partlycloudy","cloudy","fog","windy","windy-variant"];
+    const solarSelected=new Set(w.solar_eligible_conditions||["sunny","partlycloudy","cloudy"]);
     const solarSummary=solarConditions.filter(c=>solarSelected.has(c)).map(c=>this._translatedValue("weather.condition_values",c)).join(", ")||this._t("weather.solar_none");
     const profileOptions=(selected)=>`<option value="ignore" ${selected==="ignore"?"selected":""}>${this._t("weather.ignore")}</option>${(this._config.schedule_profiles||[]).map(p=>`<option value="${esc(p.id)}" ${selected===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}`;
     return `<div class="card"><h2>${this._t("weather.title")}</h2><div class="weather-top-actions"><button id="refreshWeather">${this._t("weather.refresh_now")}</button><button id="save" class="primary">${this._t("buttons.save")}</button></div><div class="weather-grid">
