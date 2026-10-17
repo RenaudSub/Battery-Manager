@@ -57,9 +57,28 @@
     "solar_threshold": "Irradiancia mínima",
     "solar_validation": "Retraso de validación",
     "solar_hold": "Duración de mantenimiento",
+    "solar_method": "Método bidireccional",
+    "solar_methods": {
+      "sun_elevation": "Altura del sol",
+      "time_window": "Franja horaria"
+    },
+    "solar_min_elevation": "Altura solar mínima (°)",
+    "solar_window_start": "Inicio bidireccional",
+    "solar_window_end": "Fin bidireccional",
+    "solar_low_allowed": "Corrección a Nublado autorizada",
+    "solar_sun_elevation": "Altura actual del sol",
+    "solar_window": "Franja bidireccional",
+    "solar_gate_reason": "Estado del método",
+    "solar_gate_reasons": {
+      "within_time_window": "Dentro de la franja horaria",
+      "outside_time_window": "Fuera de la franja — se conserva la previsión",
+      "sun_elevation_sufficient": "Altura solar suficiente",
+      "sun_elevation_low": "Sol demasiado bajo — se conserva la previsión",
+      "sun_elevation_unavailable": "Altura solar no disponible — se conserva la previsión"
+    },
     "solar_conditions": "Condiciones corregibles",
     "solar_none": "Ninguna condición",
-    "solar_help": "Para las condiciones seleccionadas, la irradiancia local impone Soleado por encima del umbral y Nublado por debajo tras el mantenimiento. Lluvioso y Tormenta con lluvia vuelven a su perfil inicial por debajo del umbral; los demás fenómenos importantes conservan prioridad.",
+    "solar_help": "Durante el análisis meteorológico, la irradiancia por encima del umbral puede confirmar Soleado independientemente del método. La corrección a Nublado por debajo del umbral solo se autoriza por la altura solar o durante la franja horaria elegida. Fuera de ella se conserva la previsión meteorológica.",
     "diagnostic": "Diagnóstico en directo",
     "available": "Previsión disponible",
     "forecast_time": "Hora analizada",
@@ -105,7 +124,8 @@
       "validating": "Validación en curso",
       "active": "Activa",
       "holding": "Mantenimiento temporal",
-      "inactive": "Inactiva"
+      "inactive": "Inactiva",
+      "low_correction_blocked": "Corrección baja ignorada"
     },
     "calculated_profile": "Perfil calculado",
     "reason": "Motivo",

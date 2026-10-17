@@ -405,6 +405,38 @@ class BatteryController:
             irradiance = raw / factor
         return max(0.0, irradiance), raw, unit or None
 
+    @staticmethod
+    def _clock_in_window(clock: str, start: str, end: str) -> bool:
+        """Return whether a HH:MM clock is inside a possibly overnight window."""
+        if start == end:
+            return True
+        if start < end:
+            return start <= clock < end
+        return clock >= start or clock < end
+
+    def _solar_bidirectional_gate(
+        self, weather: dict[str, Any]
+    ) -> tuple[bool, str, float | None, str]:
+        """Return whether weak irradiance may force the Cloudy profile."""
+        method = str(weather.get("solar_bidirectional_method", "sun_elevation"))
+        if method == "time_window":
+            start = str(weather.get("solar_window_start", "10:30"))
+            end = str(weather.get("solar_window_end", "17:00"))
+            clock = dt_util.as_local(dt_util.now()).strftime("%H:%M")
+            allowed = self._clock_in_window(clock, start, end)
+            return allowed, ("within_time_window" if allowed else "outside_time_window"), None, clock
+
+        state = self.hass.states.get("sun.sun")
+        try:
+            elevation = float((state.attributes or {}).get("elevation")) if state else None
+        except (TypeError, ValueError):
+            elevation = None
+        if elevation is None:
+            return False, "sun_elevation_unavailable", None, ""
+        minimum = float(weather.get("solar_min_elevation_deg", 15))
+        allowed = elevation >= minimum
+        return allowed, ("sun_elevation_sufficient" if allowed else "sun_elevation_low"), elevation, ""
+
     def _update_solar_override(self, weather: dict[str, Any]) -> None:
         """Apply a delayed, local irradiance correction to the forecast profile."""
         status = self._weather_status
@@ -445,6 +477,9 @@ class BatteryController:
         configured = bool(weather.get("solar_irradiance_enabled")) and bool(
             str(weather.get("solar_irradiance_entity", "")).strip()
         )
+        bidirectional_allowed, gate_reason, sun_elevation, local_clock = (
+            self._solar_bidirectional_gate(weather)
+        )
         allowed = (
             configured
             and bool(status.get("available"))
@@ -464,6 +499,20 @@ class BatteryController:
             "solar_validation_minutes": validation_seconds // 60,
             "solar_hold_minutes": hold_seconds // 60,
             "solar_condition_eligible": condition in eligible,
+            "solar_bidirectional_method": str(
+                weather.get("solar_bidirectional_method", "sun_elevation")
+            ),
+            "solar_bidirectional_allowed": bidirectional_allowed,
+            "solar_bidirectional_reason": gate_reason,
+            "solar_min_elevation_deg": float(
+                weather.get("solar_min_elevation_deg", 15)
+            ),
+            "solar_sun_elevation_deg": (
+                round(sun_elevation, 1) if sun_elevation is not None else None
+            ),
+            "solar_window_start": str(weather.get("solar_window_start", "10:30")),
+            "solar_window_end": str(weather.get("solar_window_end", "17:00")),
+            "solar_local_clock": local_clock or None,
         })
 
         if not allowed:
@@ -497,16 +546,23 @@ class BatteryController:
                 if now_mono - self._solar_below_since >= hold_seconds:
                     self._solar_override_active = False
                     self._solar_below_since = None
-                solar_state = "holding" if self._solar_override_active else "inactive"
+                solar_state = (
+                    "holding"
+                    if self._solar_override_active
+                    else ("inactive" if bidirectional_allowed else "low_correction_blocked")
+                )
             else:
                 self._solar_below_since = None
-                solar_state = "inactive"
+                solar_state = (
+                    "inactive" if bidirectional_allowed else "low_correction_blocked"
+                )
 
         low_irradiance_cloud_override = (
             allowed
             and irradiance is not None
             and irradiance < threshold
             and not self._solar_override_active
+            and bidirectional_allowed
             and condition not in {"rainy", "lightning-rainy"}
         )
         if self._solar_override_active:

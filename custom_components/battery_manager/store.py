@@ -108,6 +108,26 @@ class BatteryManagerStore:
         weather["solar_threshold_wm2"] = max(100, min(400, solar_threshold))
         weather["solar_validation_minutes"] = max(1, min(30, solar_validation))
         weather["solar_hold_minutes"] = max(5, min(45, solar_hold))
+        method = str(weather.get("solar_bidirectional_method", "sun_elevation"))
+        weather["solar_bidirectional_method"] = (
+            method if method in {"sun_elevation", "time_window"} else "sun_elevation"
+        )
+        try:
+            min_elevation = float(weather.get("solar_min_elevation_deg", 15))
+        except (TypeError, ValueError):
+            min_elevation = 15
+        weather["solar_min_elevation_deg"] = max(0.0, min(45.0, min_elevation))
+        for key, fallback in (
+            ("solar_window_start", "10:30"),
+            ("solar_window_end", "17:00"),
+        ):
+            value = str(weather.get(key, fallback))
+            try:
+                hour, minute = (int(part) for part in value.split(":"))
+                valid = 0 <= hour <= 23 and 0 <= minute <= 59 and len(value) == 5
+            except (TypeError, ValueError):
+                valid = False
+            weather[key] = value if valid else fallback
         eligible = weather.get(
             "solar_eligible_conditions",
             ["sunny", "partlycloudy", "cloudy", "rainy", "lightning-rainy"],

@@ -57,9 +57,28 @@
     "solar_threshold": "Minimum irradiance",
     "solar_validation": "Validation delay",
     "solar_hold": "Hold duration",
+    "solar_method": "Bidirectional method",
+    "solar_methods": {
+      "sun_elevation": "Sun elevation",
+      "time_window": "Time window"
+    },
+    "solar_min_elevation": "Minimum sun elevation (°)",
+    "solar_window_start": "Bidirectional start",
+    "solar_window_end": "Bidirectional end",
+    "solar_low_allowed": "Cloudy correction allowed",
+    "solar_sun_elevation": "Current sun elevation",
+    "solar_window": "Bidirectional window",
+    "solar_gate_reason": "Method status",
+    "solar_gate_reasons": {
+      "within_time_window": "Inside the time window",
+      "outside_time_window": "Outside window — forecast retained",
+      "sun_elevation_sufficient": "Sun elevation is sufficient",
+      "sun_elevation_low": "Sun too low — forecast retained",
+      "sun_elevation_unavailable": "Sun elevation unavailable — forecast retained"
+    },
     "solar_conditions": "Correctable conditions",
     "solar_none": "No condition",
-    "solar_help": "For selected conditions, local irradiance selects Sunny above the threshold and Cloudy below it after the hold period. Rainy and Lightning-rainy return to their initial profile below the threshold; other severe conditions keep priority.",
+    "solar_help": "During weather analysis, irradiance above the threshold can confirm Sunny regardless of the method. The below-threshold correction to Cloudy is allowed only by sun elevation or during the selected time window. Outside it, the weather forecast is retained.",
     "diagnostic": "Live diagnostic",
     "available": "Forecast available",
     "forecast_time": "Forecast time",
@@ -105,7 +124,8 @@
       "validating": "Validation in progress",
       "active": "Active",
       "holding": "Temporary hold",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "low_correction_blocked": "Low correction ignored"
     },
     "calculated_profile": "Calculated profile",
     "reason": "Reason",

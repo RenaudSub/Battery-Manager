@@ -57,9 +57,28 @@
     "solar_threshold": "Rayonnement minimal",
     "solar_validation": "Délai de validation",
     "solar_hold": "Durée de maintien",
+    "solar_method": "Méthode bidirectionnelle",
+    "solar_methods": {
+      "sun_elevation": "Hauteur du soleil",
+      "time_window": "Plage horaire"
+    },
+    "solar_min_elevation": "Hauteur solaire minimale (°)",
+    "solar_window_start": "Début bidirectionnel",
+    "solar_window_end": "Fin bidirectionnelle",
+    "solar_low_allowed": "Correction vers Nuageux autorisée",
+    "solar_sun_elevation": "Hauteur actuelle du soleil",
+    "solar_window": "Plage bidirectionnelle",
+    "solar_gate_reason": "État de la méthode",
+    "solar_gate_reasons": {
+      "within_time_window": "Dans la plage horaire",
+      "outside_time_window": "Hors plage — prévision conservée",
+      "sun_elevation_sufficient": "Hauteur solaire suffisante",
+      "sun_elevation_low": "Soleil trop bas — prévision conservée",
+      "sun_elevation_unavailable": "Hauteur du soleil indisponible — prévision conservée"
+    },
     "solar_conditions": "Conditions corrigibles",
     "solar_none": "Aucune condition",
-    "solar_help": "Pour les conditions cochées, le rayonnement local impose Ensoleillé au-dessus du seuil et Nuageux sous le seuil après maintien. Pluvieux et Orageux avec pluie reviennent à leur profil initial sous le seuil ; les autres phénomènes importants restent prioritaires.",
+    "solar_help": "Pendant l’analyse météo, le rayonnement supérieur au seuil peut confirmer Ensoleillé indépendamment de la méthode. La correction vers Nuageux sous le seuil est autorisée uniquement par la hauteur solaire ou pendant la plage horaire choisie. En dehors, la prévision météo est conservée.",
     "diagnostic": "Diagnostic en direct",
     "available": "Prévision disponible",
     "forecast_time": "Heure analysée",
@@ -105,7 +124,8 @@
       "validating": "Validation en cours",
       "active": "Active",
       "holding": "Maintien temporaire",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "low_correction_blocked": "Correction basse ignorée"
     },
     "calculated_profile": "Profil calculé",
     "reason": "Raison",

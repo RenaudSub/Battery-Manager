@@ -160,11 +160,17 @@ class RuleTests(unittest.TestCase):
             'disabled','forecast_unavailable','sensor_unavailable',
             'precipitation_priority','outside_analysis_hours',
             'condition_not_selected','validating','active','holding','inactive',
+            'low_correction_blocked',
         }
         for lang in ('fr','en','es'):
             weather=json.loads((SOURCE/'frontend'/'translations'/f'{lang}.json').read_text())['weather']
             self.assertTrue(expected_conditions <= set(weather['condition_values']))
             self.assertEqual(expected_solar_states,set(weather['solar_states']))
+            self.assertEqual({'sun_elevation','time_window'},set(weather['solar_methods']))
+            self.assertEqual({
+                'within_time_window','outside_time_window','sun_elevation_sufficient',
+                'sun_elevation_low','sun_elevation_unavailable',
+            },set(weather['solar_gate_reasons']))
         self.assertTrue(set(SOLAR_CORRECTABLE_CONDITIONS) <= expected_conditions)
     def test_audit_planning_compact(self):
         config=fixture();changed=deepcopy(config)
@@ -191,6 +197,10 @@ class RuleTests(unittest.TestCase):
         self.assertIn('id="haSidebarMenu"',panel)
         self.assertIn('new CustomEvent("hass-toggle-menu"',panel)
         self.assertIn('.ha-menu-button{display:grid;order:0}',panel)
+        self.assertIn('_global.weather.solar_bidirectional_method',panel)
+        self.assertIn('_global.weather.solar_min_elevation_deg',panel)
+        self.assertIn('_global.weather.solar_window_start',panel)
+        self.assertIn('_global.weather.solar_window_end',panel)
 
 class WeatherTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
@@ -202,8 +212,12 @@ class WeatherTests(unittest.IsolatedAsyncioTestCase):
             'solar_irradiance_enabled':True,'solar_irradiance_entity':'sensor.solar',
             'solar_lux_per_wm2':126.7,'solar_threshold_wm2':100,
             'solar_validation_minutes':5,'solar_hold_minutes':20,
+            'solar_bidirectional_method':'sun_elevation','solar_min_elevation_deg':15,
+            'solar_window_start':'10:30','solar_window_end':'17:00',
             'solar_eligible_conditions':['sunny','partlycloudy','cloudy','rainy','lightning-rainy'],
         }
+        self.hass.put('sun.sun','above_horizon')
+        self.hass.entities['sun.sun'].attributes={'elevation':30}
     async def asyncTearDown(self):self.tmp.cleanup()
     async def test_light_rain_uses_cloud_cover(self):
         self.weather['sunny_cloud_max']=20
@@ -242,7 +256,9 @@ class WeatherTests(unittest.IsolatedAsyncioTestCase):
         config=deepcopy(store.data);weather=config['weather']
         weather.update({'solar_irradiance_enabled':True,'solar_irradiance_entity':'sensor.ws90',
                         'solar_threshold_wm2':450,'solar_validation_minutes':0,
-                        'solar_hold_minutes':60,'solar_eligible_conditions':['cloudy','rainy','cloudy']})
+                        'solar_hold_minutes':60,'solar_eligible_conditions':['cloudy','rainy','cloudy'],
+                        'solar_bidirectional_method':'time_window','solar_min_elevation_deg':90,
+                        'solar_window_start':'10:30','solar_window_end':'17:00'})
         await store.async_save(config);weather=store.data['weather']
         self.assertTrue(weather['solar_irradiance_enabled'])
         self.assertEqual(weather['solar_threshold_wm2'],400)
@@ -250,6 +266,10 @@ class WeatherTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(weather['solar_hold_minutes'],45)
         self.assertEqual(weather['solar_eligible_conditions'],['cloudy','rainy'])
         self.assertEqual(weather['solar_conditions_version'],2)
+        self.assertEqual(weather['solar_bidirectional_method'],'time_window')
+        self.assertEqual(weather['solar_min_elevation_deg'],45)
+        self.assertEqual(weather['solar_window_start'],'10:30')
+        self.assertEqual(weather['solar_window_end'],'17:00')
     async def test_new_solar_conditions_are_migrated_once(self):
         store=BatteryManagerStore(self.hass)
         store._store.saved={'weather':{'solar_eligible_conditions':['partlycloudy','cloudy']}}
@@ -260,6 +280,18 @@ class WeatherTests(unittest.IsolatedAsyncioTestCase):
         config['weather']['solar_eligible_conditions']=['cloudy']
         await store.async_save(config)
         self.assertEqual(store.data['weather']['solar_eligible_conditions'],['cloudy'])
+    async def test_invalid_bidirectional_settings_are_normalized(self):
+        store=BatteryManagerStore(self.hass);await store.async_load({})
+        config=deepcopy(store.data)
+        config['weather'].update({'solar_bidirectional_method':'invalid',
+                                  'solar_min_elevation_deg':-12,
+                                  'solar_window_start':'99:99','solar_window_end':'bad'})
+        await store.async_save(config)
+        weather=store.data['weather']
+        self.assertEqual(weather['solar_bidirectional_method'],'sun_elevation')
+        self.assertEqual(weather['solar_min_elevation_deg'],0)
+        self.assertEqual(weather['solar_window_start'],'10:30')
+        self.assertEqual(weather['solar_window_end'],'17:00')
     async def test_solar_override_validates_and_holds(self):
         self.hass.put('sensor.solar',123)
         self.controller._weather_status.update({'available':True,'condition':'cloudy','precipitation_mm':0,
@@ -288,6 +320,46 @@ class WeatherTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.controller._weather_status['selected_profile'],'cloudy')
         self.assertEqual(self.controller._weather_status['reason'],'solar_irradiance_below_threshold')
         self.assertEqual(self.controller._weather_status['solar_state'],'inactive')
+        self.assertTrue(self.controller._weather_status['solar_bidirectional_allowed'])
+    async def test_low_irradiance_keeps_forecast_when_sun_is_too_low(self):
+        self.hass.put('sensor.solar',40)
+        self.hass.entities['sun.sun'].attributes={'elevation':8}
+        self.controller._weather_status.update({'available':True,'condition':'sunny','precipitation_mm':0,
+            'cloud_coverage':10,'base_profile':'sunny','base_reason':'cloud_threshold','selected_profile':'sunny'})
+        with patch('custom_components.battery_manager.controller.monotonic',return_value=100):
+            self.controller._update_solar_override(self.weather)
+        self.assertEqual(self.controller._weather_status['selected_profile'],'sunny')
+        self.assertEqual(self.controller._weather_status['reason'],'cloud_threshold')
+        self.assertEqual(self.controller._weather_status['solar_state'],'low_correction_blocked')
+        self.assertFalse(self.controller._weather_status['solar_bidirectional_allowed'])
+        self.assertEqual(self.controller._weather_status['solar_bidirectional_reason'],'sun_elevation_low')
+    async def test_time_window_controls_only_the_low_correction(self):
+        self.weather['solar_bidirectional_method']='time_window'
+        self.hass.put('sensor.solar',40)
+        self.controller._weather_status.update({'available':True,'condition':'sunny','precipitation_mm':0,
+            'cloud_coverage':10,'base_profile':'sunny','base_reason':'cloud_threshold','selected_profile':'sunny'})
+        with patch('custom_components.battery_manager.controller.dt_util.now',return_value=datetime(2026,10,17,11,0,tzinfo=timezone.utc)), \
+             patch('custom_components.battery_manager.controller.monotonic',return_value=100):
+            self.controller._update_solar_override(self.weather)
+        self.assertEqual(self.controller._weather_status['selected_profile'],'cloudy')
+        self.assertTrue(self.controller._weather_status['solar_bidirectional_allowed'])
+        with patch('custom_components.battery_manager.controller.dt_util.now',return_value=datetime(2026,10,17,18,0,tzinfo=timezone.utc)), \
+             patch('custom_components.battery_manager.controller.monotonic',return_value=200):
+            self.controller._update_solar_override(self.weather)
+        self.assertEqual(self.controller._weather_status['selected_profile'],'sunny')
+        self.assertFalse(self.controller._weather_status['solar_bidirectional_allowed'])
+        self.assertEqual(self.controller._weather_status['solar_state'],'low_correction_blocked')
+        self.hass.put('sensor.solar',200)
+        with patch('custom_components.battery_manager.controller.dt_util.now',return_value=datetime(2026,10,17,18,0,tzinfo=timezone.utc)), \
+             patch('custom_components.battery_manager.controller.monotonic',side_effect=[300,600]):
+            self.controller._update_solar_override(self.weather)
+            self.controller._update_solar_override(self.weather)
+        self.assertEqual(self.controller._weather_status['selected_profile'],'sunny')
+        self.assertTrue(self.controller._weather_status['solar_override_active'])
+    async def test_time_window_supports_midnight_crossing(self):
+        self.assertTrue(self.controller._clock_in_window('23:00','22:00','06:00'))
+        self.assertTrue(self.controller._clock_in_window('05:59','22:00','06:00'))
+        self.assertFalse(self.controller._clock_in_window('12:00','22:00','06:00'))
     async def test_selected_rain_can_be_corrected_but_returns_to_rain_below_threshold(self):
         self.hass.put('sensor.solar',200)
         self.controller._weather_status.update({'available':True,'condition':'rainy','precipitation_mm':1,

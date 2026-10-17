@@ -101,13 +101,18 @@ réel mesuré sur place de corriger temporairement une prévision nuageuse.
 - le délai de validation impose un dépassement continu avant la correction ;
 - la durée de maintien évite de quitter immédiatement le profil Ensoleillé au
   passage d'un nuage ;
+- choisissez comment autoriser la correction inverse vers **Nuageux** : hauteur
+  minimale du soleil ou plage horaire ;
+- avec la hauteur solaire, `sun.sun` fournit automatiquement l'attribut
+  `elevation` ; avec la plage horaire, indiquez simplement le début et la fin ;
 - cochez uniquement les conditions que le rayonnement a le droit de corriger.
 
-Par défaut, seules **Partiellement nuageux** et **Nuageux** sont corrigibles.
-Les précipitations significatives, orages, grêle, neige et conditions
-exceptionnelles gardent toujours la priorité. Une valeur faible ou
-indisponible ne force jamais le profil Nuageux : elle rend simplement la main
-à l'interprétation de la prévision.
+Un rayonnement supérieur au seuil peut confirmer **Ensoleillé** pendant toute
+la plage générale d'analyse météo, indépendamment de la méthode. Un rayonnement
+inférieur au seuil ne force **Nuageux** que lorsque la méthode bidirectionnelle
+l'autorise. Lorsque le soleil est trop bas ou que l'heure se trouve hors de la
+plage choisie, la prévision météo reste appliquée. Les phénomènes importants
+non sélectionnés gardent toujours la priorité.
 
 ## Perte du Grid
 

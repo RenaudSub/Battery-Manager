@@ -219,6 +219,14 @@ La puissance appliquée est la plus faible parmi :
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
 
+## Version 0.6.2
+
+- ajout de deux méthodes pour encadrer la correction bidirectionnelle du rayonnement : hauteur minimale du soleil ou plage horaire configurable ;
+- la correction positive vers `Ensoleillé` reste disponible pendant toute la plage générale d'analyse météo lorsque le seuil est dépassé ;
+- la correction négative vers `Nuageux` n'est appliquée que si la hauteur solaire est suffisante ou pendant la plage horaire choisie ; en dehors, la prévision météo est conservée ;
+- hauteur solaire minimale fixée à `15°` par défaut et plage horaire préremplie de `10:30` à `17:00` ;
+- prise en charge des plages traversant minuit et diagnostic détaillé de l'autorisation courante de la correction basse.
+
 ## Version 0.6.1
 
 - le rayonnement local devient prioritaire dans les deux sens : au-dessus du seuil il peut imposer `Ensoleillé`, et sous le seuil il impose `Nuageux` après le délai de maintien même si la couverture prévue reste faible ;

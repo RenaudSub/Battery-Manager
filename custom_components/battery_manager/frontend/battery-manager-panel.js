@@ -5,7 +5,7 @@ const ACTIONS = {
   default_mode: { color: "#ffffff" },
   standby: { color: "#78909c" },
 };
-const PANEL_VERSION = "0.6.1";
+const PANEL_VERSION = "0.6.2";
 const ASSET_BASE = "/battery_manager/frontend/assets/";
 const BATTERY_MODELS = {
   generic: [{id:"generic", label:""}],
@@ -406,6 +406,11 @@ class BatteryManagerPanel extends HTMLElement {
       .weather-slider-grid label { display:grid; grid-template-columns:1fr auto; gap:6px 10px; align-items:center; text-align:left; }
       .weather-slider-grid input { grid-column:1 / -1; width:100%; }
       .weather-slider-grid output { font-weight:700; white-space:nowrap; }
+      .weather-bidirectional-grid { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:end; margin-top:14px; }
+      .weather-bidirectional-grid label { display:flex; flex-direction:column; align-items:flex-start; gap:5px; text-align:left; }
+      .weather-bidirectional-grid select { min-width:190px; padding:8px; }
+      .weather-bidirectional-grid input[type="number"] { width:90px; padding:8px; }
+      .weather-bidirectional-grid input[type="time"] { width:108px; padding:8px; }
       .solar-condition-picker { position:relative; margin-top:14px; max-width:520px; }
       .solar-condition-picker > summary { cursor:pointer; list-style:none; display:flex; justify-content:space-between; gap:12px; padding:9px 12px; border:1px solid var(--divider-color); border-radius:9px; background:var(--secondary-background-color); }
       .solar-condition-picker > summary::-webkit-details-marker { display:none; }
@@ -939,6 +944,8 @@ class BatteryManagerPanel extends HTMLElement {
     const solarConditions=["sunny","partlycloudy","cloudy","rainy","lightning-rainy","fog","windy","windy-variant"];
     const solarSelected=new Set(w.solar_eligible_conditions||["sunny","partlycloudy","cloudy","rainy","lightning-rainy"]);
     const solarSummary=solarConditions.filter(c=>solarSelected.has(c)).map(c=>this._translatedValue("weather.condition_values",c)).join(", ")||this._t("weather.solar_none");
+    const solarMethod=w.solar_bidirectional_method||"sun_elevation";
+    const diagnosticMethod=d.solar_bidirectional_method||solarMethod;
     const profileOptions=(selected)=>`<option value="ignore" ${selected==="ignore"?"selected":""}>${this._t("weather.ignore")}</option>${(this._config.schedule_profiles||[]).map(p=>`<option value="${esc(p.id)}" ${selected===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}`;
     return `<div class="card"><h2>${this._t("weather.title")}</h2><div class="weather-top-actions"><button id="refreshWeather">${this._t("weather.refresh_now")}</button><button id="save" class="primary">${this._t("buttons.save")}</button></div><div class="weather-grid">
       <fieldset class="weather-source"><legend>${this._t("weather.source")}</legend><div class="weather-source-pickers">
@@ -968,6 +975,10 @@ class BatteryManagerPanel extends HTMLElement {
           <div class="weather-diagnostic-item">${this._t("weather.solar_raw")} : <b>${d.solar_sensor_raw==null?"—":`${esc(d.solar_sensor_raw)} ${esc(d.solar_sensor_unit||"")}`}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.solar_correction")} : <b>${esc(d.solar_state?this._translatedValue("weather.solar_states",d.solar_state):"—")}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.effective_cloud")} : <b>${d.solar_effective_cloud_coverage==null?"—":`${esc(d.solar_effective_cloud_coverage)} %`}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.solar_method")} : <b>${esc(this._translatedValue("weather.solar_methods",diagnosticMethod))}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.solar_low_allowed")} : <b>${d.solar_bidirectional_allowed?this._t("weather.yes"):this._t("weather.no")}</b></div>
+          <div class="weather-diagnostic-item">${diagnosticMethod==="time_window"?this._t("weather.solar_window"):this._t("weather.solar_sun_elevation")} : <b>${diagnosticMethod==="time_window"?`${esc(d.solar_window_start||w.solar_window_start||"10:30")} – ${esc(d.solar_window_end||w.solar_window_end||"17:00")}`:(d.solar_sun_elevation_deg==null?"—":`${esc(d.solar_sun_elevation_deg)}°`)}</b></div>
+          <div class="weather-diagnostic-item">${this._t("weather.solar_gate_reason")} : <b>${esc(d.solar_bidirectional_reason?this._translatedValue("weather.solar_gate_reasons",d.solar_bidirectional_reason):"—")}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.base_profile")} : <b>${esc(profileName(d.base_profile))}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.calculated_profile")} : <b>${esc(profileName(d.selected_profile))}</b></div>
           <div class="weather-diagnostic-item">${this._t("weather.reason")} : <b>${esc(d.reason?this._reason(d.reason):"—")}</b></div>
@@ -983,6 +994,15 @@ class BatteryManagerPanel extends HTMLElement {
           <label>${this._t("weather.solar_threshold")}<output data-solar-output="threshold">${esc(w.solar_threshold_wm2??100)} W/m²</output><input data-path="_global.weather.solar_threshold_wm2" data-solar-range="threshold" type="range" min="100" max="400" step="10" value="${esc(w.solar_threshold_wm2??100)}"></label>
           <label>${this._t("weather.solar_validation")}<output data-solar-output="validation">${esc(w.solar_validation_minutes??5)} min</output><input data-path="_global.weather.solar_validation_minutes" data-solar-range="validation" type="range" min="1" max="30" step="1" value="${esc(w.solar_validation_minutes??5)}"></label>
           <label>${this._t("weather.solar_hold")}<output data-solar-output="hold">${esc(w.solar_hold_minutes??20)} min</output><input data-path="_global.weather.solar_hold_minutes" data-solar-range="hold" type="range" min="5" max="45" step="5" value="${esc(w.solar_hold_minutes??20)}"></label>
+        </div>
+        <div class="weather-bidirectional-grid">
+          <label>${this._t("weather.solar_method")}<select data-path="_global.weather.solar_bidirectional_method">
+            <option value="sun_elevation" ${solarMethod==="sun_elevation"?"selected":""}>${this._t("weather.solar_methods.sun_elevation")}</option>
+            <option value="time_window" ${solarMethod==="time_window"?"selected":""}>${this._t("weather.solar_methods.time_window")}</option>
+          </select></label>
+          ${solarMethod==="sun_elevation"
+            ? `<label>${this._t("weather.solar_min_elevation")}<input data-path="_global.weather.solar_min_elevation_deg" type="number" min="0" max="45" step="1" value="${esc(w.solar_min_elevation_deg??15)}"></label>`
+            : `<label>${this._t("weather.solar_window_start")}<input data-path="_global.weather.solar_window_start" type="time" value="${esc(w.solar_window_start||"10:30")}"></label><label>${this._t("weather.solar_window_end")}<input data-path="_global.weather.solar_window_end" type="time" value="${esc(w.solar_window_end||"17:00")}"></label>`}
         </div>
         <details class="solar-condition-picker"><summary><span>${this._t("weather.solar_conditions")}</span><strong data-solar-summary>${esc(solarSummary)}</strong></summary><div class="solar-condition-options">
           ${solarConditions.map(c=>`<label><input type="checkbox" data-solar-condition="${esc(c)}" ${solarSelected.has(c)?"checked":""}>${esc(this._translatedValue("weather.condition_values",c))}</label>`).join("")}
@@ -1289,7 +1309,7 @@ class BatteryManagerPanel extends HTMLElement {
       }
       this._setPath(b,input.dataset.path.replace("_global.",""),value);
       if(input.dataset.path === "adapter") b.model="generic";
-      if(["adapter", "model", "grid_loss_return_default"].includes(input.dataset.path)) this._render();
+      if(["adapter", "model", "grid_loss_return_default", "_global.weather.solar_bidirectional_method"].includes(input.dataset.path)) this._render();
     });
     this.shadowRoot.querySelectorAll("[data-solar-range]").forEach((input) => input.oninput = () => {
       const output=this.shadowRoot.querySelector(`[data-solar-output="${input.dataset.solarRange}"]`);

@@ -65,6 +65,10 @@ DEFAULT_CONFIG = {
         "solar_threshold_wm2": 100,
         "solar_validation_minutes": 5,
         "solar_hold_minutes": 20,
+        "solar_bidirectional_method": "sun_elevation",
+        "solar_min_elevation_deg": 15,
+        "solar_window_start": "10:30",
+        "solar_window_end": "17:00",
         "solar_conditions_version": 2,
         "solar_eligible_conditions": [
             "sunny",
