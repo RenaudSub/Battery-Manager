@@ -423,13 +423,30 @@ class BatteryController:
         precipitation = status.get("precipitation_mm")
         rain_threshold = float(weather.get("rain_threshold_mm", 0.5))
        severe = {"pouring","lightning","lightning-rainy","hail","snowy","snowy-rainy","exceptional",}
-    rain_override_selected = ( condition in {"rainy", "lightning-rainy"}
-    and condition in eligible)
+        severe = {
+            "pouring",
+            "lightning",
+            "lightning-rainy",
+            "hail",
+            "snowy",
+            "snowy-rainy",
+            "exceptional",
+        }
+        rain_override_selected = (
+            condition in {"rainy", "lightning-rainy"}
+            and condition in eligible
+        )
 
-    precipitation_blocks = ( not rain_override_selected
-    and ( condition in severe
-        or (precipitation is not None
-            and float(precipitation) >= rain_threshold)))
+        precipitation_blocks = (
+            not rain_override_selected
+            and (
+                condition in severe
+                or (
+                    precipitation is not None
+                    and float(precipitation) >= rain_threshold
+                )
+            )
+        )
 
         configured = bool(weather.get("solar_irradiance_enabled")) and bool(
             str(weather.get("solar_irradiance_entity", "")).strip()
