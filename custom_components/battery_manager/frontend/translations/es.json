@@ -59,7 +59,7 @@
     "solar_hold": "Duración de mantenimiento",
     "solar_conditions": "Condiciones corregibles",
     "solar_none": "Ninguna condición",
-    "solar_help": "La corrección solo puede convertir las condiciones seleccionadas al perfil Soleado. Las precipitaciones y los fenómenos importantes mantienen la prioridad.",
+    "solar_help": "Para las condiciones seleccionadas, la irradiancia local impone Soleado por encima del umbral y Nublado por debajo tras el mantenimiento. Lluvioso y Tormenta con lluvia vuelven a su perfil inicial por debajo del umbral; los demás fenómenos importantes conservan prioridad.",
     "diagnostic": "Diagnóstico en directo",
     "available": "Previsión disponible",
     "forecast_time": "Hora analizada",
@@ -365,7 +365,8 @@
     "manual": "Selección manual",
     "backup_active": "Modo Backup activo — ninguna orden enviada",
     "backup_grid_confirmation": "Salida de Backup — confirmación de red durante 30 segundos",
-    "solar_irradiance_override": "Irradiancia local por encima del umbral"
+    "solar_irradiance_override": "Irradiancia local por encima del umbral",
+    "solar_irradiance_below_threshold": "Irradiancia local por debajo del umbral"
   },
   "notifications": {
     "targets": "Destinos de notificaciones",

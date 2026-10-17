@@ -422,7 +422,6 @@ class BatteryController:
         condition = str(status.get("condition") or "")
         precipitation = status.get("precipitation_mm")
         rain_threshold = float(weather.get("rain_threshold_mm", 0.5))
-       severe = {"pouring","lightning","lightning-rainy","hail","snowy","snowy-rainy","exceptional",}
         severe = {
             "pouring",
             "lightning",
@@ -436,18 +435,13 @@ class BatteryController:
             condition in {"rainy", "lightning-rainy"}
             and condition in eligible
         )
-
-        precipitation_blocks = (
-            not rain_override_selected
-            and (
-                condition in severe
-                or (
-                    precipitation is not None
-                    and float(precipitation) >= rain_threshold
-                )
+        precipitation_blocks = not rain_override_selected and (
+            condition in severe
+            or (
+                precipitation is not None
+                and float(precipitation) >= rain_threshold
             )
         )
-
         configured = bool(weather.get("solar_irradiance_enabled")) and bool(
             str(weather.get("solar_irradiance_entity", "")).strip()
         )
@@ -508,12 +502,25 @@ class BatteryController:
                 self._solar_below_since = None
                 solar_state = "inactive"
 
+        low_irradiance_cloud_override = (
+            allowed
+            and irradiance is not None
+            and irradiance < threshold
+            and not self._solar_override_active
+            and condition not in {"rainy", "lightning-rainy"}
+        )
         if self._solar_override_active:
             effective_profile = str(weather.get("condition_map", {}).get("sunny", "sunny"))
             if effective_profile == "ignore":
                 effective_profile = base_profile
             effective_reason = "solar_irradiance_override"
             effective_cloud = 0.0
+        elif low_irradiance_cloud_override:
+            effective_profile = str(weather.get("condition_map", {}).get("cloudy", "cloudy"))
+            if effective_profile == "ignore":
+                effective_profile = base_profile
+            effective_reason = "solar_irradiance_below_threshold"
+            effective_cloud = 100.0
         else:
             effective_profile = base_profile
             effective_reason = base_reason

@@ -59,7 +59,7 @@
     "solar_hold": "Durée de maintien",
     "solar_conditions": "Conditions corrigibles",
     "solar_none": "Aucune condition",
-    "solar_help": "La correction peut uniquement transformer les conditions cochées en profil Ensoleillé. Les précipitations et phénomènes importants restent prioritaires.",
+    "solar_help": "Pour les conditions cochées, le rayonnement local impose Ensoleillé au-dessus du seuil et Nuageux sous le seuil après maintien. Pluvieux et Orageux avec pluie reviennent à leur profil initial sous le seuil ; les autres phénomènes importants restent prioritaires.",
     "diagnostic": "Diagnostic en direct",
     "available": "Prévision disponible",
     "forecast_time": "Heure analysée",
@@ -365,7 +365,8 @@
     "manual": "Sélection manuelle",
     "backup_active": "Mode Backup actif — aucune commande envoyée",
     "backup_grid_confirmation": "Sortie Backup — confirmation du Grid pendant 30 secondes",
-    "solar_irradiance_override": "Rayonnement local supérieur au seuil"
+    "solar_irradiance_override": "Rayonnement local supérieur au seuil",
+    "solar_irradiance_below_threshold": "Rayonnement local inférieur au seuil"
   },
   "notifications": {
     "targets": "Cibles des notifications",

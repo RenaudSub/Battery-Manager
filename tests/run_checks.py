@@ -188,6 +188,9 @@ class RuleTests(unittest.TestCase):
         self.assertIn('this._scheduleTooltip(days[day],time,s)',panel)
         self.assertIn('weather.condition_values",c',panel)
         self.assertIn('data-solar-condition=',panel)
+        self.assertIn('id="haSidebarMenu"',panel)
+        self.assertIn('new CustomEvent("hass-toggle-menu"',panel)
+        self.assertIn('.ha-menu-button{display:grid;order:0}',panel)
 
 class WeatherTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
@@ -199,7 +202,7 @@ class WeatherTests(unittest.IsolatedAsyncioTestCase):
             'solar_irradiance_enabled':True,'solar_irradiance_entity':'sensor.solar',
             'solar_lux_per_wm2':126.7,'solar_threshold_wm2':100,
             'solar_validation_minutes':5,'solar_hold_minutes':20,
-            'solar_eligible_conditions':['partlycloudy','cloudy'],
+            'solar_eligible_conditions':['sunny','partlycloudy','cloudy','rainy','lightning-rainy'],
         }
     async def asyncTearDown(self):self.tmp.cleanup()
     async def test_light_rain_uses_cloud_cover(self):
@@ -245,7 +248,18 @@ class WeatherTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(weather['solar_threshold_wm2'],400)
         self.assertEqual(weather['solar_validation_minutes'],1)
         self.assertEqual(weather['solar_hold_minutes'],45)
-        self.assertEqual(weather['solar_eligible_conditions'],['cloudy'])
+        self.assertEqual(weather['solar_eligible_conditions'],['cloudy','rainy'])
+        self.assertEqual(weather['solar_conditions_version'],2)
+    async def test_new_solar_conditions_are_migrated_once(self):
+        store=BatteryManagerStore(self.hass)
+        store._store.saved={'weather':{'solar_eligible_conditions':['partlycloudy','cloudy']}}
+        await store.async_load({})
+        selected=store.data['weather']['solar_eligible_conditions']
+        self.assertEqual(selected,['partlycloudy','cloudy','sunny','rainy','lightning-rainy'])
+        config=deepcopy(store.data)
+        config['weather']['solar_eligible_conditions']=['cloudy']
+        await store.async_save(config)
+        self.assertEqual(store.data['weather']['solar_eligible_conditions'],['cloudy'])
     async def test_solar_override_validates_and_holds(self):
         self.hass.put('sensor.solar',123)
         self.controller._weather_status.update({'available':True,'condition':'cloudy','precipitation_mm':0,
@@ -263,8 +277,34 @@ class WeatherTests(unittest.IsolatedAsyncioTestCase):
             self.controller._update_solar_override(self.weather)
             self.assertFalse(self.controller._weather_status['solar_override_active'])
             self.assertEqual(self.controller._weather_status['selected_profile'],'cloudy')
+            self.assertEqual(self.controller._weather_status['reason'],'solar_irradiance_below_threshold')
+            self.assertEqual(self.controller._weather_status['solar_effective_cloud_coverage'],100)
+    async def test_low_irradiance_overrides_sunny_cloud_forecast(self):
+        self.hass.put('sensor.solar',87.1)
+        self.controller._weather_status.update({'available':True,'condition':'sunny','precipitation_mm':0,
+            'cloud_coverage':10,'base_profile':'sunny','base_reason':'cloud_threshold','selected_profile':'sunny'})
+        with patch('custom_components.battery_manager.controller.monotonic',return_value=100):
+            self.controller._update_solar_override(self.weather)
+        self.assertEqual(self.controller._weather_status['selected_profile'],'cloudy')
+        self.assertEqual(self.controller._weather_status['reason'],'solar_irradiance_below_threshold')
+        self.assertEqual(self.controller._weather_status['solar_state'],'inactive')
+    async def test_selected_rain_can_be_corrected_but_returns_to_rain_below_threshold(self):
+        self.hass.put('sensor.solar',200)
+        self.controller._weather_status.update({'available':True,'condition':'rainy','precipitation_mm':1,
+            'cloud_coverage':90,'base_profile':'rainy','base_reason':'precipitation_threshold','selected_profile':'rainy'})
+        with patch('custom_components.battery_manager.controller.monotonic',side_effect=[0,300,301,1501]):
+            self.controller._update_solar_override(self.weather)
+            self.controller._update_solar_override(self.weather)
+            self.assertEqual(self.controller._weather_status['selected_profile'],'sunny')
+            self.hass.put('sensor.solar',50)
+            self.controller._update_solar_override(self.weather)
+            self.assertEqual(self.controller._weather_status['solar_state'],'holding')
+            self.controller._update_solar_override(self.weather)
+        self.assertEqual(self.controller._weather_status['selected_profile'],'rainy')
+        self.assertEqual(self.controller._weather_status['reason'],'precipitation_threshold')
     async def test_precipitation_immediately_cancels_solar_override(self):
         self.hass.put('sensor.solar',200)
+        self.weather['solar_eligible_conditions']=['cloudy']
         self.controller._weather_status.update({'available':True,'condition':'cloudy','precipitation_mm':0,
             'cloud_coverage':70,'base_profile':'cloudy','base_reason':'cloud_threshold','selected_profile':'cloudy'})
         with patch('custom_components.battery_manager.controller.monotonic',side_effect=[0,300,301]):

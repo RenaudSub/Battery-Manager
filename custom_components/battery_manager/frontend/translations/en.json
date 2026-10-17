@@ -59,7 +59,7 @@
     "solar_hold": "Hold duration",
     "solar_conditions": "Correctable conditions",
     "solar_none": "No condition",
-    "solar_help": "The correction can only turn selected conditions into the Sunny profile. Precipitation and severe conditions always keep priority.",
+    "solar_help": "For selected conditions, local irradiance selects Sunny above the threshold and Cloudy below it after the hold period. Rainy and Lightning-rainy return to their initial profile below the threshold; other severe conditions keep priority.",
     "diagnostic": "Live diagnostic",
     "available": "Forecast available",
     "forecast_time": "Forecast time",
@@ -365,7 +365,8 @@
     "manual": "Manual selection",
     "backup_active": "Backup mode active — no command sent",
     "backup_grid_confirmation": "Leaving Backup — confirming Grid for 30 seconds",
-    "solar_irradiance_override": "Local irradiance above threshold"
+    "solar_irradiance_override": "Local irradiance above threshold",
+    "solar_irradiance_below_threshold": "Local irradiance below threshold"
   },
   "notifications": {
     "targets": "Notification targets",

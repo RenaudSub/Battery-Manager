@@ -9,7 +9,7 @@ de marques différentes dans Home Assistant.
 
 🌐 [Site officiel de Battery Manager](https://logisub.com/battery-manager.html)
 
-## Fonctionnalités présentes v0.6.0
+## Fonctionnalités présentes v0.6.1
 
 ### Surveillance et vue d’ensemble
 
@@ -58,7 +58,8 @@ de marques différentes dans Home Assistant.
 - Diagnostic détaillé : prévision analysée, couverture et source, précipitations prévues, seuil appliqué, rayonnement converti, valeur brute, état de la correction, profil initial et raison du profil retenu.
 - Traduction des conditions météo en français, anglais et espagnol dans les associations, tout en conservant les identifiants techniques Home Assistant.
 - Actualisation manuelle du diagnostic, y compris lorsqu’un profil manuel est sélectionné.
-
+- Le rayonnement local devient prioritaire dans les deux sens : au-dessus du seuil il peut imposer le profil `Ensoleillé`, tandis qu’en dessous du seuil il peut imposer le profil `Nuageux` après le délai de maintien.
+- Les conditions `Pluvieux` et `Orageux avec pluie` peuvent être sélectionnées comme conditions corrigibles : un rayonnement réellement élevé peut alors imposer `Ensoleillé`, mais leur profil pluvieux initial reste conservé lorsque le rayonnement demeure sous le seuil.
 
 ### Configuration, protections et Backup
 
@@ -218,6 +219,12 @@ La puissance appliquée est la plus faible parmi :
 À partir du SOC maximal, la charge est interdite. Elle reprend au seuil de
 reprise. Le même principe est appliqué à la décharge au SOC minimal.
 
+## Version 0.6.1
+
+- le rayonnement local devient prioritaire dans les deux sens : au-dessus du seuil il peut imposer `Ensoleillé`, et sous le seuil il impose `Nuageux` après le délai de maintien même si la couverture prévue reste faible ;
+- une condition `Pluvieux` ou `Orageux avec pluie` explicitement cochée peut désormais être corrigée vers `Ensoleillé` par un rayonnement réellement élevé ; sous le seuil, son profil pluvieux initial est conservé ;
+- ajout de ces conditions à la sélection de correction du panneau Météo et conservation correcte de leur état après enregistrement ;
+- restauration du bouton ouvrant le menu latéral Home Assistant sur téléphone, sans modifier l'en-tête tablette ou ordinateur.
 
 ## Version 0.6.0
 

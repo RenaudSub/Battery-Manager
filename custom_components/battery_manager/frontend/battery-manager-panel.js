@@ -5,7 +5,7 @@ const ACTIONS = {
   default_mode: { color: "#ffffff" },
   standby: { color: "#78909c" },
 };
-const PANEL_VERSION = "0.6.0";
+const PANEL_VERSION = "0.6.1";
 const ASSET_BASE = "/battery_manager/frontend/assets/";
 const BATTERY_MODELS = {
   generic: [{id:"generic", label:""}],
@@ -249,6 +249,8 @@ class BatteryManagerPanel extends HTMLElement {
       header { position:sticky; top:0; z-index:3; display:flex; align-items:center; gap:12px; padding:12px 18px;
         background:var(--app-header-background-color, var(--card-background-color)); box-shadow:0 2px 8px #0002; }
       header h1 { font-size:20px; margin:0 auto 0 0; }
+      .ha-menu-button { display:none; width:40px; height:40px; padding:0; place-items:center; flex:0 0 40px; border-radius:50%; background:transparent; }
+      .ha-menu-button ha-icon { width:24px; height:24px; }
       .language-select { min-width:105px; padding:7px; }
       .profile-menu { position:relative; }
       .profile-menu summary { list-style:none; min-width:155px; padding:8px 12px; border:1px solid var(--divider-color); border-radius:9px; background:var(--card-background-color); cursor:pointer; font-weight:700; }
@@ -466,7 +468,7 @@ class BatteryManagerPanel extends HTMLElement {
       .journal-line:nth-child(even){background:var(--secondary-background-color)}
       .journal-tabs{display:flex;flex-wrap:wrap;gap:7px}.journal-tabs .active{background:var(--primary-color);color:var(--text-primary-color,#fff)}
       .about-hero{text-align:center;padding:28px 12px}.about-hero h2{font-size:32px;margin:0 0 14px}.about-links{display:flex;justify-content:center;gap:18px;flex-wrap:wrap}.about-sections details{border-top:1px solid var(--divider-color);padding:10px 2px}.about-sections summary{cursor:pointer;font-weight:700}.about-sections p,.about-sections li{line-height:1.55}.backup-action-grid{display:grid;grid-template-columns:minmax(280px,520px) auto;gap:18px;align-items:end}.backup-action-grid label{display:flex;gap:8px;align-items:center}
-      @media(max-width:700px){header{flex-wrap:wrap}header h1{flex:1 1 calc(100% - 60px);min-width:0;order:0}.profile-menu{order:1;max-width:calc(100% - 54px)}.profile-menu summary{max-width:100%}.profile-menu .profile-menu-content{left:0;right:auto;max-width:calc(100vw - 24px)}.navigation-menu{order:2;flex-shrink:0;margin-left:auto}.navigation-menu .actions-menu-content{right:0;left:auto;max-width:calc(100vw - 24px)}.target-manager select{min-width:0;max-width:100%}.target-manager .form-grid,.backup-action-grid{grid-template-columns:minmax(0,1fr)}.journal-line{grid-template-columns:minmax(0,1fr);gap:2px}.notification-battery{width:100%}.notification-batteries{display:block}.notification-battery{margin:8px 0;box-sizing:border-box}.journal-toolbar input{max-width:100%}}
+      @media(max-width:700px){header{flex-wrap:wrap}.ha-menu-button{display:grid;order:0}header>ha-icon{order:0}header h1{flex:1 1 0;min-width:0;order:0}.profile-menu{order:1;max-width:calc(100% - 54px)}.profile-menu summary{max-width:100%}.profile-menu .profile-menu-content{left:0;right:auto;max-width:calc(100vw - 24px)}.navigation-menu{order:2;flex-shrink:0;margin-left:auto}.navigation-menu .actions-menu-content{right:0;left:auto;max-width:calc(100vw - 24px)}.target-manager select{min-width:0;max-width:100%}.target-manager .form-grid,.backup-action-grid{grid-template-columns:minmax(0,1fr)}.journal-line{grid-template-columns:minmax(0,1fr);gap:2px}.notification-battery{width:100%}.notification-batteries{display:block}.notification-battery{margin:8px 0;box-sizing:border-box}.journal-toolbar input{max-width:100%}}
 
       .about-brand{width:min(800px,100%)}.about-brand img{display:block;width:100%;height:auto;border-radius:12px}.about-version{text-align:right;font-weight:600;margin:6px 4px 14px;color:var(--secondary-text-color)}
       .configuration-theme{--neo-bg:#e8edf2;--neo-input:#f0f4f7;--neo-text:#253e48;--neo-muted:#526975;--neo-border:#a9c4ca;--neo-light:#ffffff;--neo-shadow:#bdc8d3;--neo-accent:#397e8c;background:var(--neo-bg);color:var(--neo-text);padding:12px 18px;border-radius:24px}
@@ -537,7 +539,7 @@ class BatteryManagerPanel extends HTMLElement {
       : this._tab === "batteries" ? this._batteryEditor()
       : this._scheduleEditor();
     this.shadowRoot.innerHTML = `${this._styles()}
-      <header><ha-icon icon="mdi:battery-charging"></ha-icon><h1>${this._t("title")} v${PANEL_VERSION}</h1>
+      <header><button id="haSidebarMenu" class="ha-menu-button" aria-label="Home Assistant"><ha-icon icon="mdi:menu"></ha-icon></button><ha-icon icon="mdi:battery-charging"></ha-icon><h1>${this._t("title")} v${PANEL_VERSION}</h1>
       <details class="profile-menu"><summary>${this._config.active_profile==="auto"?`${this._t("profiles.auto")} → ${esc((this._config.schedule_profiles||[]).find(p=>p.id===this._status.effective_profile)?.name||this._status.effective_profile||"—")}`:`${this._t("profiles.manual")} → ${esc((this._config.schedule_profiles||[]).find(p=>p.id===this._config.active_profile)?.name||this._config.active_profile)}`}</summary><div class="profile-menu-content">
         <button data-active-profile="auto">${this._t("profiles.auto")}</button>
         ${(this._config.schedule_profiles||[]).map(p=>`<button data-active-profile="${esc(p.id)}">${esc(p.name)}</button>`).join("")}
@@ -1214,6 +1216,11 @@ class BatteryManagerPanel extends HTMLElement {
   }
 
   _bind() {
+    const haSidebarMenu = this.shadowRoot.querySelector("#haSidebarMenu");
+    if (haSidebarMenu) haSidebarMenu.onclick = () => this.dispatchEvent(new CustomEvent("hass-toggle-menu", {
+      bubbles: true,
+      composed: true,
+    }));
     const languageSelect = this.shadowRoot.querySelector("#languageSelect");
     if (languageSelect) languageSelect.onchange = async () => {
       this._languageOverride = languageSelect.value;

@@ -71,9 +71,15 @@ class BatteryManagerStore:
         valid = {item["id"] for item in profiles}
         active = str(self.data.get("active_profile", "sunny"))
         self.data["active_profile"] = active if active == "auto" or active in valid else "sunny"
+        stored_weather = self.data.get("weather")
+        stored_solar_conditions_version = (
+            stored_weather.get("solar_conditions_version", 1)
+            if isinstance(stored_weather, dict)
+            else 1
+        )
         weather = deepcopy(DEFAULT_CONFIG["weather"])
-        if isinstance(self.data.get("weather"), dict):
-            weather.update(self.data["weather"])
+        if isinstance(stored_weather, dict):
+            weather.update(stored_weather)
         weather["entity_id"] = str(weather.get("entity_id", "")).strip()
         weather["cloud_cover_entity"] = str(weather.get("cloud_cover_entity", "")).strip()
         weather["solar_irradiance_enabled"] = bool(
@@ -102,9 +108,25 @@ class BatteryManagerStore:
         weather["solar_threshold_wm2"] = max(100, min(400, solar_threshold))
         weather["solar_validation_minutes"] = max(1, min(30, solar_validation))
         weather["solar_hold_minutes"] = max(5, min(45, solar_hold))
-        eligible = weather.get("solar_eligible_conditions", ["partlycloudy", "cloudy"])
+        eligible = weather.get(
+            "solar_eligible_conditions",
+            ["sunny", "partlycloudy", "cloudy", "rainy", "lightning-rainy"],
+        )
         if not isinstance(eligible, list):
-            eligible = ["partlycloudy", "cloudy"]
+            eligible = [
+                "sunny",
+                "partlycloudy",
+                "cloudy",
+                "rainy",
+                "lightning-rainy",
+            ]
+        try:
+            solar_conditions_version = int(stored_solar_conditions_version)
+        except (TypeError, ValueError):
+            solar_conditions_version = 1
+        if solar_conditions_version < 2:
+            eligible = [*eligible, "sunny", "rainy", "lightning-rainy"]
+        weather["solar_conditions_version"] = 2
         allowed = set(SOLAR_CORRECTABLE_CONDITIONS)
         weather["solar_eligible_conditions"] = [
             condition
