@@ -130,7 +130,7 @@ def discover_marstek_devices(hass: HomeAssistant) -> list[dict[str, Any]]:
         entities: list[dict[str, Any]] = []
         mapping: dict[str, str] = {}
         for entry in sorted(entries, key=lambda item: item.entity_id):
-            name = er.async_get_unprefixed_name(hass, entry) or entry.entity_id
+            name = entry.entity_name or entry.entity_id
             state = hass.states.get(entry.entity_id)
             full_name = (
                 state.attributes.get("friendly_name")
